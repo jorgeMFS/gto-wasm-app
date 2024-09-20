@@ -7,14 +7,15 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: '[name].[contenthash].js',
-    publicPath: '/', // Ensures that assets are served from the root
+    publicPath: '/',
     webassemblyModuleFilename: 'wasm/[hash].wasm',
   },
   module: {
+    noParse: /public\/wasm\/gto_.*\.js$/, // Exclude Emscripten JS files from parsing
     rules: [
       {
         test: /\.js$/,
-        exclude: /node_modules/,
+        exclude: /node_modules|public\/wasm/,
         use: {
           loader: 'babel-loader',
           options: {
@@ -29,11 +30,15 @@ module.exports = {
       {
         test: /\.wasm$/,
         type: 'webassembly/async',
-        // Webpack 5 handles WASM natively
       },
+      // Remove the 'file-loader' rule for Emscripten JS files
       {
-        test: /gto_.*\.js$/, // Target only gto_*.js files
-        type: 'javascript/auto', // Prevent Webpack from interpreting them as modules
+        test: /gto_.*\.js$/,
+        include: path.resolve(__dirname, 'public/wasm'),
+        type: 'asset/resource', // Treat these files as resources to be emitted to the output directory
+        generator: {
+          filename: 'wasm/[name][ext]',
+        },
       },
     ],
   },
@@ -43,8 +48,6 @@ module.exports = {
     }),
     new webpack.ProvidePlugin({
       Buffer: ['buffer', 'Buffer'],
-    }),
-    new webpack.ProvidePlugin({
       process: 'process/browser',
     }),
   ],
@@ -60,6 +63,7 @@ module.exports = {
     alias: {
       wasm: path.resolve(__dirname, 'public/wasm'),
     },
+    extensions: ['.js', '.jsx', '.wasm'], // Ensure .wasm files are resolved
   },
   experiments: {
     asyncWebAssembly: true,
@@ -73,6 +77,11 @@ module.exports = {
     port: 'auto',
     historyApiFallback: true,
     open: true,
+  },
+  optimization: {
+    splitChunks: {
+      chunks: 'all',
+    },
   },
   performance: {
     maxAssetSize: 5000000, // 5 MB

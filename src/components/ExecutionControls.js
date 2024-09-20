@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Button, FormControlLabel, Checkbox, Typography, CircularProgress } from '@mui/material';
+import { Button, FormControlLabel, Checkbox, CircularProgress } from '@mui/material';
+import { loadWasmModule } from '../gtoWasm';
 
-const ExecutionControls = ({ 
-  workflow, 
-  gtoModules, 
-  inputData, 
-  setOutputData 
+const ExecutionControls = ({
+  workflow,
+  inputData,
+  setOutputData
 }) => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [autoExecute, setAutoExecute] = useState(false);
@@ -15,13 +15,26 @@ const ExecutionControls = ({
     let data = inputData;
     try {
       for (const operation of workflow) {
-        const module = gtoModules[operation];
-        if (module && module.process) {
-          // Assuming each module's 'process' function is synchronous
-          data = module.process(data);
+        const { toolName, params } = operation;
+
+        // Load the wrapper function dynamically
+        const runFunction = await loadWasmModule(toolName);
+
+        if (typeof runFunction === 'function') {
+          // Prepare command-line arguments if necessary
+          let args = [];
+          if (params && Object.keys(params).length > 0) {
+            args = Object.entries(params)
+              .flatMap(([key, value]) => [`--${key}`, `${value}`]);
+          }
+
+          // Run the function with the current data and arguments
+          const outputData = await runFunction(data, args);
+
+          // Update data for the next operation
+          data = outputData;
         } else {
-          console.error(`Module for ${operation} not loaded or missing 'process' function.`);
-          throw new Error(`Module for ${operation} not loaded or missing 'process' function.`);
+          throw new Error(`Function run_${toolName} not found.`);
         }
       }
       setOutputData(data);
@@ -42,18 +55,18 @@ const ExecutionControls = ({
 
   return (
     <div style={{ marginTop: '20px', textAlign: 'center' }}>
-      <Button 
-        variant="contained" 
-        color="primary" 
-        onClick={handleRun} 
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={handleRun}
         disabled={workflow.length === 0 || isExecuting}
       >
         {isExecuting ? <CircularProgress size={24} /> : 'Run'}
       </Button>
       <FormControlLabel
         control={
-          <Checkbox 
-            checked={autoExecute} 
+          <Checkbox
+            checked={autoExecute}
             onChange={(e) => setAutoExecute(e.target.checked)}
             color="primary"
           />

@@ -15,6 +15,9 @@
 
 # WebAssembly files
 /public/wasm/*.wasm
+/public/wasm/*.log
+/public/wasm/*.js
+/dist/*
 
 # Misc
 .DS_Store
