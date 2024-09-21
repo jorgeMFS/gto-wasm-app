@@ -75,6 +75,8 @@ for ((i=0; i<tool_count; i++)); do
     tool=$(jq ".tools[$i]" "$DESCRIPTION_FILE")
     prog=$(echo "$tool" | jq -r '.name')
     source_file=$(echo "$tool" | jq -r '.source // empty')  # Use // empty to avoid null
+    input_type=$(echo "$tool" | jq -r '.input.type // "unknown"')
+    output_type=$(echo "$tool" | jq -r '.output.type // "unknown"')
 
     # Skip if source is not specified
     if [[ -z "$source_file" ]]; then
@@ -93,7 +95,7 @@ for ((i=0; i<tool_count; i++)); do
         output_js="$WASM_DIR/${prog}.js"
         compile_log="$WASM_DIR/${prog}_compile.log"
 
-        # Define compilation flags as an array
+        # Define compilation flags as an array (updated)
         emcc_flags=(
             -O3
             -Wall
@@ -103,7 +105,7 @@ for ((i=0; i<tool_count; i++)); do
             -I"$SCRIPT_DIR/gto/src"
             -sWASM=1
             -sALLOW_MEMORY_GROWTH=1
-            -sMODULARIZE
+            -sMODULARIZE=1
             -sEXPORT_NAME="$prog"
             -sENVIRONMENT=web,worker
             -sEXPORTED_FUNCTIONS='["_main","_malloc","_free"]'
@@ -112,26 +114,26 @@ for ((i=0; i<tool_count; i++)); do
 
         # Determine which object files to link
         if [[ "$prog" == "gto_comparative_map" ]]; then
-            # For gto_comparative_map, use additional_cmap_objects only
             link_objects="$additional_cmap_objects"
         else
-            # For other programs, use common_objects only
             link_objects="$common_objects"
         fi
 
-        # Compile the program
-        echo "Command: emcc ${emcc_flags[*]} \"$full_source_path\" $link_objects -o \"$output_js\" -lm" | tee -a "$MAIN_LOG_FILE"
-        emcc "${emcc_flags[@]}" "$full_source_path" $link_objects -o "$output_js" -lm >> "$MAIN_LOG_FILE" 2>&1
-        compile_status=$?
+        # Create post.js to assign module factory to window
+        post_js_content="window['$prog'] = $prog;"
+        echo "$post_js_content" > "$WASM_DIR/${prog}_post.js"
 
-        if [[ $compile_status -eq 0 ]]; then
+        # Compile the program with --post-js
+        # Compile the program with --post-js
+        echo "Command: emcc ${emcc_flags[*]} \"$full_source_path\" $link_objects -o \"$output_js\" -lm --post-js \"$WASM_DIR/${prog}_post.js\"" | tee -a "$MAIN_LOG_FILE"
+        emcc "${emcc_flags[@]}" "$full_source_path" $link_objects -o "$output_js" -lm \
+            --post-js "$WASM_DIR/${prog}_post.js" >> "$compile_log" 2>&1
+
+        if [[ $? -eq 0 ]]; then
             echo "Successfully compiled ${prog}." | tee -a "$MAIN_LOG_FILE"
             compiled_programs=$((compiled_programs + 1))
 
             # Generate the wrapper script
-            # Ensure input_type and output_type are defined in the description.json or handle accordingly
-            input_type=$(echo "$tool" | jq -r '.input.type // "unknown"')
-            output_type=$(echo "$tool" | jq -r '.output.type // "unknown"')
             "$SCRIPT_DIR/generate_wrapper.sh" "$prog" "$input_type" "$output_type" >> "$MAIN_LOG_FILE" 2>&1
         else
             failed_programs=$((failed_programs + 1))

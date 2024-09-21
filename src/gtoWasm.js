@@ -6,8 +6,8 @@
 
 export async function loadWasmModule(toolName) {
   try {
-    // Ensure the toolName includes the 'gto_' prefix
-    const moduleName = toolName.startsWith('gto_') ? toolName : `gto_${toolName}`;
+    // Do not add 'gto_' prefix
+    const moduleName = toolName; // Assume toolName is without 'gto_' prefix
     const scriptUrl = `/wasm/${moduleName}_wrapper.js`;
 
     // Load the script dynamically
@@ -15,6 +15,7 @@ export async function loadWasmModule(toolName) {
 
     const runFunctionName = `run_${moduleName}`;
     const runFunction = window[runFunctionName];
+
     if (typeof runFunction === 'function') {
       return runFunction;
     } else {

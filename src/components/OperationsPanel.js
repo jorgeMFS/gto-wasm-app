@@ -6,7 +6,8 @@ import {
   TextField, 
   Divider, 
   Typography,
-  Box
+  Box,
+  Tooltip
 } from '@mui/material';
 import ListItemButton from '@mui/material/ListItemButton';
 import debounce from 'lodash.debounce';
@@ -14,92 +15,87 @@ import debounce from 'lodash.debounce';
 // Define categories and map operations to them
 const operationCategories = {
   "Sequence Manipulation": [
-    'fasta_extract',
-    'fasta_reverse',
-    'fasta_complement',
-    'fasta_mutate',
-    'fasta_rand_extra_chars',
-    'fasta_extract_by_read',
-    'fasta_extract_read_by_pattern',
-    'fasta_extract_pattern_coords',
-    'fasta_filter_extra_char_seqs',
-    'fasta_get_unique',
-    'fasta_rename_human_headers',
-    'fasta_split_reads',
-    'fasta_split_streams',
-    'fasta_merge_streams',
-    'fastq_exclude_n',
-    'fastq_extract_quality_scores',
-    'fastq_minimum_quality_score',
-    'fastq_minimum_read_size',
-    'fastq_maximum_read_size',
-    'fastq_minimum_local_quality_score_forward',
-    'fastq_minimum_local_quality_score_reverse',
-    'fastq_rand_extra_chars',
-    'fastq_cut',
-    'fastq_pack',
-    'fastq_unpack',
-    'fastq_quality_score_info',
-    'fastq_quality_score_min',
-    'fastq_quality_score_max',
-    'fastq_complement',
-    'fastq_reverse',
-    'fastq_split',
-    'fastq_mutate',
+    { name: 'fasta_extract', description: 'Extracts sequences from a FASTA file' },
+    { name: 'fasta_reverse', description: 'Reverses the order of a FASTA or Multi-FASTA file format' },
+    { name: 'fasta_complement', description: 'Replaces the ACGT bases with their complements in FASTA or Multi-FASTA file format' },
+    { name: 'fasta_mutate', description: 'Creates a synthetic mutation of a FASTA file' },
+    { name: 'fasta_rand_extra_chars', description: 'Substitutes in the DNA sequence the outside ACGT chars by random ACGT symbols' },
+    { name: 'fasta_extract_by_read', description: 'Extracts sequences from each read in a Multi-FASTA file' },
+    { name: 'fasta_extract_read_by_pattern', description: 'Extracts reads from a Multi-FASTA file format given a pattern in the header' },
+    { name: 'fasta_extract_pattern_coords', description: 'Extracts the header and coordinates from a Multi-FASTA file format given a pattern/motif in the sequence' },
+    { name: 'fasta_split_reads', description: 'Splits a Multi-FASTA file to multiple FASTA files' },
+    { name: 'fasta_split_streams', description: 'Splits and writes a FASTA file into three channels of information: headers, extra and DNA' },
+    { name: 'fasta_merge_streams', description: 'Merges the three channels of information (headers, extra and DNA) and writes it into a FASTA file' },
+    { name: 'fastq_exclude_n', description: 'Discards the FASTQ reads with the minimum number of \'N\' symbols' },
+    { name: 'fastq_extract_quality_scores', description: 'Extracts all the quality-scores from FASTQ reads' },
+    { name: 'fastq_minimum_quality_score', description: 'Discards reads with average quality-score below of the defined' },
+    { name: 'fastq_minimum_read_size', description: 'Filters the FASTQ reads with the length smaller than the value defined' },
+    { name: 'fastq_maximum_read_size', description: 'Filters the FASTQ reads with the length higher than the value defined' },
+    { name: 'fastq_minimum_local_quality_score_forward', description: 'Filters the reads considering the quality score average of a defined window size of bases' },
+    { name: 'fastq_minimum_local_quality_score_reverse', description: 'Filters the reverse reads, considering the quality score average of a defined window size of bases' },
+    { name: 'fastq_rand_extra_chars', description: 'Substitutes in the FASTQ files, the DNA sequence the outside ACGT chars by random ACGT symbols' },
+    { name: 'fastq_cut', description: 'Cuts read sequences in a FASTQ file' },
+    { name: 'fastq_pack', description: 'Packages each FASTQ read in a single line' },
+    { name: 'fastq_unpack', description: 'Unpacks the FASTQ reads packaged using the gto_fastq_pack tool' },
+    { name: 'fastq_quality_score_info', description: 'Analyses the quality-scores of a FASTQ file' },
+    { name: 'fastq_quality_score_min', description: 'Analyses the minimal quality-scores of a FASTQ file' },
+    { name: 'fastq_quality_score_max', description: 'Analyses the maximal quality-scores of a FASTQ file' },
+    { name: 'fastq_complement', description: 'Replaces the ACGT bases with their complements in a FASTQ file format' },
+    { name: 'fastq_reverse', description: 'Reverses the ACGT bases order for each read in a FASTQ file format' },
+    { name: 'fastq_split', description: 'Splits Paired End files according to the direction of the strand' },
+    { name: 'fastq_mutate', description: 'Creates a synthetic mutation of a FASTQ file' },
   ],
   "Format Conversion": [
-    'fasta_from_seq',
-    'fasta_to_seq',
-    'fastq_to_fasta',
-    'fastq_to_mfasta',
-    'fastq_from_seq',
-    'amino_acid_from_fasta',
-    'amino_acid_from_fastq',
-    'amino_acid_from_seq',
+    { name: 'fasta_from_seq', description: 'Converts a genomic sequence to pseudo FASTA file format' },
+    { name: 'fasta_to_seq', description: 'Converts a FASTA or Multi-FASTA file format to a seq' },
+    { name: 'fastq_to_fasta', description: 'Converts a FASTQ file format to a pseudo FASTA file' },
+    { name: 'fastq_to_mfasta', description: 'Converts a FASTQ file format to a pseudo Multi-FASTA file' },
+    { name: 'fastq_from_seq', description: 'Converts a genomic sequence to pseudo FASTQ file format' },
+    { name: 'amino_acid_from_fasta', description: 'Converts DNA sequences in FASTA or Multi-FASTA file format to an amino acid sequence' },
+    { name: 'amino_acid_from_fastq', description: 'Converts DNA sequences in the FASTQ file format to an amino acid sequence' },
+    { name: 'amino_acid_from_seq', description: 'Converts DNA sequence to an amino acid sequence' },
+    { name: 'amino_acid_to_seq', description: 'Converts amino acid sequences to DNA sequences' },
   ],
   "Genomic Operations": [
-    'genomic_complement',
-    'genomic_reverse',
-    'genomic_extract',
-    'genomic_gen_random_dna',
-    'genomic_rand_seq_extra_chars',
-    'genomic_period',
-    'genomic_count_bases',
-    'genomic_dna_mutate',
+    { name: 'genomic_complement', description: 'Replaces the ACGT bases with their complements in a DNA sequence' },
+    { name: 'genomic_reverse', description: 'Reverses the ACGT bases order for each read in a sequence file' },
+    { name: 'genomic_extract', description: 'Extracts sequences from a sequence file' },
+    { name: 'genomic_gen_random_dna', description: 'Generates a synthetic DNA' },
+    { name: 'genomic_rand_seq_extra_chars', description: 'Substitutes in the DNA sequence the outside ACGT chars by random ACGT symbols' },
+    { name: 'genomic_period', description: 'Calculates the best order depth of a sequence, using FCMs' },
+    { name: 'genomic_count_bases', description: 'Counts the number of bases in sequence, FASTA or FASTQ files' },
+    { name: 'genomic_dna_mutate', description: 'Creates a synthetic mutation of a sequence file' },
   ],
   "Amino Acid Operations": [
-    'amino_acid_to_group',
-    'amino_acid_to_pseudo_dna',
+    { name: 'amino_acid_to_group', description: 'Converts an amino acid sequence to a group sequence' },
+    { name: 'amino_acid_to_pseudo_dna', description: 'Converts an amino acid (protein) sequence to a pseudo DNA sequence' },
   ],
   "Information and Analysis": [
-    'fasta_info',
-    'fastq_info',
-    'info',
-    'fasta_find_n_pos',
-    'comparative_map',
+    { name: 'fasta_info', description: 'Shows the readed information of a FASTA or Multi-FASTA file format' },
+    { name: 'fastq_info', description: 'Analyses the basic information of FASTQ file format' },
+    { name: 'info', description: 'Gives the basic properties of the file' },
+    { name: 'fasta_find_n_pos', description: 'Reports the \'N\' regions in a sequence or FASTA (seq) file' },
+    { name: 'comparative_map', description: 'Creates a visualization for comparative maps' },
   ],
   "Mathematical Operations": [
-    'lower_bound',
-    'upper_bound',
-    'max',
-    'min',
-    'sum',
-    'permute_by_blocks',
-    'real_to_binary_with_threshold',
+    { name: 'lower_bound', description: 'Sets an lower bound in a file with a value per line' },
+    { name: 'upper_bound', description: 'Sets an upper bound in a file with a value per line' },
+    { name: 'max', description: 'Computes the maximum value in each row between two files' },
+    { name: 'min', description: 'Computes the minium value in each row between two files' },
+    { name: 'sum', description: 'Adds decimal values in file, line by line, splitted by spaces or tabs' },
+    { name: 'permute_by_blocks', description: 'Permutates by block sequence, FASTA and Multi-FASTA files' },
+    { name: 'real_to_binary_with_threshold', description: 'Converts a sequence of real numbers into a binary sequence, given a threshold' },
   ],
   "Text Processing": [
-    'char_to_line',
-    'new_line_on_new_x',
-    'filter',
-    'reverse',
-    'segment',
-    'word_search',
-    'brute_force_string',
+    { name: 'char_to_line', description: 'Splits a sequence into lines, creating an output sequence which has a char for each line' },
+    { name: 'new_line_on_new_x', description: 'Splits different rows with a new empty row' },
+    { name: 'filter', description: 'Filters numerical sequences using a low-pass filter' },
+    { name: 'reverse', description: 'Reverses the ACGT bases order for each read in a sequence file' },
+    { name: 'segment', description: 'Segments a filtered sequence based on a threshold' },
+    { name: 'word_search', description: 'Search for a word in a file' },
+    { name: 'brute_force_string', description: 'Generates all combinations, line by line, for an inputted alphabet and specific size' },
   ]
 };
-
-// Merge all operations into a single array for search functionality
-const allOperations = Object.values(operationCategories).flat();
 
 const OperationsPanel = ({ onAddOperation }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -117,7 +113,8 @@ const OperationsPanel = ({ onAddOperation }) => {
   // Filter operations based on search term
   const filterOperations = (operations) => {
     return operations.filter((op) =>
-      op.toLowerCase().includes(searchTerm.toLowerCase())
+      op.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      op.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
   };
 
@@ -143,12 +140,13 @@ const OperationsPanel = ({ onAddOperation }) => {
             <React.Fragment key={category}>
               <ListSubheader>{category}</ListSubheader>
               {filteredOps.map((operation) => (
-                <ListItemButton
-                  key={operation}
-                  onClick={() => onAddOperation(operation)}
-                >
-                  <ListItemText primary={operation} />
-                </ListItemButton>
+                <Tooltip key={operation.name} title={operation.description} placement="right">
+                  <ListItemButton
+                    onClick={() => onAddOperation(operation.name)}
+                  >
+                    <ListItemText primary={operation.name} />
+                  </ListItemButton>
+                </Tooltip>
               ))}
               <Divider />
             </React.Fragment>
