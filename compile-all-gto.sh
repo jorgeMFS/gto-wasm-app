@@ -3,235 +3,181 @@
 # Don't exit immediately on error
 set +e
 
+# Get the directory of the script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+
 # Set the path to the emsdk directory
 EMSDK_PATH="/home/jorge/GTOChef/emsdk"
 
 # Ensure Emscripten is in the PATH
 source "$EMSDK_PATH/emsdk_env.sh"
 
-# Navigate to the GTO src directory
-cd "$(dirname "$0")/gto/src"
+# Path to description.json
+DESCRIPTION_FILE="$SCRIPT_DIR/description.json"
 
-# Create the output directory
-mkdir -p ../../public/wasm
+# Ensure description.json exists
+if [[ ! -f "$DESCRIPTION_FILE" ]]; then
+    echo "Error: description.json not found at $DESCRIPTION_FILE"
+    exit 1
+fi
 
-# Compile common objects
-common_sources="argparse.c csmodel.c buffer.c mem.c misc.c parser.c reads.c labels.c common.c dna.c fcm.c phash.c"
+# Ensure public/wasm directory exists
+WASM_DIR="$SCRIPT_DIR/public/wasm"
+mkdir -p "$WASM_DIR"
+
+# Single log file for all compilations
+MAIN_LOG_FILE="$WASM_DIR/compilation_log.txt"
+echo "Compilation Log" > "$MAIN_LOG_FILE"
+echo "=================" >> "$MAIN_LOG_FILE"
+
+# Compile common source files
+common_sources="argparse.c buffer.c common.c csmodel.c dna.c fcm.c labels.c mem.c misc.c parser.c phash.c reads.c"
+common_objects=""
+
+echo "Compiling common source files..." | tee -a "$MAIN_LOG_FILE"
+
 for file in $common_sources; do
-    echo "Compiling $file..."
-    emcc -c "$file" -o "${file%.c}.o" -I. -DLINUX -O3 -Wall -ffast-math
-    if [ $? -ne 0 ]; then
-        echo "Error compiling $file"
+    obj_file="${file%.c}.o"
+    echo "Compiling $file..." | tee -a "$MAIN_LOG_FILE"
+    emcc -c "$SCRIPT_DIR/gto/src/$file" -o "$obj_file" -I"$SCRIPT_DIR/gto/src" -O3 -Wall -ffast-math -DLINUX >> "$MAIN_LOG_FILE" 2>&1
+    if [[ $? -ne 0 ]]; then
+        echo "Error compiling $file. Check $MAIN_LOG_FILE for details."
         exit 1
     fi
+    common_objects+=" $obj_file"
 done
 
-common_objects=$(echo $common_sources | sed 's/\.c/\.o/g')
+# Compile Additional Objects for Comparative Mapping
+additional_cmap_sources="common-cmap.c mem-cmap.c msg-cmap.c paint-cmap.c time-cmap.c"
+additional_cmap_objects=""
 
-# Define the list of programs to compile (order matches Makefile)
-declare -A program_sources
-program_sources=(
-    ["fastq_to_fasta"]="FastqToFasta.c"
-    ["fastq_to_mfasta"]="FastqToMFasta.c"
-    ["fasta_to_seq"]="FastaToSeq.c"
-    ["fasta_from_seq"]="FastaFromSeq.c"
-    ["fastq_from_seq"]="FastqFromSeq.c"
-    ["char_to_line"]="CharToLine.c"
-    ["amino_acid_to_group"]="AminoAcidToGroup.c"
-    ["fasta_extract_read_by_pattern"]="FastaExtractReadByIdPattern.c"
-    ["fasta_extract"]="FastaExtract.c"
-    ["fasta_extract_by_read"]="FastaExtractByRead.c"
-    ["fasta_info"]="FastaInfo.c"
-    ["fastq_exclude_n"]="FastqExcludeN.c"
-    ["fastq_extract_quality_scores"]="FastqExtractQS.c"
-    ["fastq_info"]="FastqInfo.c"
-    ["fastq_maximum_read_size"]="FastqMaximumReadSize.c"
-    ["fastq_minimum_read_size"]="FastqMinimumReadSize.c"
-    ["fastq_minimum_quality_score"]="FastqMinimumQualityScore.c"
-    ["fasta_find_n_pos"]="FastaFindNPos.c"
-    ["genomic_gen_random_dna"]="GenomicGenRandomDNA.c"
-    ["fasta_mutate"]="FastaMutate.c"
-    ["fastq_mutate"]="FastqMutate.c"
-    ["new_line_on_new_x"]="NewLineForNewValue.c"
-    ["amino_acid_to_pseudo_dna"]="AminoAcidToPseudoDNA.c"
-    ["fasta_rand_extra_chars"]="FastaRandExtraChars.c"
-    ["fastq_rand_extra_chars"]="FastqRandExtraChars.c"
-    ["genomic_rand_seq_extra_chars"]="GenomicRandSeqExtraChars.c"
-    ["fasta_rename_human_headers"]="FastaRenameHumanHeaders.c"
-    ["genomic_reverse"]="Reverse.c"
-    ["reverse"]="Reverse.c"
-    ["fasta_split_reads"]="FastaSplitReads.c"
-    ["fastq_split"]="FastqSplit.c"
-    ["fastq_pack"]="FastqPack.c"
-    ["fastq_unpack"]="FastqUnpack.c"
-    ["upper_bound"]="UpperBound.c"
-    ["lower_bound"]="LowerBound.c"
-    ["fastq_quality_score_info"]="FastqQualityScoreInfo.c"
-    ["fastq_quality_score_min"]="FastqQualityScoreMin.c"
-    ["fastq_quality_score_max"]="FastqQualityScoreMax.c"
-    ["fastq_cut"]="FastqCut.c"
-    ["fastq_minimum_local_quality_score_forward"]="FastqMinimumQualityScoreForward.c"
-    ["fastq_minimum_local_quality_score_reverse"]="FastqMinimumQualityScoreReverse.c"
-    ["genomic_dna_mutate"]="GenomicDNAMutate.c"
-    ["genomic_extract"]="GenomicExtract.c"
-    ["brute_force_string"]="BruteForceString.c"
-    ["real_to_binary_with_threshold"]="RealToBinaryWithThreshold.c"
-    ["sum"]="Sum.c"
-    ["filter"]="Filter.c"
-    ["word_search"]="WordSearch.c"
-    ["permute_by_blocks"]="PermuteByBlocks.c"
-    ["fasta_extract_pattern_coords"]="FastaExtractPatternCoords.c"
-    ["info"]="Info.c"
-    ["segment"]="Segment.c"
-    ["fasta_get_unique"]="FastaGetUnique.c"
-    ["genomic_period"]="GenomicPeriod.c"
-    ["genomic_count_bases"]="GenomicCountBases.c"
-    ["max"]="Max.c"
-    ["min"]="Min.c"
-    ["fastq_complement"]="FastqComplement.c"
-    ["fasta_complement"]="FastaComplement.c"
-    ["genomic_complement"]="GenomicComplement.c"
-    ["fastq_reverse"]="FastqReverse.c"
-    ["fasta_reverse"]="FastaReverse.c"
-    ["amino_acid_from_fasta"]="AminoAcidFromFasta.c"
-    ["amino_acid_from_fastq"]="AminoAcidFromFastq.c"
-    ["amino_acid_from_seq"]="AminoAcidFromSeq.c"
-    ["fasta_split_streams"]="FastaSplitStreams.c"
-    ["fasta_merge_streams"]="FastaMergeStreams.c"
-    ["fasta_filter_extra_char_seqs"]="FastaFilterExtraCharSeqs.c"
-)
+echo "Compiling additional ComparativeMap source files..." | tee -a "$MAIN_LOG_FILE"
 
-# Initialize counters
+for file in $additional_cmap_sources; do
+    obj_file="${file%.c}.o"
+    echo "Compiling $file..." | tee -a "$MAIN_LOG_FILE"
+    emcc -c "$SCRIPT_DIR/gto/src/$file" -o "$obj_file" -I"$SCRIPT_DIR/gto/src" -O3 -Wall -ffast-math -DLINUX >> "$MAIN_LOG_FILE" 2>&1
+    if [[ $? -ne 0 ]]; then
+        echo "Error compiling $file. Check $MAIN_LOG_FILE for details."
+        exit 1
+    fi
+    additional_cmap_objects+=" $obj_file"
+done
+
+# Read tools from description.json
+tool_count=$(jq '.tools | length' "$DESCRIPTION_FILE")
 total_programs=0
 compiled_programs=0
 failed_programs=0
+declare -a failed_list
 
-for prog in "${!program_sources[@]}"; do
-    source_file=${program_sources[$prog]}
+for ((i=0; i<tool_count; i++)); do
+    tool=$(jq ".tools[$i]" "$DESCRIPTION_FILE")
+    prog=$(echo "$tool" | jq -r '.name')
+    source_file=$(echo "$tool" | jq -r '.source // empty')  # Use // empty to avoid null
+
+    # Skip if source is not specified
+    if [[ -z "$source_file" ]]; then
+        echo "Skipping $prog: no source file specified." | tee -a "$MAIN_LOG_FILE"
+        continue
+    fi
+
+    full_source_path="$SCRIPT_DIR/$source_file"
+
     total_programs=$((total_programs + 1))
 
-    echo "Processing $prog ($source_file)..."
+    echo "Processing ${prog} (${source_file})..." | tee -a "$MAIN_LOG_FILE"
+    echo "Compiling ${prog}..." | tee -a "$MAIN_LOG_FILE"
 
-    if [[ -f "$source_file" ]]; then
-        output_js="../../public/wasm/gto_${prog}.js"
+    if [[ -f "$full_source_path" ]]; then
+        output_js="$WASM_DIR/${prog}.js"
+        compile_log="$WASM_DIR/${prog}_compile.log"
 
-        # Define compilation flags
-          emcc \
-            -O3 \
-            -Wall \
-            -ffast-math \
-            -DPROGRESS \
-            -DLINUX \
-            -I. \
-            -s WASM=1 \
-            -s ALLOW_MEMORY_GROWTH=1 \
-            -s MODULARIZE=1 \
-            -s EXPORT_NAME="'gto_${prog}'" \
-            -s ENVIRONMENT='web,worker' \
-            -s EXPORTED_FUNCTIONS='["_main", "_malloc", "_free"]' \
-            -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "FS", "setValue", "stringToUTF8"]' \
-            "$source_file" \
-            $common_objects \
-            -o "$output_js" \
-            -lm \
-            > "../../public/wasm/gto_${prog}_compile.log" 2>&1
+        # Define compilation flags as an array
+        emcc_flags=(
+            -O3
+            -Wall
+            -ffast-math
+            -DPROGRESS
+            -DLINUX
+            -I"$SCRIPT_DIR/gto/src"
+            -sWASM=1
+            -sALLOW_MEMORY_GROWTH=1
+            -sMODULARIZE
+            -sEXPORT_NAME="$prog"
+            -sENVIRONMENT=web,worker
+            -sEXPORTED_FUNCTIONS='["_main","_malloc","_free"]'
+            -sEXPORTED_RUNTIME_METHODS='["ccall","cwrap","FS","setValue","stringToUTF8","callMain"]'
+        )
 
-        if [ $? -eq 0 ]; then
+        # Determine which object files to link
+        if [[ "$prog" == "gto_comparative_map" ]]; then
+            # For gto_comparative_map, use additional_cmap_objects only
+            link_objects="$additional_cmap_objects"
+        else
+            # For other programs, use common_objects only
+            link_objects="$common_objects"
+        fi
+
+        # Compile the program
+        echo "Command: emcc ${emcc_flags[*]} \"$full_source_path\" $link_objects -o \"$output_js\" -lm" | tee -a "$MAIN_LOG_FILE"
+        emcc "${emcc_flags[@]}" "$full_source_path" $link_objects -o "$output_js" -lm >> "$MAIN_LOG_FILE" 2>&1
+        compile_status=$?
+
+        if [[ $compile_status -eq 0 ]]; then
+            echo "Successfully compiled ${prog}." | tee -a "$MAIN_LOG_FILE"
             compiled_programs=$((compiled_programs + 1))
-            echo "Successfully compiled ${prog}"
 
-            # Create a JavaScript wrapper that attaches run_<toolName> to window
-cat > "../../public/wasm/gto_${prog}_wrapper.js" <<EOL
-(function() {
-  window.run_${prog} = async function(input, args = []) {
-    const moduleInstance = await window.createModule_${prog}();
-    
-    // Set up input
-    moduleInstance.FS.writeFile('input.txt', input);
-
-    // Prepare command-line arguments
-    const argv = ['gto_${prog}', ...args, 'input.txt', 'output.txt'];
-    const argc = argv.length;
-    const argvPtrs = argv.map(arg => {
-      const buf = moduleInstance._malloc(arg.length + 1);
-      moduleInstance.stringToUTF8(arg, buf, arg.length + 1);
-      return buf;
-    });
-
-    const argvPtr = moduleInstance._malloc(argc * 4);
-    argvPtrs.forEach((ptr, i) => {
-      moduleInstance.setValue(argvPtr + i * 4, ptr, '*');
-    });
-
-    // Run the main function
-    moduleInstance._main(argc, argvPtr);
-
-    // Read the output
-    const output = moduleInstance.FS.readFile('output.txt', { encoding: 'utf8' });
-
-    // Clean up
-    moduleInstance._free(argvPtr);
-    argvPtrs.forEach(ptr => moduleInstance._free(ptr));
-
-    return output;
-  };
-
-  // Factory function to create the Module instance
-  window.createModule_${prog} = function() {
-    return new Promise((resolve, reject) => {
-      var script = document.createElement('script');
-      script.src = '/wasm/gto_${prog}.js';
-      script.onload = () => {
-        window['gto_${prog}']({
-          locateFile: (path, prefix) => {
-            if (path.endsWith('.wasm')) {
-              return '/wasm/' + path;
-            }
-            return prefix + path;
-          }
-        }).then(resolve).catch(reject);
-      };
-      script.onerror = reject;
-      document.head.appendChild(script);
-    });
-  };
-})();
-EOL
-
-            echo "Created wrapper for ${prog}"
-
+            # Generate the wrapper script
+            # Ensure input_type and output_type are defined in the description.json or handle accordingly
+            input_type=$(echo "$tool" | jq -r '.input.type // "unknown"')
+            output_type=$(echo "$tool" | jq -r '.output.type // "unknown"')
+            "$SCRIPT_DIR/generate_wrapper.sh" "$prog" "$input_type" "$output_type" >> "$MAIN_LOG_FILE" 2>&1
         else
             failed_programs=$((failed_programs + 1))
-            echo "Failed to compile ${prog}. Check gto_${prog}_compile.log for details."
-            tail -n 10 "../../public/wasm/gto_${prog}_compile.log"
+            failed_list+=("$prog")
+            echo "Failed to compile ${prog}. Check $compile_log for details." | tee -a "$MAIN_LOG_FILE"
+            
+            # Extract and display relevant error messages
+            echo "Analyzing compilation errors for ${prog}..." | tee -a "$MAIN_LOG_FILE"
+            if grep -q "error:" "$compile_log"; then
+                echo "Compilation errors found:" | tee -a "$MAIN_LOG_FILE"
+                grep "error:" "$compile_log" | head -n 5 | tee -a "$MAIN_LOG_FILE"
+            elif grep -q "undefined symbol" "$compile_log"; then
+                echo "Linker errors found (undefined symbols):" | tee -a "$MAIN_LOG_FILE"
+                grep "undefined symbol" "$compile_log" | head -n 5 | tee -a "$MAIN_LOG_FILE"
+            else
+                echo "Unknown compilation error. Please check the log file." | tee -a "$MAIN_LOG_FILE"
+            fi
         fi
     else
         failed_programs=$((failed_programs + 1))
-        echo "Warning: Source file $source_file not found for program $prog"
+        failed_list+=("$prog")
+        echo "Warning: Source file '$full_source_path' not found for program '$prog'." | tee -a "$MAIN_LOG_FILE"
     fi
 
-    echo "----------------------------------------"
+    echo "----------------------------------------" | tee -a "$MAIN_LOG_FILE"
 done
 
-# Clean up common object files
-rm *.o
+# Clean up object files
+echo "Cleaning up object files..." | tee -a "$MAIN_LOG_FILE"
+rm -f *.o
 
-cd ../..
+# Summary
+echo -e "\n---------------------------------------------" | tee -a "$MAIN_LOG_FILE"
+echo "Compilation complete!" | tee -a "$MAIN_LOG_FILE"
+echo "Total programs: $total_programs" | tee -a "$MAIN_LOG_FILE"
+echo "Successfully compiled: $compiled_programs" | tee -a "$MAIN_LOG_FILE"
+echo "Failed to compile: $failed_programs" | tee -a "$MAIN_LOG_FILE"
 
-echo "---------------------------------------------"
-echo "Compilation complete!"
-echo "Total programs: $total_programs"
-echo "Successfully compiled: $compiled_programs"
-echo "Failed to compile: $failed_programs"
+if [[ ${#failed_list[@]} -gt 0 ]]; then
+    echo -e "\nFailed programs:" | tee -a "$MAIN_LOG_FILE"
+    for prog in "${failed_list[@]}"; do
+        echo "- $prog" | tee -a "$MAIN_LOG_FILE"
+    done
+fi
 
-echo "WASM files generated:"
-ls -1 public/wasm/*.wasm 2>/dev/null || echo "None"
-
-echo "JS files generated:"
-ls -1 public/wasm/*.js 2>/dev/null || echo "None"
-
-echo "Wrapper files generated:"
-ls -1 public/wasm/*_wrapper.js 2>/dev/null || echo "None"
+echo -e "\nDetailed compilation log available at: $MAIN_LOG_FILE"
 
 # Remove any remaining files in src/wasm and wasm directories
-rm -rf src/wasm/*.wasm src/wasm/*.js wasm/*.wasm wasm/*.js
+rm -rf "$SCRIPT_DIR/src/wasm"/*.wasm "$SCRIPT_DIR/src/wasm"/*.js "$SCRIPT_DIR/wasm"/*.wasm "$SCRIPT_DIR/wasm"/*.js

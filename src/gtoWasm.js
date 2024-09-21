@@ -6,13 +6,14 @@
 
 export async function loadWasmModule(toolName) {
   try {
-    const scriptUrl = `/wasm/gto_${toolName}_wrapper.js`;
+    // Ensure the toolName includes the 'gto_' prefix
+    const moduleName = toolName.startsWith('gto_') ? toolName : `gto_${toolName}`;
+    const scriptUrl = `/wasm/${moduleName}_wrapper.js`;
 
     // Load the script dynamically
     await loadScript(scriptUrl);
 
-    const runFunctionName = `run_${toolName}`;
-    // The wrapper script should attach the run function to the global window object
+    const runFunctionName = `run_${moduleName}`;
     const runFunction = window[runFunctionName];
     if (typeof runFunction === 'function') {
       return runFunction;

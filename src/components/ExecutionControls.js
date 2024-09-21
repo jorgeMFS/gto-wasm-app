@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Button, FormControlLabel, Checkbox, CircularProgress } from '@mui/material';
 import { loadWasmModule } from '../gtoWasm';
+import description from '../../description.json'; 
 
-const ExecutionControls = ({
-  workflow,
-  inputData,
-  setOutputData
-}) => {
+const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [autoExecute, setAutoExecute] = useState(false);
 
@@ -21,14 +18,19 @@ const ExecutionControls = ({
         const runFunction = await loadWasmModule(toolName);
 
         if (typeof runFunction === 'function') {
-          // Prepare command-line arguments if necessary
+          // Find tool configuration from description.json
+          const toolConfig = description.tools.find(tool => tool.name === toolName);
+          if (!toolConfig) {
+            throw new Error(`Configuration for tool ${toolName} not found.`);
+          }
+
           let args = [];
           if (params && Object.keys(params).length > 0) {
             args = Object.entries(params)
               .flatMap(([key, value]) => [`--${key}`, `${value}`]);
           }
 
-          // Run the function with the current data and arguments
+          // Execute the tool
           const outputData = await runFunction(data, args);
 
           // Update data for the next operation

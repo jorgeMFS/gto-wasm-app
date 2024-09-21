@@ -1,0 +1,2082 @@
+{
+  "tools": [
+    {
+      "name": "gto_fastq_to_fasta",
+      "description": "Converts a FASTQ file format to a pseudo FASTA file. It does NOT align the sequence. It extracts the sequence and adds a pseudo header.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "flags": [],
+      "parameters": [],
+      "source": "gto/src/FastqToFasta.c"
+    },
+    {
+      "name": "gto_fastq_to_mfasta",
+      "description": "Converts a FASTQ file format to a pseudo Multi-FASTA file. It does NOT align the sequence. It extracts the sequence and adds each header in a Multi-FASTA format.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "Multi-FASTA"
+      },
+      "flags": [],
+      "parameters": [],
+      "source": "gto/src/FastqToMFasta.c"
+    },
+    {
+      "name": "gto_fastq_exclude_n",
+      "description": "Discards the FASTQ reads with the minimum number of 'N' symbols. If present, it will erase the second header (after +).",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "flags": [],
+      "parameters": [
+        {
+          "name": "minimum_n_symbols",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/FastqExcludeN.c"
+    },
+    {
+      "name": "gto_fastq_extract_quality_scores",
+      "description": "Extracts all the quality-scores from FASTQ reads.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "text"
+      },
+      "flags": [],
+      "parameters": [],
+      "source": "gto/src/FastqExtractQS.c"
+    },
+    {
+      "name": "gto_fastq_info",
+      "description": "Analyses the basic information of FASTQ file format.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "stdout",
+        "format": "text"
+      },
+      "flags": [],
+      "parameters": [],
+      "source": "gto/src/FastqInfo.c"
+    },
+    {
+      "name": "gto_fastq_maximum_read_size",
+      "description": "Filters the FASTQ reads with the length higher than the value defined. If present, it will erase the second header (after +).",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "flags": [],
+      "parameters": [
+        {
+          "name": "maximum_read_size",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/FastqMaximumReadSize.c"
+    },
+    {
+      "name": "gto_fastq_minimum_quality_score",
+      "description": "Discards reads with average quality-score below of the defined.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "flags": [],
+      "parameters": [
+        {
+          "name": "minimum_quality_score",
+          "type": "float"
+        }
+      ],
+      "source": "gto/src/FastqMinimumQualityScore.c"
+    },
+    {
+      "name": "gto_fastq_minimum_read_size",
+      "description": "Filters the FASTQ reads with the length smaller than the value defined. If present, it will erase the second header (after +).",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "flags": [],
+      "parameters": [
+        {
+          "name": "minimum_read_size",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/FastqMinimumReadSize.c"
+    },
+    {
+      "name": "gto_fastq_rand_extra_chars",
+      "description": "Substitutes in the FASTQ files, the DNA sequence the outside ACGT chars by random ACGT symbols.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "flags": [],
+      "parameters": [],
+      "source": "gto/src/FastqRandExtraChars.c"
+    },
+    {
+      "name": "gto_fastq_from_seq",
+      "description": "Converts a genomic sequence to pseudo FASTQ file format.",
+      "input": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "flags": [],
+      "parameters": [],
+      "source": "gto/src/FastqFromSeq.c"
+    },
+    {
+      "name": "gto_fastq_mutate",
+      "description": "Creates a synthetic mutation of a FASTQ file given specific rates of mutations, deletions and additions.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "flags": [],
+      "parameters": [
+        {
+          "name": "mutation_rate",
+          "type": "float"
+        },
+        {
+          "name": "deletion_rate",
+          "type": "float"
+        },
+        {
+          "name": "addition_rate",
+          "type": "float"
+        }
+      ],
+      "source": "gto/src/FastqMutate.c"
+    },
+    {
+      "name": "gto_fastq_split",
+      "description": "Splits Paired End files according to the direction of the strand ('/1' or '/2'). It writes by default singleton reads as forward stands.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "stdout",
+        "format": "text"
+      },
+      "flags": [
+        "-f",
+        "-r"
+      ],
+      "parameters": [
+        {
+          "name": "output_forward.fastq",
+          "type": "string"
+        },
+        {
+          "name": "output_reverse.fastq",
+          "type": "string"
+        }
+      ],
+      "source": "gto/src/FastqSplit.c"
+    },
+    {
+      "name": "gto_fastq_pack",
+      "description": "Packages each FASTQ read in a single line. It can show the read score first or the dna sequence, depending on the execution mode.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "flags": [
+        "-s"
+      ],
+      "parameters": [],
+      "source": "gto/src/FastqPack.c"
+    },
+    {
+      "name": "gto_fastq_unpack",
+      "description": "Unpacks the FASTQ reads packaged using the gto_fastq_pack tool.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "flags": [
+        "-s"
+      ],
+      "parameters": [],
+      "source": "gto/src/FastqUnpack.c"
+    },
+    {
+      "name": "gto_fastq_quality_score_info",
+      "description": "Analyses the quality-scores of a FASTQ file.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "stdout",
+        "format": "text"
+      },
+      "flags": [
+        "-m"
+      ],
+      "parameters": [
+        {
+          "name": "max",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/FastqQualityScoreInfo.c"
+    },
+    {
+      "name": "gto_fastq_quality_score_min",
+      "description": "Analyses the minimal quality-scores of a FASTQ file.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "stdout",
+        "format": "text"
+      },
+      "flags": [
+        "-m"
+      ],
+      "parameters": [
+        {
+          "name": "max",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/FastqQualityScoreMin.c"
+    },
+    {
+      "name": "gto_fastq_quality_score_max",
+      "description": "Analyses the maximal quality-scores of a FASTQ file.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "stdout",
+        "format": "text"
+      },
+      "flags": [
+        "-m"
+      ],
+      "parameters": [
+        {
+          "name": "max",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/FastqQualityScoreMax.c"
+    },
+    {
+      "name": "gto_fastq_cut",
+      "description": "Cuts read sequences in a FASTQ file. It requires that the initial and end positions for the cut.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "flags": [
+        "-i",
+        "-e"
+      ],
+      "parameters": [
+        {
+          "name": "initial",
+          "type": "integer"
+        },
+        {
+          "name": "end",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/FastqCut.c"
+    },
+    {
+      "name": "gto_fastq_minimum_local_quality_score_forward",
+      "description": "Filters the reads considering the quality score average of a defined window size of bases.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "flags": [
+        "-k",
+        "-w",
+        "-m"
+      ],
+      "parameters": [
+        {
+          "name": "windowsize",
+          "type": "integer"
+        },
+        {
+          "name": "minavg",
+          "type": "integer"
+        },
+        {
+          "name": "minqs",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/FastqMinimumQualityScoreForward.c"
+    },
+    {
+      "name": "gto_fastq_minimum_local_quality_score_reverse",
+      "description": "Filters the reverse reads, considering the quality score average of a defined window size of bases.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "flags": [
+        "-k",
+        "-w",
+        "-m"
+      ],
+      "parameters": [
+        {
+          "name": "windowsize",
+          "type": "integer"
+        },
+        {
+          "name": "minavg",
+          "type": "integer"
+        },
+        {
+          "name": "minqs",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/FastqMinimumQualityScoreReverse.c"
+    },
+    {
+      "name": "gto_fastq_xs",
+      "description": "A skilled FASTQ read simulation tool, flexible, portable (does not need a reference sequence) and tunable in terms of sequence complexity. XS handles Ion Torrent, Roche-454, Illumina and ABI-SOLiD simulation sequencing types. It has several running modes, depending on the time and memory available, and is aimed at testing computing infrastructures, namely cloud computing of large-scale projects, and testing FASTQ compression algorithms. Moreover, XS offers the possibility of simulating the three main FASTQ components individually (headers, DNA sequences and quality-scores). Quality-scores can be simulated using uniform and Gaussian distributions.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "flags": [
+        "-h",
+        "-v",
+        "-t",
+        "-hf",
+        "-i",
+        "-o",
+        "-ls",
+        "-ld",
+        "-n",
+        "-f",
+        "-rn",
+        "-ri",
+        "-ra",
+        "-rm",
+        "-rr",
+        "-qt",
+        "-qf",
+        "-qc",
+        "-eh",
+        "-eo",
+        "-ed",
+        "-edb",
+        "-es",
+        "-s"
+      ],
+      "parameters": [
+        {
+          "name": "sequencingType",
+          "type": "integer"
+        },
+        {
+          "name": "headerFormat",
+          "type": "integer"
+        },
+        {
+          "name": "instrumentName",
+          "type": "string"
+        },
+        {
+          "name": "lineSize",
+          "type": "integer"
+        },
+        {
+          "name": "minSize",
+          "type": "integer"
+        },
+        {
+          "name": "maxSize",
+          "type": "integer"
+        },
+        {
+          "name": "numberOfReads",
+          "type": "integer"
+        },
+        {
+          "name": "A",
+          "type": "float"
+        },
+        {
+          "name": "C",
+          "type": "float"
+        },
+        {
+          "name": "G",
+          "type": "float"
+        },
+        {
+          "name": "T",
+          "type": "float"
+        },
+        {
+          "name": "N",
+          "type": "float"
+        },
+        {
+          "name": "numberOfRepeats",
+          "type": "integer"
+        },
+        {
+          "name": "repeatsMinSize",
+          "type": "integer"
+        },
+        {
+          "name": "repeatsMaxSize",
+          "type": "integer"
+        },
+        {
+          "name": "mutationRate",
+          "type": "float"
+        },
+        {
+          "name": "assignmentType",
+          "type": "integer"
+        },
+        {
+          "name": "statsFile",
+          "type": "string"
+        },
+        {
+          "name": "template",
+          "type": "string"
+        },
+        {
+          "name": "seed",
+          "type": "integer"
+        },
+        {
+          "name": "genFile",
+          "type": "string"
+        }
+      ],
+      "source": "external_tool"
+    },
+    {
+      "name": "gto_fastq_clust_reads",
+      "description": "Agroups reads and creates an index file. It cluster reads in therms of Seq k-mer Lexicographical order.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "flags": [
+        "-c"
+      ],
+      "parameters": [
+        {
+          "name": "ctx",
+          "type": "integer"
+        }
+      ],
+      "source": "Not found in Makefile"
+    },
+    {
+      "name": "gto_fastq_complement",
+      "description": "Replaces the ACGT bases with their complements in a FASTQ file format.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "flags": [],
+      "parameters": [],
+      "source": "gto/src/FastqComplement.c"
+    },
+    {
+      "name": "gto_fastq_reverse",
+      "description": "Reverses the ACGT bases order for each read in a FASTQ file format.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "flags": [],
+      "parameters": [],
+      "source": "gto/src/FastqReverse.c"
+    },
+    {
+      "name": "gto_fastq_variation_map",
+      "description": "Identifies the variation that occurs in the sequences relative to the reads or a set of reads. The (probabilistic) Bloom filter is automatically set.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "text"
+      },
+      "flags": [
+        "-v",
+        "-a",
+        "-s",
+        "-i",
+        "-p",
+        "-k"
+      ],
+      "parameters": [
+        {
+          "name": "rFile1",
+          "type": "string"
+        },
+        {
+          "name": "rFile2",
+          "type": "string"
+        },
+        {
+          "name": "tFile1",
+          "type": "string"
+        },
+        {
+          "name": "tFile2",
+          "type": "string"
+        },
+        {
+          "name": "bloom size",
+          "type": "integer"
+        },
+        {
+          "name": "k-mer size",
+          "type": "integer"
+        }
+      ],
+      "source": "external_tool (CHESTER)"
+    },
+    {
+      "name": "gto_fastq_variation_filter",
+      "description": "Filters and segments the regions of singularity from the output of gto_fastq_variation_map.",
+      "input": {
+        "type": "file",
+        "format": "text"
+      },
+      "output": {
+        "type": "file",
+        "format": "text"
+      },
+      "flags": [
+        "-v",
+        "-a",
+        "-t",
+        "-w",
+        "-u"
+      ],
+      "parameters": [
+        {
+          "name": "tFile1",
+          "type": "string"
+        },
+        {
+          "name": "tFile2",
+          "type": "string"
+        },
+        {
+          "name": "threshold",
+          "type": "float"
+        },
+        {
+          "name": "window size",
+          "type": "integer"
+        },
+        {
+          "name": "sub-sampling",
+          "type": "integer"
+        }
+      ],
+      "source": "external_tool (CHESTER)"
+    },
+    {
+      "name": "gto_fastq_variation_visual",
+      "description": "Depicts the regions of singularity using the output from gto_fastq_variation_filter into an SVG image.",
+      "input": {
+        "type": "file",
+        "format": "text"
+      },
+      "output": {
+        "type": "file",
+        "format": "SVG"
+      },
+      "flags": [
+        "-v",
+        "-a",
+        "-e"
+      ],
+      "parameters": [
+        {
+          "name": "tFile1",
+          "type": "string"
+        },
+        {
+          "name": "tFile2",
+          "type": "string"
+        },
+        {
+          "name": "enlarge painted regions",
+          "type": "integer"
+        }
+      ],
+      "source": "external_tool (CHESTER)"
+    },
+    {
+      "name": "gto_fastq_metagenomics",
+      "description": "An ultra-fast method to infer metagenomic composition of sequenced reads relative to a database. gto_fastq_metagenomics measures similarity between any FASTQ file (or FASTA), independently from the size, against any multi-FASTA database, such as the entire set of complete genomes from the NCBI. gto_fastq_metagenomics supports single reads, paired-end reads, and compositions of both. It has been tested in many platforms, such as Illumina MySeq, HiSeq, Novaseq, IonTorrent. gto_fastq_metagenomics is efficient to detect the presence and authenticate a given species in the FASTQ reads. The core of the method is based on relative data compression. gto_fastq_metagenomics uses variable multi-threading, without multiplying the memory for each thread, being able to run efficiently in a common laptop.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "CSV"
+      },
+      "flags": [
+        "-h",
+        "-F",
+        "-V",
+        "-v",
+        "-Z",
+        "-s",
+        "-l",
+        "-p",
+        "-t",
+        "-n",
+        "-x",
+        "-y"
+      ],
+      "parameters": [
+        {
+          "name": "FILE1",
+          "type": "string"
+        },
+        {
+          "name": "FILE2",
+          "type": "string"
+        },
+        {
+          "name": "FILE",
+          "type": "string"
+        },
+        {
+          "name": "level",
+          "type": "integer"
+        },
+        {
+          "name": "sample",
+          "type": "integer"
+        },
+        {
+          "name": "top",
+          "type": "integer"
+        },
+        {
+          "name": "nThreads",
+          "type": "integer"
+        },
+        {
+          "name": "similarity top filename",
+          "type": "string"
+        },
+        {
+          "name": "profile filename",
+          "type": "string"
+        }
+      ],
+      "source": "external_tool"
+    },
+    {
+      "name": "gto_fasta_to_seq",
+      "description": "Converts a FASTA or Multi-FASTA file format to a seq.",
+      "input": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "output": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "flags": [],
+      "parameters": [],
+      "source": "gto/src/FastaToSeq.c"
+    },
+    {
+      "name": "gto_fasta_from_seq",
+      "description": "Converts a genomic sequence to pseudo FASTA file format.",
+      "input": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "flags": [
+        "-n",
+        "-l"
+      ],
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "lineSize",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/FastaFromSeq.c"
+    },
+    {
+      "name": "gto_fasta_extract",
+      "description": "Extracts sequences from a FASTA file, which the range is defined by the user in the parameters.",
+      "input": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "output": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "flags": [
+        "-i",
+        "-e"
+      ],
+      "parameters": [
+        {
+          "name": "init",
+          "type": "integer"
+        },
+        {
+          "name": "end",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/FastaExtract.c"
+    },
+    {
+      "name": "gto_fasta_extract_by_read",
+      "description": "Extracts sequences from each read in a Multi-FASTA file (splited by \\n), which the range is defined by the user in the parameters.",
+      "input": {
+        "type": "file",
+        "format": "Multi-FASTA"
+      },
+      "output": {
+        "type": "file",
+        "format": "Multi-FASTA"
+      },
+      "flags": [
+        "-i",
+        "-e"
+      ],
+      "parameters": [
+        {
+          "name": "init",
+          "type": "integer"
+        },
+        {
+          "name": "end",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/FastaExtractByRead.c"
+    },
+    {
+      "name": "gto_fasta_info",
+      "description": "Shows the readed information of a FASTA or Multi-FASTA file format.",
+      "input": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "output": {
+        "type": "stdout",
+        "format": "text"
+      },
+      "flags": [],
+      "parameters": [],
+      "source": "gto/src/FastaInfo.c"
+    },
+    {
+      "name": "gto_fasta_mutate",
+      "description": "Creates a synthetic mutation of a FASTA file given specific rates of editions, deletions and additions.",
+      "input": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "flags": [
+        "-h",
+        "-s",
+        "-e",
+        "-d",
+        "-i",
+        "-a"
+      ],
+      "parameters": [
+        {
+          "name": "seed",
+          "type": "integer"
+        },
+        {
+          "name": "edit-rate",
+          "type": "float"
+        },
+        {
+          "name": "deletion-rate",
+          "type": "float"
+        },
+        {
+          "name": "insertion-rate",
+          "type": "float"
+        }
+      ],
+      "source": "gto/src/FastaMutate.c"
+    },
+    {
+      "name": "gto_fasta_rand_extra_chars",
+      "description": "Substitutes in the DNA sequence the outside ACGT chars by random ACGT symbols. It works both in FASTA and Multi-FASTA file formats.",
+      "input": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "flags": [],
+      "parameters": [],
+      "source": "gto/src/FastaRandExtraChars.c"
+    },
+    {
+      "name": "gto_fasta_extract_read_by_pattern",
+      "description": "Extracts reads from a Multi-FASTA file format given a pattern in the header. Also, this pattern is case insensitive.",
+      "input": {
+        "type": "file",
+        "format": "Multi-FASTA"
+      },
+      "output": {
+        "type": "file",
+        "format": "Multi-FASTA"
+      },
+      "flags": [
+        "-p"
+      ],
+      "parameters": [
+        {
+          "name": "pattern",
+          "type": "string"
+        }
+      ],
+      "source": "gto/src/FastaExtractReadByIdPattern.c"
+    },
+    {
+      "name": "gto_fasta_find_n_pos",
+      "description": "Reports the 'N' regions in a sequence or FASTA (seq) file.",
+      "input": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "output": {
+        "type": "stdout",
+        "format": "text"
+      },
+      "flags": [],
+      "parameters": [],
+      "source": "gto/src/FastaFindNPos.c"
+    },
+    {
+      "name": "gto_fasta_split_reads",
+      "description": "Splits a Multi-FASTA file to multiple FASTA files.",
+      "input": {
+        "type": "file",
+        "format": "Multi-FASTA"
+      },
+      "output": {
+        "type": "stdout",
+        "format": "text"
+      },
+      "flags": [
+        "-l"
+      ],
+      "parameters": [
+        {
+          "name": "location",
+          "type": "string"
+        }
+      ],
+      "source": "gto/src/FastaSplitReads.c"
+    },
+    {
+      "name": "gto_fasta_rename_human_headers",
+      "description": "Changes the headers of FASTA or Multi-FASTA file to simple chrX by order, where X is the number.",
+      "input": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "flags": [],
+      "parameters": [],
+      "source": "gto/src/FastaRenameHumanHeaders.c"
+    },
+    {
+      "name": "gto_fasta_extract_pattern_coords",
+      "description": "Extracts the header and coordinates from a Multi-FASTA file format given a pattern/motif in the sequence.",
+      "input": {
+        "type": "file",
+        "format": "Multi-FASTA"
+      },
+      "output": {
+        "type": "file",
+        "format": "text"
+      },
+      "flags": [
+        "-p"
+      ],
+      "parameters": [
+        {
+          "name": "pattern",
+          "type": "string"
+        }
+      ],
+      "source": "gto/src/FastaExtractPatternCoords.c"
+    },
+    {
+      "name": "gto_fasta_complement",
+      "description": "Replaces the ACGT bases with their complements in FASTA or Multi-FASTA file format.",
+      "input": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "flags": [],
+      "parameters": [],
+      "source": "gto/src/FastaComplement.c"
+    },
+    {
+      "name": "gto_fasta_reverse",
+      "description": "Reverses the order of a FASTA or Multi-FASTA file format.",
+      "input": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "flags": [],
+      "parameters": [],
+      "source": "gto/src/FastaReverse.c"
+    },
+    {
+      "name": "gto_fasta_variation_map",
+      "description": "This tool is an alias to gto_fastq_variation_map tool. Please check the documentation of this tool in the in the section of FASTQ tools.",
+      "input": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "output": {
+        "type": "file",
+        "format": "text"
+      },
+      "flags": [
+        "-v",
+        "-a",
+        "-s",
+        "-i",
+        "-p",
+        "-k"
+      ],
+      "parameters": [
+        {
+          "name": "rFile1",
+          "type": "string"
+        },
+        {
+          "name": "rFile2",
+          "type": "string"
+        },
+        {
+          "name": "tFile1",
+          "type": "string"
+        },
+        {
+          "name": "tFile2",
+          "type": "string"
+        },
+        {
+          "name": "bloom size",
+          "type": "integer"
+        },
+        {
+          "name": "k-mer size",
+          "type": "integer"
+        }
+      ],
+      "source": "external_tool (CHESTER)"
+    },
+    {
+      "name": "gto_fasta_variation_filter",
+      "description": "This tool is an alias to gto_fastq_variation_filter tool. Please check the documentation of this tool in the in the section of FASTQ tools.",
+      "input": {
+        "type": "file",
+        "format": "text"
+      },
+      "output": {
+        "type": "file",
+        "format": "text"
+      },
+      "flags": [
+        "-v",
+        "-a",
+        "-t",
+        "-w",
+        "-u"
+      ],
+      "parameters": [
+        {
+          "name": "tFile1",
+          "type": "string"
+        },
+        {
+          "name": "tFile2",
+          "type": "string"
+        },
+        {
+          "name": "threshold",
+          "type": "float"
+        },
+        {
+          "name": "window size",
+          "type": "integer"
+        },
+        {
+          "name": "sub-sampling",
+          "type": "integer"
+        }
+      ],
+      "source": "external_tool (CHESTER)"
+    },
+    {
+      "name": "gto_fasta_variation_visual",
+      "description": "This tool is an alias to gto_fastq_variation_visual tool. Please check the documentation of this tool in the in the section of FASTQ tools.",
+      "input": {
+        "type": "file",
+        "format": "text"
+      },
+      "output": {
+        "type": "file",
+        "format": "SVG"
+      },
+      "flags": [
+        "-v",
+        "-a",
+        "-e"
+      ],
+      "parameters": [
+        {
+          "name": "tFile1",
+          "type": "string"
+        },
+        {
+          "name": "tFile2",
+          "type": "string"
+        },
+        {
+          "name": "enlarge painted regions",
+          "type": "integer"
+        }
+      ],
+      "source": "external_tool (CHESTER)"
+    },
+    {
+      "name": "gto_fasta_split_streams",
+      "description": "Splits and writes a FASTA file into three channels of information: headers, extra and DNA.",
+      "input": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "output": {
+        "type": "stdout",
+        "format": "text"
+      },
+      "flags": [
+        "-e",
+        "-d",
+        "-H"
+      ],
+      "parameters": [
+        {
+          "name": "extra",
+          "type": "string"
+        },
+        {
+          "name": "dna",
+          "type": "string"
+        },
+        {
+          "name": "headers",
+          "type": "string"
+        }
+      ],
+      "source": "gto/src/FastaSplitStreams.c"
+    },
+    {
+      "name": "gto_fasta_merge_streams",
+      "description": "It merges the three channels of information (headers, extra and DNA) and writes it into a FASTA file.",
+      "input": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "output": {
+        "type": "stdout",
+        "format": "text"
+      },
+      "flags": [
+        "-e",
+        "-d",
+        "-H"
+      ],
+      "parameters": [
+        {
+          "name": "extra",
+          "type": "string"
+        },
+        {
+          "name": "dna",
+          "type": "string"
+        },
+        {
+          "name": "headers",
+          "type": "string"
+        }
+      ],
+      "source": "gto/src/FastaMergeStreams.c"
+    },
+    {
+      "name": "gto_amino_acid_to_group",
+      "description": "Converts an amino acid sequence to a group sequence.",
+      "input": {
+        "type": "file",
+        "format": "PROT"
+      },
+      "output": {
+        "type": "file",
+        "format": "GROUP"
+      },
+      "flags": [],
+      "parameters": [],
+      "source": "gto/src/AminoAcidToGroup.c"
+    },
+    {
+      "name": "gto_amino_acid_to_pseudo_dna",
+      "description": "Converts an amino acid (protein) sequence to a pseudo DNA sequence.",
+      "input": {
+        "type": "file",
+        "format": "PROT"
+      },
+      "output": {
+        "type": "file",
+        "format": "DNA"
+      },
+      "flags": [],
+      "parameters": [],
+      "source": "gto/src/AminoAcidToPseudoDNA.c"
+    },
+    {
+      "name": "gto_amino_acid_compressor",
+      "description": "A new lossless compressor to compress efficiently amino acid sequences (proteins). It uses a cooperation between multiple context and substitutional tolerant context models. The cooperation between models is balanced with weights that benefit the models with better performance according to a forgetting function specific for each model.",
+      "input": {
+        "type": "file",
+        "format": "PROT"
+      },
+      "output": {
+        "type": "file",
+        "format": "PROT"
+      },
+      "flags": [
+        "-h",
+        "-s",
+        "-v",
+        "-V",
+        "-f",
+        "-l",
+        "-t",
+        "-e",
+        "-rm",
+        "-tm"
+      ],
+      "parameters": [
+        {
+          "name": "level",
+          "type": "integer"
+        },
+        {
+          "name": "threshold",
+          "type": "float"
+        },
+        {
+          "name": "c",
+          "type": "integer"
+        },
+        {
+          "name": "d",
+          "type": "integer"
+        },
+        {
+          "name": "g",
+          "type": "float"
+        },
+        {
+          "name": "m",
+          "type": "integer"
+        },
+        {
+          "name": "e",
+          "type": "integer"
+        },
+        {
+          "name": "a",
+          "type": "float"
+        },
+        {
+          "name": "FILE",
+          "type": "string"
+        }
+      ],
+      "source": "external_tool"
+    },
+    {
+      "name": "gto_amino_acid_from_fasta",
+      "description": "Converts DNA sequences in FASTA or Multi-FASTA file format to an amino acid sequence.",
+      "input": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "output": {
+        "type": "file",
+        "format": "PROT"
+      },
+      "flags": [
+        "-h",
+        "-f"
+      ],
+      "parameters": [
+        {
+          "name": "frame",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/AminoAcidFromFasta.c"
+    },
+    {
+      "name": "gto_amino_acid_from_fastq",
+      "description": "Converts DNA sequences in the FASTQ file format to an amino acid sequence.",
+      "input": {
+        "type": "file",
+        "format": "FASTQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "PROT"
+      },
+      "flags": [
+        "-h",
+        "-f"
+      ],
+      "parameters": [
+        {
+          "name": "frame",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/AminoAcidFromFastq.c"
+    },
+    {
+      "name": "gto_amino_acid_from_seq",
+      "description": "Converts DNA sequence to an amino acid sequence.",
+      "input": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "PROT"
+      },
+      "flags": [
+        "-h",
+        "-f"
+      ],
+      "parameters": [
+        {
+          "name": "frame",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/AminoAcidFromSeq.c"
+    },
+    {
+      "name": "gto_amino_acid_to_seq",
+      "description": "Converts amino acid sequences to DNA sequences.",
+      "input": {
+        "type": "file",
+        "format": "PROT"
+      },
+      "output": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "flags": [
+        "-h"
+      ],
+      "parameters": [],
+      "source": "gto/src/AminoAcidToSeq.c"
+    },
+    {
+      "name": "gto_genomic_gen_random_dna",
+      "description": "Generates a synthetic DNA.",
+      "input": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "output": {
+        "type": "stdout",
+        "format": "text"
+      },
+      "flags": [
+        "-h",
+        "-s",
+        "-n",
+        "-f"
+      ],
+      "parameters": [
+        {
+          "name": "seed",
+          "type": "integer"
+        },
+        {
+          "name": "nSymbols",
+          "type": "integer"
+        },
+        {
+          "name": "frequency",
+          "type": "string"
+        }
+      ],
+      "source": "gto/src/GenomicGenRandomDNA.c"
+    },
+    {
+      "name": "gto_genomic_rand_seq_extra_chars",
+      "description": "Substitutes in the DNA sequence the outside ACGT chars by random ACGT symbols. It works in sequence file formats.",
+      "input": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "flags": [
+        "-h"
+      ],
+      "parameters": [],
+      "source": "gto/src/GenomicRandSeqExtraChars.c"
+    },
+    {
+      "name": "gto_genomic_dna_mutate",
+      "description": "Creates a synthetic mutation of a sequence file given specific rates of mutations, deletions and additions.",
+      "input": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "flags": [
+        "-h",
+        "-s",
+        "-m",
+        "-d",
+        "-i",
+        "-a"
+      ],
+      "parameters": [
+        {
+          "name": "seed",
+          "type": "integer"
+        },
+        {
+          "name": "mutation-rate",
+          "type": "float"
+        },
+        {
+          "name": "deletion-rate",
+          "type": "float"
+        },
+        {
+          "name": "insertion-rate",
+          "type": "float"
+        }
+      ],
+      "source": "gto/src/GenomicDNAMutate.c"
+    },
+    {
+      "name": "gto_genomic_extract",
+      "description": "Extracts sequences from a sequence file, which the range is defined by the user in the parameters.",
+      "input": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "flags": [
+        "-h",
+        "-i",
+        "-e"
+      ],
+      "parameters": [
+        {
+          "name": "init",
+          "type": "integer"
+        },
+        {
+          "name": "end",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/GenomicExtract.c"
+    },
+    {
+      "name": "gto_genomic_period",
+      "description": "Calculates the best order depth of a sequence, using FCMs. It only works \"ACGT\", while the rest will be discarded.",
+      "input": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "output": {
+        "type": "stdout",
+        "format": "text"
+      },
+      "flags": [
+        "-h"
+      ],
+      "parameters": [],
+      "source": "gto/src/GenomicPeriod.c"
+    },
+    {
+      "name": "gto_genomic_count_bases",
+      "description": "Counts the number of bases in sequence, FASTA or FASTQ files.",
+      "input": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "output": {
+        "type": "stdout",
+        "format": "text"
+      },
+      "flags": [
+        "-h"
+      ],
+      "parameters": [],
+      "source": "gto/src/GenomicCountBases.c"
+    },
+    {
+      "name": "gto_genomic_compressor",
+      "description": "Able to provide additional compression gains over several top specific tools, while as an analysis tool, it is able to determine absolute measures, namely for many distance computations, and local measures, such as the information content contained in each element, providing a way to quantify and locate specific genomic events.",
+      "input": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "flags": [
+        "-h",
+        "-V",
+        "-F",
+        "-v",
+        "-x",
+        "-s",
+        "-e",
+        "-l",
+        "-tm",
+        "-rm",
+        "-r"
+      ],
+      "parameters": [
+        {
+          "name": "level",
+          "type": "integer"
+        },
+        {
+          "name": "NB_C",
+          "type": "integer"
+        },
+        {
+          "name": "NB_D",
+          "type": "integer"
+        },
+        {
+          "name": "NB_I",
+          "type": "integer"
+        },
+        {
+          "name": "NB_H",
+          "type": "integer"
+        },
+        {
+          "name": "NB_G",
+          "type": "float"
+        },
+        {
+          "name": "NB_S",
+          "type": "integer"
+        },
+        {
+          "name": "NB_E",
+          "type": "integer"
+        },
+        {
+          "name": "NB_A",
+          "type": "float"
+        },
+        {
+          "name": "FILE",
+          "type": "string"
+        }
+      ],
+      "source": "external_tool"
+    },
+    {
+      "name": "gto_genomic_complement",
+      "description": "Replaces the ACGT bases with their complements in a DNA sequence. It works in sequence file formats.",
+      "input": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "flags": [
+        "-h"
+      ],
+      "parameters": [],
+      "source": "gto/src/GenomicComplement.c"
+    },
+    {
+      "name": "gto_genomic_reverse",
+      "description": "Reverses the ACGT bases order for each read in a sequence file.",
+      "input": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "flags": [
+        "-h"
+      ],
+      "parameters": [],
+      "source": "gto/src/Reverse.c"
+    },
+    {
+      "name": "gto_char_to_line",
+      "description": "Splits a sequence into lines, creating an output sequence which has a char for each line.",
+      "input": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "flags": [
+        "-h"
+      ],
+      "parameters": [],
+      "source": "gto/src/CharToLine.c"
+    },
+    {
+      "name": "gto_new_line_on_new_x",
+      "description": "Splits different rows with a new empty row.",
+      "input": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "output": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "flags": [
+        "-h"
+      ],
+      "parameters": [],
+      "source": "gto/src/NewLineForNewValue.c"
+    },
+    {
+      "name": "gto_upper_bound",
+      "description": "Sets an upper bound in a file with a value per line.",
+      "input": {
+        "type": "file",
+        "format": "NUM"
+      },
+      "output": {
+        "type": "file",
+        "format": "NUM"
+      },
+      "flags": [
+        "-h",
+        "-u"
+      ],
+      "parameters": [
+        {
+          "name": "upperbound",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/UpperBound.c"
+    },
+    {
+      "name": "gto_lower_bound",
+      "description": "Sets an lower bound in a file with a value per line.",
+      "input": {
+        "type": "file",
+        "format": "NUM"
+      },
+      "output": {
+        "type": "file",
+        "format": "NUM"
+      },
+      "flags": [
+        "-h",
+        "-l"
+      ],
+      "parameters": [
+        {
+          "name": "lowerbound",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/LowerBound.c"
+    },
+    {
+      "name": "gto_brute_force_string",
+      "description": "Generates all combinations, line by line, for an inputted alphabet and specific size.",
+      "input": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "output": {
+        "type": "stdout",
+        "format": "text"
+      },
+      "flags": [
+        "-h",
+        "-a",
+        "-s"
+      ],
+      "parameters": [
+        {
+          "name": "alphabet",
+          "type": "string"
+        },
+        {
+          "name": "size",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/BruteForceString.c"
+    },
+    {
+      "name": "gto_real_to_binary_with_threshold",
+      "description": "Converts a sequence of real numbers into a binary sequence, given a threshold. The numbers below to the threshold will be 0.",
+      "input": {
+        "type": "file",
+        "format": "NUM"
+      },
+      "output": {
+        "type": "file",
+        "format": "BIN"
+      },
+      "flags": [
+        "-h",
+        "-t"
+      ],
+      "parameters": [
+        {
+          "name": "threshold",
+          "type": "float"
+        }
+      ],
+      "source": "gto/src/RealToBinaryWithThreshold.c"
+    },
+    {
+      "name": "gto_sum",
+      "description": "Adds decimal values in file, line by line, splitted by spaces or tabs.",
+      "input": {
+        "type": "file",
+        "format": "NUM"
+      },
+      "output": {
+        "type": "file",
+        "format": "NUM"
+      },
+      "flags": [
+        "-h",
+        "-r",
+        "-a"
+      ],
+      "parameters": [],
+      "source": "gto/src/Sum.c"
+    },
+    {
+      "name": "gto_filter",
+      "description": "Filters numerical sequences using a low-pass filter.",
+      "input": {
+        "type": "file",
+        "format": "NUM"
+      },
+      "output": {
+        "type": "file",
+        "format": "NUM"
+      },
+      "flags": [
+        "-h",
+        "-w",
+        "-d",
+        "-t",
+        "-c",
+        "-p",
+        "-r"
+      ],
+      "parameters": [
+        {
+          "name": "windowsize",
+          "type": "integer"
+        },
+        {
+          "name": "drop",
+          "type": "float"
+        },
+        {
+          "name": "windowtype",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/Filter.c"
+    },
+    {
+      "name": "gto_word_search",
+      "description": "Search for a word in a file. It is case sensitive.",
+      "input": {
+        "type": "file",
+        "format": "TXT"
+      },
+      "output": {
+        "type": "file",
+        "format": "TXT"
+      },
+      "flags": [
+        "-h",
+        "-w"
+      ],
+      "parameters": [
+        {
+          "name": "word",
+          "type": "string"
+        }
+      ],
+      "source": "gto/src/WordSearch.c"
+    },
+    {
+      "name": "gto_permute_by_blocks",
+      "description": "Permutates by block sequence, FASTA and Multi-FASTA files.",
+      "input": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "output": {
+        "type": "file",
+        "format": "FASTA"
+      },
+      "flags": [
+        "-h",
+        "-b",
+        "-s"
+      ],
+      "parameters": [
+        {
+          "name": "numbases",
+          "type": "integer"
+        },
+        {
+          "name": "seed",
+          "type": "integer"
+        }
+      ],
+      "source": "gto/src/PermuteByBlocks.c"
+    },
+    {
+      "name": "gto_info",
+      "description": "Gives the basic properties of the file, namely size, cardinality, distribution percentage of the symbols, among others.",
+      "input": {
+        "type": "file",
+        "format": "SEQ"
+      },
+      "output": {
+        "type": "stdout",
+        "format": "text"
+      },
+      "flags": [
+        "-h",
+        "-a"
+      ],
+      "parameters": [],
+      "source": "gto/src/Info.c"
+    },
+    {
+      "name": "gto_segment",
+      "description": "Segments a filtered sequence based on a threshold.",
+      "input": {
+        "type": "file",
+        "format": "NUM"
+      },
+      "output": {
+        "type": "stdout",
+        "format": "text"
+      },
+      "flags": [
+        "-h",
+        "-t"
+      ],
+      "parameters": [
+        {
+          "name": "threshold",
+          "type": "float"
+        }
+      ],
+      "source": "gto/src/Segment.c"
+    },
+    {
+      "name": "gto_comparative_map",
+      "description": "Creates a visualization for comparative maps.",
+      "input": {
+        "type": "file",
+        "format": "POS"
+      },
+      "output": {
+        "type": "file",
+        "format": "SVG"
+      },
+      "flags": [
+        "-h",
+        "-V",
+        "-v",
+        "-l",
+        "-w",
+        "-s",
+        "-m",
+        "-b",
+        "-c",
+        "-i",
+        "-r",
+        "-o"
+      ],
+      "parameters": [
+        {
+          "name": "link",
+          "type": "integer"
+        },
+        {
+          "name": "width",
+          "type": "integer"
+        },
+        {
+          "name": "space",
+          "type": "integer"
+        },
+        {
+          "name": "mult",
+          "type": "integer"
+        },
+        {
+          "name": "begin",
+          "type": "integer"
+        },
+        {
+          "name": "minimum",
+          "type": "integer"
+        },
+        {
+          "name": "FILE",
+          "type": "string"
+        }
+      ],
+      "source": "gto/src/ComparativeMap.c"
+    },
+    {
+      "name": "gto_max",
+      "description": "Computes the maximum value in each row between two files.",
+      "input": {
+        "type": "file",
+        "format": "NUM"
+      },
+      "output": {
+        "type": "file",
+        "format": "NUM"
+      },
+      "flags": [
+        "-h",
+        "-f",
+        "-s"
+      ],
+      "parameters": [
+        {
+          "name": "first_file",
+          "type": "string"
+        },
+        {
+          "name": "second_file",
+          "type": "string"
+        }
+      ],
+      "source": "gto/src/Max.c"
+    },
+    {
+      "name": "gto_min",
+      "description": "Computes the minium value in each row between two files.",
+      "input": {
+        "type": "file",
+        "format": "NUM"
+      },
+      "output": {
+        "type": "file",
+        "format": "NUM"
+      },
+      "flags": [
+        "-h",
+        "-f",
+        "-s"
+      ],
+      "parameters": [
+        {
+          "name": "first_file",
+          "type": "string"
+        },
+        {
+          "name": "second_file",
+          "type": "string"
+        }
+      ],
+      "source": "gto/src/Min.c"
+    }
+  ]
+}
