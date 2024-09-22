@@ -13,8 +13,8 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
     console.log('Input data:', inputData);
 
     setIsExecuting(true);
-    let data = inputData;
     try {
+      let data = inputData;
       for (const operation of workflow) {
         const { toolName, params } = operation;
         console.log(`Processing operation: ${toolName}`);
@@ -31,7 +31,7 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
         }
         console.log(`Tool configuration for ${toolName}:`, toolConfig);
 
-
+        // Prepare arguments based on tool configuration
         let args = [];
         if (params && Object.keys(params).length > 0) {
           args = Object.entries(params)

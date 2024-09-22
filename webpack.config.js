@@ -74,7 +74,8 @@ module.exports = {
       directory: path.join(__dirname, 'public'),
     },
     compress: true,
-    port: 'auto',
+    host: '0.0.0.0',       // Added this line to specify the host
+    port: 8082,            // Changed the port to 8082
     historyApiFallback: true,
     open: true,
   },
