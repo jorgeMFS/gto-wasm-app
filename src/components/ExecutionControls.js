@@ -8,38 +8,47 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
   const [autoExecute, setAutoExecute] = useState(false);
 
   const handleRun = async () => {
+    console.log('Starting workflow execution');
+    console.log('Workflow:', workflow);
+    console.log('Input data:', inputData);
+
     setIsExecuting(true);
     let data = inputData;
     try {
       for (const operation of workflow) {
         const { toolName, params } = operation;
+        console.log(`Processing operation: ${toolName}`);
 
         // Load the wrapper function dynamically
         const runFunction = await loadWasmModule(toolName);
+        console.log(`Run function loaded for ${toolName}`);
 
-        if (typeof runFunction === 'function') {
-          // Find tool configuration from description.json
-          const toolConfig = description.tools.find(tool => tool.name === toolName);
-          if (!toolConfig) {
-            throw new Error(`Configuration for tool ${toolName} not found.`);
-          }
-
-          let args = [];
-          if (params && Object.keys(params).length > 0) {
-            args = Object.entries(params)
-              .flatMap(([key, value]) => [`--${key}`, `${value}`]);
-          }
-
-          // Execute the tool
-          const outputData = await runFunction(data, args);
-
-          // Update data for the next operation
-          data = outputData;
-        } else {
-          throw new Error(`Function run_${toolName} not found.`);
+        // Find tool configuration from description.json
+        const toolConfig = description.tools.find(tool => tool.name === `gto_${toolName}`);
+        if (!toolConfig) {
+          console.error(`Configuration for tool ${toolName} not found in description.json`);
+          throw new Error(`Configuration for tool ${toolName} not found.`);
         }
+        console.log(`Tool configuration for ${toolName}:`, toolConfig);
+
+
+        let args = [];
+        if (params && Object.keys(params).length > 0) {
+          args = Object.entries(params)
+            .flatMap(([key, value]) => [`--${key}`, `${value}`]);
+        }
+        console.log(`Arguments for ${toolName}:`, args);
+
+        // Execute the tool
+        console.log(`Executing ${toolName} with input:`, data);
+        const outputData = await runFunction(data, args);
+        console.log(`Output from ${toolName}:`, outputData);
+
+        // Update data for the next operation
+        data = outputData;
       }
       setOutputData(data);
+      console.log('Workflow execution completed successfully');
     } catch (error) {
       console.error('Error executing workflow:', error);
       setOutputData(`Error: ${error.message}`);
@@ -50,9 +59,9 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
   // Auto-Execute: Execute workflow whenever workflow or inputData changes
   useEffect(() => {
     if (autoExecute && workflow.length > 0 && inputData) {
+      console.log('Auto-executing workflow');
       handleRun();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workflow, inputData, autoExecute]);
 
   return (

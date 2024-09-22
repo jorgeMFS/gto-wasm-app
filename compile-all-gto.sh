@@ -78,11 +78,12 @@ for ((i=0; i<tool_count; i++)); do
     input_type=$(echo "$tool" | jq -r '.input.type // "unknown"')
     output_type=$(echo "$tool" | jq -r '.output.type // "unknown"')
 
-    # Skip if source is not specified
-    if [[ -z "$source_file" ]]; then
+     if [[ -z "$source_file" ]]; then
         echo "Skipping $prog: no source file specified." | tee -a "$MAIN_LOG_FILE"
         continue
     fi
+    # Remove 'gto_' prefix for module name
+    module_name="${prog#gto_}"
 
     full_source_path="$SCRIPT_DIR/$source_file"
 
@@ -92,8 +93,8 @@ for ((i=0; i<tool_count; i++)); do
     echo "Compiling ${prog}..." | tee -a "$MAIN_LOG_FILE"
 
     if [[ -f "$full_source_path" ]]; then
-        output_js="$WASM_DIR/${prog}.js"
-        compile_log="$WASM_DIR/${prog}_compile.log"
+        output_js="$WASM_DIR/${module_name}.js"
+        compile_log="$WASM_DIR/${module_name}_compile.log"
 
         # Define compilation flags as an array (updated)
         emcc_flags=(
@@ -106,7 +107,7 @@ for ((i=0; i<tool_count; i++)); do
             -sWASM=1
             -sALLOW_MEMORY_GROWTH=1
             -sMODULARIZE=1
-            -sEXPORT_NAME="$prog"
+            -sEXPORT_NAME="$module_name"
             -sENVIRONMENT=web,worker
             -sEXPORTED_FUNCTIONS='["_main","_malloc","_free"]'
             -sEXPORTED_RUNTIME_METHODS='["ccall","cwrap","FS","setValue","stringToUTF8","callMain"]'
@@ -120,28 +121,27 @@ for ((i=0; i<tool_count; i++)); do
         fi
 
         # Create post.js to assign module factory to window
-        post_js_content="window['$prog'] = $prog;"
-        echo "$post_js_content" > "$WASM_DIR/${prog}_post.js"
+        post_js_content="window['$module_name'] = $module_name;"
+        echo "$post_js_content" > "$WASM_DIR/${module_name}_post.js"
 
         # Compile the program with --post-js
-        # Compile the program with --post-js
-        echo "Command: emcc ${emcc_flags[*]} \"$full_source_path\" $link_objects -o \"$output_js\" -lm --post-js \"$WASM_DIR/${prog}_post.js\"" | tee -a "$MAIN_LOG_FILE"
+        echo "Command: emcc ${emcc_flags[*]} \"$full_source_path\" $link_objects -o \"$output_js\" -lm --post-js \"$WASM_DIR/${module_name}_post.js\"" | tee -a "$MAIN_LOG_FILE"
         emcc "${emcc_flags[@]}" "$full_source_path" $link_objects -o "$output_js" -lm \
-            --post-js "$WASM_DIR/${prog}_post.js" >> "$compile_log" 2>&1
+            --post-js "$WASM_DIR/${module_name}_post.js" >> "$compile_log" 2>&1
 
         if [[ $? -eq 0 ]]; then
-            echo "Successfully compiled ${prog}." | tee -a "$MAIN_LOG_FILE"
+            echo "Successfully compiled ${module_name}." | tee -a "$MAIN_LOG_FILE"
             compiled_programs=$((compiled_programs + 1))
 
             # Generate the wrapper script
-            "$SCRIPT_DIR/generate_wrapper.sh" "$prog" "$input_type" "$output_type" >> "$MAIN_LOG_FILE" 2>&1
+            "$SCRIPT_DIR/generate_wrapper.sh" "$module_name" "$input_type" "$output_type" >> "$MAIN_LOG_FILE" 2>&1
         else
             failed_programs=$((failed_programs + 1))
-            failed_list+=("$prog")
-            echo "Failed to compile ${prog}. Check $compile_log for details." | tee -a "$MAIN_LOG_FILE"
+            failed_list+=("$module_name")
+            echo "Failed to compile ${module_name}. Check $compile_log for details." | tee -a "$MAIN_LOG_FILE"
             
             # Extract and display relevant error messages
-            echo "Analyzing compilation errors for ${prog}..." | tee -a "$MAIN_LOG_FILE"
+            echo "Analyzing compilation errors for ${module_name}..." | tee -a "$MAIN_LOG_FILE"
             if grep -q "error:" "$compile_log"; then
                 echo "Compilation errors found:" | tee -a "$MAIN_LOG_FILE"
                 grep "error:" "$compile_log" | head -n 5 | tee -a "$MAIN_LOG_FILE"
@@ -154,8 +154,8 @@ for ((i=0; i<tool_count; i++)); do
         fi
     else
         failed_programs=$((failed_programs + 1))
-        failed_list+=("$prog")
-        echo "Warning: Source file '$full_source_path' not found for program '$prog'." | tee -a "$MAIN_LOG_FILE"
+        failed_list+=("$module_name")
+        echo "Warning: Source file '$full_source_path' not found for program '$module_name'." | tee -a "$MAIN_LOG_FILE"
     fi
 
     echo "----------------------------------------" | tee -a "$MAIN_LOG_FILE"

@@ -6,19 +6,23 @@
 
 export async function loadWasmModule(toolName) {
   try {
-    // Do not add 'gto_' prefix
+    console.log(`Attempting to load module for tool: ${toolName}`);
     const moduleName = toolName; // Assume toolName is without 'gto_' prefix
     const scriptUrl = `/wasm/${moduleName}_wrapper.js`;
+    console.log(`Script URL: ${scriptUrl}`);
 
-    // Load the script dynamically
     await loadScript(scriptUrl);
+    console.log(`Script loaded successfully: ${scriptUrl}`);
 
     const runFunctionName = `run_${moduleName}`;
+    console.log(`Looking for run function: ${runFunctionName}`);
     const runFunction = window[runFunctionName];
 
     if (typeof runFunction === 'function') {
+      console.log(`Run function found for ${toolName}`);
       return runFunction;
     } else {
+      console.error(`Run function not found for ${toolName}`);
       throw new Error(`Function ${runFunctionName} not found on window.`);
     }
   } catch (error) {
@@ -34,8 +38,9 @@ export async function loadWasmModule(toolName) {
  */
 function loadScript(src) {
   return new Promise((resolve, reject) => {
-    // Check if script is already loaded
+    console.log(`Attempting to load script: ${src}`);
     if (document.querySelector(`script[src="${src}"]`)) {
+      console.log(`Script already loaded: ${src}`);
       resolve();
       return;
     }
@@ -45,9 +50,11 @@ function loadScript(src) {
     script.async = true;
 
     script.onload = () => {
+      console.log(`Script loaded successfully: ${src}`);
       resolve();
     };
     script.onerror = () => {
+      console.error(`Failed to load script: ${src}`);
       reject(new Error(`Failed to load script: ${src}`));
     };
 

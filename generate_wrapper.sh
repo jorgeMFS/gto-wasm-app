@@ -5,18 +5,18 @@ if [ "$#" -ne 3 ]; then
     exit 1
 fi
 
-prog=$1
+tool_name=$1
 input_type=$2
 output_type=$3
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-wrapper_file="$SCRIPT_DIR/public/wasm/${prog}_wrapper.js"
+wrapper_file="$SCRIPT_DIR/public/wasm/${tool_name}_wrapper.js"
 
 cat > "$wrapper_file" <<EOL
 (function() {
-  window.run_${prog} = async function(inputText = '', args = []) {
+  window.run_${tool_name} = async function(inputText = '', args = []) {
     try {
-      const moduleInstance = await window.createModule_${prog}({
+      const moduleInstance = await window.createModule_${tool_name}({
         noInitialRun: true,
       });
 
@@ -43,7 +43,7 @@ cat > "$wrapper_file" <<EOL
           outputText += String.fromCharCode(charCode);
         };
 
-        const argv = ['${prog}', ...args];
+        const argv = ['${tool_name}', ...args];
         moduleInstance.callMain(argv);
       } else if ('${input_type}' === 'file') {
         // Determine input and output file names based on output_type
@@ -54,7 +54,7 @@ cat > "$wrapper_file" <<EOL
         moduleInstance.FS.writeFile(inputFile, inputText);
 
         // Prepare command-line arguments
-        const argv = ['${prog}', ...args, inputFile, outputFile];
+        const argv = ['${tool_name}', ...args, inputFile, outputFile];
 
         // Optionally, redirect stdout if needed
         moduleInstance.stdout = function(charCode) {
@@ -73,18 +73,22 @@ cat > "$wrapper_file" <<EOL
 
       return outputText;
     } catch (err) {
-      console.error('Error in run_${prog}:', err);
+      console.error('Error in run_${tool_name}:', err);
       throw err;
     }
   };
 
   // Factory function to create the Module instance
-  window.createModule_${prog} = function(moduleOverrides = {}) {
+  window.createModule_${tool_name} = function(moduleOverrides = {}) {
     return new Promise((resolve, reject) => {
       var script = document.createElement('script');
-      script.src = '/wasm/${prog}.js';
+      script.src = '/wasm/${tool_name}.js';
       script.onload = () => {
-        window['${prog}']({
+        var moduleFactory = window['${tool_name}'];
+        if (typeof moduleFactory !== 'function') {
+          return reject(new Error('Module factory function not found.'));
+        }
+        moduleFactory({
           ...moduleOverrides,
           locateFile: (path, prefix) => {
             if (path.endsWith('.wasm')) {
@@ -101,4 +105,4 @@ cat > "$wrapper_file" <<EOL
 })();
 EOL
 
-echo "Generated wrapper for ${prog} at ${wrapper_file}"
+echo "Generated wrapper for ${tool_name} at ${wrapper_file}"

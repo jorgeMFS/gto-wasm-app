@@ -97,6 +97,9 @@ const operationCategories = {
   ]
 };
 
+// At the beginning of the file, after imports
+console.log('Operation categories:', operationCategories);
+
 const OperationsPanel = ({ onAddOperation }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -117,6 +120,9 @@ const OperationsPanel = ({ onAddOperation }) => {
       op.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
   };
+
+  // Inside the OperationsPanel component, before the return statement
+  console.log('Rendered operations:', Object.keys(operationCategories).flatMap(category => operationCategories[category]));
 
   return (
     <Box>
@@ -142,7 +148,10 @@ const OperationsPanel = ({ onAddOperation }) => {
               {filteredOps.map((operation) => (
                 <Tooltip key={operation.name} title={operation.description} placement="right">
                   <ListItemButton
-                    onClick={() => onAddOperation(operation.name)}
+                    onClick={() => {
+                      console.log(`Adding operation: ${operation.name}`);
+                      onAddOperation(operation.name);
+                    }}
                   >
                     <ListItemText primary={operation.name} />
                   </ListItemButton>
