@@ -37,6 +37,12 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
           args = Object.entries(params)
             .flatMap(([key, value]) => [`--${key}`, `${value}`]);
         }
+
+        // Include flags if any
+        if (toolConfig.flags && toolConfig.flags.length > 0) {
+          args.push(...toolConfig.flags);
+        }
+
         console.log(`Arguments for ${toolName}:`, args);
 
         // Execute the tool

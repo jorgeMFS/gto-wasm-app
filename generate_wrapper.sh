@@ -43,13 +43,13 @@ EOL
 fi
 
 if [ "$input_type" = "stdin" ] || [ "$output_type" = "stdout" ]; then
-  cat >> "$wrapper_file" <<EOL
+  cat >> "$wrapper_file" <<'EOL'
 
       // Initialize custom stdin and stdout
 EOL
 
   if [ "$input_type" = "stdin" ]; then
-    cat >> "$wrapper_file" <<EOL
+    cat >> "$wrapper_file" <<'EOL'
       const inputDataBuffer = (new TextEncoder()).encode(inputData);
       let inputIndex = 0;
 
@@ -64,7 +64,7 @@ EOL
   fi
 
   if [ "$output_type" = "stdout" ]; then
-    cat >> "$wrapper_file" <<EOL
+    cat >> "$wrapper_file" <<'EOL'
       let outputText = '';
       const customStdout = function(c) {
         outputText += String.fromCharCode(c);
@@ -75,8 +75,8 @@ EOL
   cat >> "$wrapper_file" <<EOL
 
       moduleInstance.FS.init(
-        ${input_type} === 'stdin' ? customStdin : null,
-        ${output_type} === 'stdout' ? customStdout : null,
+        '${input_type}' === 'stdin' ? customStdin : null,
+        '${output_type}' === 'stdout' ? customStdout : null,
         null
       );
 EOL
@@ -126,7 +126,7 @@ fi
 
 cat >> "$wrapper_file" <<EOL
 
-      return outputText.trim();
+      return outputText${output_type} === 'stdout' ? '.trim()' : '';
     } catch (err) {
       console.error('Error in run_${tool_name}:', err);
       throw err;

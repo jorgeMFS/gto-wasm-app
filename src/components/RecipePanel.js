@@ -9,7 +9,8 @@ import {
   DialogTitle, 
   DialogContent, 
   DialogActions,
-  Divider
+  Divider,
+  Box
 } from '@mui/material';
 import { Delete, Save, FolderOpen } from '@mui/icons-material';
 import {
@@ -31,6 +32,7 @@ const RecipePanel = ({ workflow, setWorkflow, gtoModules }) => {
   const [openSaveDialog, setOpenSaveDialog] = React.useState(false);
   const [savedRecipes, setSavedRecipes] = React.useState([]);
   const [recipeName, setRecipeName] = React.useState('');
+  const [openLoadDialog, setOpenLoadDialog] = React.useState(false);
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -71,7 +73,7 @@ const RecipePanel = ({ workflow, setWorkflow, gtoModules }) => {
   };
 
   return (
-    <Paper style={{ padding: '20px' }}>
+    <Paper sx={{ padding: '20px', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Typography variant="h6" gutterBottom>
         Workflow
       </Typography>
@@ -84,24 +86,39 @@ const RecipePanel = ({ workflow, setWorkflow, gtoModules }) => {
           items={workflow.map(item => item.id)}
           strategy={verticalListSortingStrategy}
         >
-          {workflow.map(({ id, toolName }) => (
-            <SortableItem 
-              key={id} 
-              id={id} 
-              onDelete={() => handleDelete(id)} 
-            />
-          ))}
+          <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+            {workflow.map(({ id, toolName }) => (
+              <SortableItem 
+                key={id} 
+                id={id} 
+                onDelete={() => handleDelete(id)} 
+              />
+            ))}
+          </Box>
         </SortableContext>
       </DndContext>
 
-      <Divider style={{ margin: '20px 0' }} />
+      <Divider sx={{ margin: '20px 0' }} />
 
-      <Button variant="contained" color="primary" onClick={() => setOpenSaveDialog(true)} style={{ marginRight: '10px' }}>
-        Save Recipe
-      </Button>
-      <Button variant="contained" color="secondary">
-        Load Recipe
-      </Button>
+      <Box>
+        <Button 
+          variant="contained" 
+          color="primary" 
+          onClick={() => setOpenSaveDialog(true)} 
+          sx={{ marginRight: '10px' }}
+          startIcon={<Save />}
+        >
+          Save Recipe
+        </Button>
+        <Button 
+          variant="contained" 
+          color="secondary"
+          startIcon={<FolderOpen />}
+          onClick={() => setOpenLoadDialog(true)}
+        >
+          Load Recipe
+        </Button>
+      </Box>
 
       {/* Save Recipe Dialog */}
       <Dialog open={openSaveDialog} onClose={() => setOpenSaveDialog(false)}>
@@ -128,11 +145,11 @@ const RecipePanel = ({ workflow, setWorkflow, gtoModules }) => {
       </Dialog>
 
       {/* Load Recipe Dialog */}
-      <Dialog open={savedRecipes.length > 0} onClose={() => {}}>
+      <Dialog open={openLoadDialog} onClose={() => setOpenLoadDialog(false)}>
         <DialogTitle>Load Recipe</DialogTitle>
         <DialogContent>
           {savedRecipes.map((saved, index) => (
-            <Paper key={index} style={{ padding: '10px', marginBottom: '10px' }}>
+            <Paper key={index} sx={{ padding: '10px', marginBottom: '10px' }}>
               <Typography>{saved.name}</Typography>
               <Button onClick={() => handleLoadRecipe(saved)} color="primary">
                 Load
@@ -141,7 +158,7 @@ const RecipePanel = ({ workflow, setWorkflow, gtoModules }) => {
           ))}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => {}} color="primary">
+          <Button onClick={() => setOpenLoadDialog(false)} color="primary">
             Close
           </Button>
         </DialogActions>

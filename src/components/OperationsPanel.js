@@ -2,14 +2,15 @@ import React, { useState, useMemo } from 'react';
 import { 
   List, 
   ListItemText, 
-  ListSubheader, 
+  Collapse,
   TextField, 
-  Divider, 
   Typography,
   Box,
-  Tooltip
+  Tooltip,
+  ListItemButton
 } from '@mui/material';
-import ListItemButton from '@mui/material/ListItemButton';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
 import debounce from 'lodash.debounce';
 
 // Define categories and map operations to them
@@ -100,8 +101,9 @@ const operationCategories = {
 // At the beginning of the file, after imports
 console.log('Operation categories:', operationCategories);
 
-const OperationsPanel = ({ onAddOperation }) => {
+const OperationsPanel = ({ onAddOperation, isOperationsPanelExpanded }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedCategories, setExpandedCategories] = useState({});
 
   // Debounced search handler
   const handleSearch = useMemo(
@@ -111,6 +113,13 @@ const OperationsPanel = ({ onAddOperation }) => {
 
   const onChange = (e) => {
     handleSearch(e.target.value);
+  };
+
+  const handleCategoryClick = (category) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [category]: !prev[category]
+    }));
   };
 
   // Filter operations based on search term
@@ -125,43 +134,54 @@ const OperationsPanel = ({ onAddOperation }) => {
   console.log('Rendered operations:', Object.keys(operationCategories).flatMap(category => operationCategories[category]));
 
   return (
-    <Box>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Typography variant="h6" align="center" gutterBottom>
         Operations
       </Typography>
-      <TextField
-        label="Search Operations"
-        variant="outlined"
-        size="small"
-        fullWidth
-        onChange={onChange}
-        style={{ margin: '10px 0' }}
-      />
-      <List>
-        {Object.keys(operationCategories).map((category) => {
-          const filteredOps = filterOperations(operationCategories[category]);
-          if (filteredOps.length === 0) return null;
+      {isOperationsPanelExpanded && (
+        <>
+          <TextField
+            label="Search Operations"
+            variant="outlined"
+            size="small"
+            fullWidth
+            onChange={onChange}
+            sx={{ margin: '10px 0' }}
+          />
+          <List sx={{ overflow: 'auto', flexGrow: 1 }}>
+            {Object.entries(operationCategories).map(([category, operations]) => {
+              const filteredOps = filterOperations(operations);
+              if (filteredOps.length === 0 && searchTerm !== '') return null;
 
-          return (
-            <React.Fragment key={category}>
-              <ListSubheader>{category}</ListSubheader>
-              {filteredOps.map((operation) => (
-                <Tooltip key={operation.name} title={operation.description} placement="right">
-                  <ListItemButton
-                    onClick={() => {
-                      console.log(`Adding operation: ${operation.name}`);
-                      onAddOperation(operation.name);
-                    }}
-                  >
-                    <ListItemText primary={operation.name} />
+              return (
+                <React.Fragment key={category}>
+                  <ListItemButton onClick={() => handleCategoryClick(category)}>
+                    <ListItemText primary={category} />
+                    {expandedCategories[category] ? <ExpandLess /> : <ExpandMore />}
                   </ListItemButton>
-                </Tooltip>
-              ))}
-              <Divider />
-            </React.Fragment>
-          );
-        })}
-      </List>
+                  <Collapse in={expandedCategories[category] || searchTerm !== ''} timeout="auto" unmountOnExit>
+                    <List component="div" disablePadding sx={{ maxHeight: '200px', overflow: 'auto' }}>
+                      {filteredOps.map((operation) => (
+                        <Tooltip key={operation.name} title={operation.description} placement="right">
+                          <ListItemButton
+                            sx={{ pl: 4 }}
+                            onClick={() => {
+                              console.log(`Adding operation: ${operation.name}`);
+                              onAddOperation(operation.name);
+                            }}
+                          >
+                            <ListItemText primary={operation.name} />
+                          </ListItemButton>
+                        </Tooltip>
+                      ))}
+                    </List>
+                  </Collapse>
+                </React.Fragment>
+              );
+            })}
+          </List>
+        </>
+      )}
     </Box>
   );
 };
