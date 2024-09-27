@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Paper, 
   Typography, 
@@ -10,9 +10,18 @@ import {
   DialogContent, 
   DialogActions,
   Divider,
-  Box
+  Box,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Checkbox,
+  FormControlLabel
 } from '@mui/material';
-import { Delete, Save, FolderOpen } from '@mui/icons-material';
+import { Delete, Save, FolderOpen, ExpandMore } from '@mui/icons-material';
 import {
   DndContext,
   closestCenter,
@@ -27,12 +36,13 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import SortableItem from './SortableItem';
+import description from '../../description.json';
 
 const RecipePanel = ({ workflow, setWorkflow, gtoModules }) => {
-  const [openSaveDialog, setOpenSaveDialog] = React.useState(false);
-  const [savedRecipes, setSavedRecipes] = React.useState([]);
-  const [recipeName, setRecipeName] = React.useState('');
-  const [openLoadDialog, setOpenLoadDialog] = React.useState(false);
+  const [openSaveDialog, setOpenSaveDialog] = useState(false);
+  const [savedRecipes, setSavedRecipes] = useState([]);
+  const [recipeName, setRecipeName] = useState('');
+  const [openLoadDialog, setOpenLoadDialog] = useState(false);
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -70,6 +80,75 @@ const RecipePanel = ({ workflow, setWorkflow, gtoModules }) => {
 
   const handleLoadRecipe = (saved) => {
     setWorkflow(saved.workflow);
+    setOpenLoadDialog(false);
+  };
+
+  const handleParameterChange = (id, paramName, value) => {
+    setWorkflow(workflow.map(item => 
+      item.id === id 
+        ? { ...item, params: { ...item.params, [paramName]: value } }
+        : item
+    ));
+  };
+
+  const renderParameters = (tool) => {
+    const toolConfig = description.tools.find(t => t.name === `gto_${tool.toolName}`);
+    if (!toolConfig) return null;
+
+    const hasParameters = toolConfig.parameters && toolConfig.parameters.length > 0;
+    const hasFlags = toolConfig.flags && toolConfig.flags.length > 0;
+
+    if (!hasParameters && !hasFlags) return null;
+
+    return (
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMore />}>
+          <Typography>Parameters & Flags</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {hasFlags && (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {toolConfig.flags.map(flag => (
+                  <FormControlLabel
+                    key={flag}
+                    control={
+                      <Checkbox
+                        checked={tool.params[flag] || false}
+                        onChange={(e) => handleParameterChange(tool.id, flag, e.target.checked)}
+                      />
+                    }
+                    label={flag}
+                  />
+                ))}
+              </Box>
+            )}
+            {hasParameters && toolConfig.parameters.map(param => (
+              <Box key={param.name} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2" sx={{ minWidth: '100px' }}>{param.name}:</Typography>
+                <FormControl size="small" sx={{ minWidth: '120px' }}>
+                  <Select
+                    value={tool.params[param.name] || ''}
+                    onChange={(e) => handleParameterChange(tool.id, param.name, e.target.value)}
+                  >
+                    <MenuItem value="">None</MenuItem>
+                    {param.type === 'integer' && [1, 2, 3, 4, 5].map(value => (
+                      <MenuItem key={value} value={value}>{value}</MenuItem>
+                    ))}
+                    {param.type === 'float' && [0.1, 0.2, 0.3, 0.4, 0.5].map(value => (
+                      <MenuItem key={value} value={value}>{value.toFixed(1)}</MenuItem>
+                    ))}
+                    {param.type === 'string' && ['option1', 'option2', 'option3'].map(value => (
+                      <MenuItem key={value} value={value}>{value}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+            ))}
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+    );
   };
 
   return (
@@ -87,12 +166,14 @@ const RecipePanel = ({ workflow, setWorkflow, gtoModules }) => {
           strategy={verticalListSortingStrategy}
         >
           <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
-            {workflow.map(({ id, toolName }) => (
-              <SortableItem 
-                key={id} 
-                id={id} 
-                onDelete={() => handleDelete(id)} 
-              />
+            {workflow.map((tool) => (
+              <React.Fragment key={tool.id}>
+                <SortableItem 
+                  id={tool.id} 
+                  onDelete={() => handleDelete(tool.id)} 
+                />
+                {renderParameters(tool)}
+              </React.Fragment>
             ))}
           </Box>
         </SortableContext>

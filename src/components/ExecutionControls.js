@@ -31,16 +31,20 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
         }
         console.log(`Tool configuration for ${toolName}:`, toolConfig);
 
-        // Prepare arguments based on tool configuration
+        // Prepare arguments based on tool configuration and user-set parameters
         let args = [];
         if (params && Object.keys(params).length > 0) {
-          args = Object.entries(params)
-            .flatMap(([key, value]) => [`--${key}`, `${value}`]);
-        }
-
-        // Include flags if any
-        if (toolConfig.flags && toolConfig.flags.length > 0) {
-          args.push(...toolConfig.flags);
+          toolConfig.parameters.forEach(param => {
+            if (params[param.name] !== undefined && params[param.name] !== '') {
+              args.push(`--${param.name}`);
+              args.push(`${params[param.name]}`);
+            }
+          });
+          toolConfig.flags.forEach(flag => {
+            if (params[flag]) {
+              args.push(flag);
+            }
+          });
         }
 
         console.log(`Arguments for ${toolName}:`, args);
@@ -51,7 +55,7 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
         console.log(`Output from ${toolName}:`, outputData);
 
         // Update data for the next operation
-        data = outputData;
+        data = `\n${outputData.stdout}\n\nSTDERR:\n${outputData.stderr}`;
       }
       setOutputData(data);
       console.log('Workflow execution completed successfully');
