@@ -1,4 +1,4 @@
-# GTOWebApp
+# GTO BioChef
 
 A web-based GTO tool, utilizing GTO WebAssembly modules for data processing.
 

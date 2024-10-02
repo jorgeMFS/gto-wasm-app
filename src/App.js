@@ -63,7 +63,7 @@ const App = () => {
     <ErrorBoundary>
       <Container maxWidth="xl" style={containerStyle}>
         <Typography variant="h4" align="center" gutterBottom>
-          GTO WebAssembly Application
+        GTO BioChef
         </Typography>
         <div style={mainContentStyle}>
           <Grid container spacing={2} style={{ height: '100%' }}>

@@ -1,7 +1,7 @@
 {
   "name": "gto-wasm-app",
   "version": "1.0.0",
-  "description": "GTO WebAssembly Application",
+  "description": "GTO BioChef",
   "main": "index.js",
   "scripts": {
     "start": "webpack serve --mode development --open",

@@ -51,7 +51,7 @@ done
 additional_cmap_sources="common-cmap.c mem-cmap.c msg-cmap.c paint-cmap.c time-cmap.c"
 additional_cmap_objects=""
 
-echo "Compiling additional ComparativeMap source files..." | tee -a "$MAIN_LOG_FILE"
+echo "Compiling additional Comparative Mapping source files..." | tee -a "$MAIN_LOG_FILE"
 
 for file in $additional_cmap_sources; do
     obj_file="${file%.c}.o"
@@ -64,12 +64,12 @@ for file in $additional_cmap_sources; do
     additional_cmap_objects+=" $obj_file"
 done
 
-# Read tools from description.json
-tool_count=$(jq '.tools | length' "$DESCRIPTION_FILE")
-total_programs=0
 compiled_programs=0
 failed_programs=0
 declare -a failed_list
+
+tool_count=$(jq '.tools | length' "$DESCRIPTION_FILE")
+total_programs=0
 
 for ((i=0; i<tool_count; i++)); do
     tool=$(jq ".tools[$i]" "$DESCRIPTION_FILE")
@@ -112,7 +112,7 @@ for ((i=0; i<tool_count; i++)); do
             -sEXPORTED_FUNCTIONS='["_main","_malloc","_free"]'
             -sEXPORTED_RUNTIME_METHODS='["ccall","cwrap","FS","setValue","stringToUTF8","callMain"]'
         )
-
+        
         # Determine which object files to link
         if [[ "$prog" == "gto_comparative_map" ]]; then
             link_objects="$additional_cmap_objects"
@@ -134,7 +134,18 @@ for ((i=0; i<tool_count; i++)); do
             compiled_programs=$((compiled_programs + 1))
 
             # Generate the wrapper script
-            "$SCRIPT_DIR/generate_wrapper.sh" "$module_name" "$input_type" "$output_type" >> "$MAIN_LOG_FILE" 2>&1
+            echo "Generating wrapper for ${module_name} with input_type='${input_type}' and output_type='${output_type}'..." | tee -a "$MAIN_LOG_FILE"
+            python "$SCRIPT_DIR/generate_wrapper.py" "$module_name" "$input_type" "$output_type" >> "$MAIN_LOG_FILE" 2>&1
+
+            # Verify if wrapper was generated successfully
+            wrapper_file="$WASM_DIR/${module_name}_wrapper.js"
+            if [[ -f "$wrapper_file" ]]; then
+                echo "Wrapper generated successfully at $wrapper_file" | tee -a "$MAIN_LOG_FILE"
+            else
+                echo "Error: Wrapper file $wrapper_file was not created." | tee -a "$MAIN_LOG_FILE"
+                failed_programs=$((failed_programs + 1))
+                failed_list+=("$module_name (Wrapper generation failed)")
+            fi
         else
             failed_programs=$((failed_programs + 1))
             failed_list+=("$module_name")
