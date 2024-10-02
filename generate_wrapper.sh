@@ -10,7 +10,11 @@ input_type=$2      # 'file' or 'stdin'
 output_type=$3     # 'file' or 'stdout'
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-wrapper_file="$SCRIPT_DIR/wasm/${tool_name}_wrapper.js"
+
+# Ensure public/wasm directory exists
+mkdir -p "$SCRIPT_DIR/public/wasm"
+
+wrapper_file="$SCRIPT_DIR/public/wasm/${tool_name}_wrapper.js"
 
 cat > "$wrapper_file" <<EOL
 /**
@@ -100,6 +104,7 @@ EOL
 fi
 
 cat >> "$wrapper_file" <<EOL
+
       argv.push(...args);
 
       moduleInstance.callMain(argv);

@@ -78,7 +78,7 @@ for ((i=0; i<tool_count; i++)); do
     input_type=$(echo "$tool" | jq -r '.input.type // "unknown"')
     output_type=$(echo "$tool" | jq -r '.output.type // "unknown"')
 
-     if [[ -z "$source_file" ]]; then
+    if [[ -z "$source_file" ]]; then
         echo "Skipping $prog: no source file specified." | tee -a "$MAIN_LOG_FILE"
         continue
     fi
@@ -181,5 +181,5 @@ fi
 
 echo -e "\nDetailed compilation log available at: $MAIN_LOG_FILE"
 
-# Remove any remaining files in src/wasm and wasm directories
-rm -rf "$SCRIPT_DIR/src/wasm"/*.wasm "$SCRIPT_DIR/src/wasm"/*.js "$SCRIPT_DIR/wasm"/*.wasm "$SCRIPT_DIR/wasm"/*.js
+# Remove any remaining files in src/wasm directory
+rm -rf "$SCRIPT_DIR/src/wasm"/*.wasm "$SCRIPT_DIR/src/wasm"/*.js
