@@ -7,7 +7,6 @@ import OutputPanel from './components/OutputPanel';
 import ExecutionControls from './components/ExecutionControls';
 import { 
   Container, 
-  Typography, 
   Grid, 
   IconButton,
   useMediaQuery,
@@ -15,6 +14,7 @@ import {
 } from '@mui/material';
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 import Box from '@mui/material/Box';
+import BioChefLogo from '../img/BioChef.svg';
 
 const App = () => {
   const [workflow, setWorkflow] = useState([]);
@@ -57,16 +57,18 @@ const App = () => {
     flex: 1,
     overflow: 'hidden',
     display: 'flex',
+    flexDirection: 'column',
   };
 
   return (
     <ErrorBoundary>
       <Container maxWidth="xl" style={containerStyle}>
-        <Typography variant="h4" align="center" gutterBottom>
-        GTO BioChef
-        </Typography>
+        {/* Adjusted Box component */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', marginY: 2 }}>
+          <BioChefLogo style={{ maxWidth: '150px', width: '100%', height: 'auto' }} />
+        </Box>
         <div style={mainContentStyle}>
-          <Grid container spacing={2} style={{ height: '100%' }}>
+          <Grid container spacing={2} style={{ flex: 1, minHeight: 0 }}>
             {/* Operations Panel */}
             <Grid item xs={3} style={{ height: '100%', overflow: 'hidden' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

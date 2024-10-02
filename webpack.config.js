@@ -40,6 +40,10 @@ module.exports = {
           filename: 'wasm/[name][ext]',
         },
       },
+      {
+        test: /\.svg$/,
+        use: ['@svgr/webpack'],
+      },
     ],
   },
   plugins: [

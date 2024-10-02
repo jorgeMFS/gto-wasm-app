@@ -44,9 +44,9 @@
     try {
       let stdout = '';
       let stderr = '';
-      
       {% if input_type == 'stdin' %}
       const stdinBuffer = inputData.split('');
+      {% endif %}
 
       const options = {
         locateFile: (path) => {
@@ -63,6 +63,7 @@
           console.error("stderr:", text);
           stderr += text + '\n';
         },
+        {% if input_type == 'stdin' %}
         stdin: () => {
           if (stdinBuffer.length > 0) {
             return stdinBuffer.shift().charCodeAt(0);
@@ -70,26 +71,8 @@
             return null; // EOF
           }
         }
+        {% endif %}
       };
-      {% else %}
-      const options = {
-        locateFile: (path) => {
-          if (path.endsWith('.wasm')) {
-            return `/wasm/${path}`;
-          }
-          return path;
-        },
-        print: (text) => {
-          console.log("stdout:", text);
-          stdout += text + '\n';
-        },
-        printErr: (text) => {
-          console.error("stderr:", text);
-          stderr += text + '\n';
-        },
-        // No stdin handling required for file input
-      };
-      {% endif %}
 
       const module = await loadModule(options);
 
@@ -99,15 +82,14 @@
 
       // Prepare the arguments for callMain
       // Emscripten treats argv[0] as the program name
-      {% if input_type == 'file' %}
       const programName = './{{ tool_name }}';
+      {% if input_type == 'file' %}
       const inputFile = '/input.txt';
       {% if output_type == 'file' %}
       const outputFile = '/output.txt';
       {% endif %}
       const fullArgs = [programName, inputFile{% if output_type == 'file' %}, outputFile{% endif %}, ...args];
       {% else %}
-      const programName = './{{ tool_name }}';
       const fullArgs = [programName, ...args];
       {% endif %}
 
@@ -117,21 +99,21 @@
       {% if output_type == 'file' %}
       // Read output from the virtual filesystem
       const outputText = module.FS.readFile(outputFile, { encoding: 'utf8' });
-
+      
       // Clean up output file
       module.FS.unlink(outputFile);
       
-          {% if input_type == 'file' %}
+      {% if input_type == 'file' %}
       // Clean up input file
       module.FS.unlink(inputFile);
-          {% endif %}
+      {% endif %}
 
       return { stdout: stdout.trim(), stderr: stderr.trim(), outputText: outputText.trim() };
       {% else %}
-          {% if input_type == 'file' %}
+      {% if input_type == 'file' %}
       // Clean up input file
       module.FS.unlink(inputFile);
-          {% endif %}
+      {% endif %}
 
       return {
         stdout: stdout.trim(),
