@@ -4,6 +4,7 @@ import App from './App';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { DataTypeProvider } from './contexts/DataTypeContext'; // Import DataTypeProvider
 
 const theme = createTheme({
   palette: {
@@ -22,8 +23,10 @@ root.render(
   <React.StrictMode>
     <ThemeProvider theme={theme}>
       <NotificationProvider>
-        <CssBaseline />
-        <App />
+        <DataTypeProvider> {/* Wrap App with DataTypeProvider */}
+          <CssBaseline />
+          <App />
+        </DataTypeProvider>
       </NotificationProvider>
     </ThemeProvider>
   </React.StrictMode>
