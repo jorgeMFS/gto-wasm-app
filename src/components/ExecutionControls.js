@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Button, FormControlLabel, Checkbox, CircularProgress } from '@mui/material';
 import { loadWasmModule } from '../gtoWasm';
 import description from '../../description.json'; 
+import { NotificationContext } from '../contexts/NotificationContext';
 
 const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [autoExecute, setAutoExecute] = useState(false);
+  const showNotification = useContext(NotificationContext);
 
   const handleRun = async () => {
     console.log('Starting workflow execution');
@@ -27,6 +29,7 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
         const toolConfig = description.tools.find(tool => tool.name === `gto_${toolName}`);
         if (!toolConfig) {
           console.error(`Configuration for tool ${toolName} not found in description.json`);
+          showNotification(`Configuration for tool ${toolName} not found.`, 'error');
           throw new Error(`Configuration for tool ${toolName} not found.`);
         }
         console.log(`Tool configuration for ${toolName}:`, toolConfig);
@@ -46,7 +49,6 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
             }
           });
         }
-
         console.log(`Arguments for ${toolName}:`, args);
 
         // Execute the tool
@@ -54,14 +56,22 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
         const outputData = await runFunction(data, args);
         console.log(`Output from ${toolName}:`, outputData);
 
+        // Check for errors in the output
+        if (outputData.stderr) {
+          showNotification(`Error in ${toolName}: ${outputData.stderr}`, 'error');
+          throw new Error(outputData.stderr);
+        }
+
         // Update data for the next operation
         data = `\n${outputData.stdout}\n\nSTDERR:\n${outputData.stderr}`;
       }
       setOutputData(data);
       console.log('Workflow execution completed successfully');
+      showNotification('Workflow executed successfully!', 'success');
     } catch (error) {
       console.error('Error executing workflow:', error);
       setOutputData(`Error: ${error.message}`);
+      showNotification(`Workflow execution failed: ${error.message}`, 'error');
     }
     setIsExecuting(false);
   };

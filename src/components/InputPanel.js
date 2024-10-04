@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Paper, Typography, TextField, Box, Button } from '@mui/material';
 import { Upload as UploadIcon } from '@mui/icons-material';
+import { NotificationContext } from '../contexts/NotificationContext';
 
 const InputPanel = ({ inputData, setInputData }) => {
   const [fileName, setFileName] = useState('');
+  const showNotification = useContext(NotificationContext);
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
@@ -12,6 +14,10 @@ const InputPanel = ({ inputData, setInputData }) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         setInputData(e.target.result);
+      };
+      reader.onerror = (e) => {
+        console.error('Error reading file:', e);
+        showNotification('Failed to read the file.', 'error');
       };
       reader.readAsText(file);
     }

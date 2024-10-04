@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Typography } from '@mui/material';
+import { NotificationContext } from '../contexts/NotificationContext';
 
 class ErrorBoundary extends React.Component {
+  static contextType = NotificationContext;
+  
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -9,6 +12,15 @@ class ErrorBoundary extends React.Component {
 
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    // Log the error details
+    console.error('ErrorBoundary caught an error', error, errorInfo);
+    // Trigger notification
+    if (this.context) {
+      this.context(`Something went wrong: ${error.message}`, 'error');
+    }
   }
 
   render() {
