@@ -17,9 +17,10 @@ const OutputPanel = ({ outputData, setOutputData }) => {
           InputProps={{
             readOnly: true,
             sx: { 
-              height: '100%',
               alignItems: 'flex-start',
               fontSize: '0.875rem', // Reduced font size
+              whiteSpace: 'pre-wrap', // Ensure text wraps correctly
+              overflowWrap: 'break-word', // Additional word wrapping
             },
           }}
           sx={{ 
@@ -27,7 +28,10 @@ const OutputPanel = ({ outputData, setOutputData }) => {
             fontSize: '0.875rem', // Reduced font size
             maxHeight: '300px', // Set maximum height
             overflowY: 'auto', // Enable vertical scrolling
+            wordBreak: 'break-word', // Prevent text overflow
+            whiteSpace: 'pre-wrap', // Ensure text wraps correctly
           }}
+          placeholder="Processed output will appear here..."
         />
       </Box>
     </Paper>

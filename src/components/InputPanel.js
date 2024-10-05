@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Paper, Typography, TextField, Box, Button } from '@mui/material';
+import { Paper, Typography, TextField, Box, IconButton } from '@mui/material';
 import { Upload as UploadIcon } from '@mui/icons-material';
 import { NotificationContext } from '../contexts/NotificationContext';
 import { DataTypeContext } from '../contexts/DataTypeContext';
@@ -76,7 +76,8 @@ const InputPanel = ({ inputData, setInputData }) => {
       const detectedType = detectDataType('input.txt', content);
       console.log(`Detected Type for manual input: ${detectedType}`); // Debugging
       setDataType(detectedType);
-      const valid = validateData(content, detectedType); // Pass detectedType
+      const valid = validateData(content, detectedType);
+
       setIsValid(valid);
 
       if (!valid && detectedType !== 'UNKNOWN') {
@@ -115,41 +116,46 @@ const InputPanel = ({ inputData, setInputData }) => {
             fontSize: '0.875rem', // Reduced font size
             maxHeight: '300px', // Set maximum height
             overflowY: 'auto', // Enable vertical scrolling
+            wordBreak: 'break-word', // Prevent text overflow
+            whiteSpace: 'pre-wrap', // Ensure text wraps correctly
           }}
           InputProps={{
             readOnly: false,
             sx: { 
-              height: '100%',
               alignItems: 'flex-start',
               fontSize: '0.875rem', // Ensure font size inside input matches
+              whiteSpace: 'pre-wrap', // Ensure text wraps correctly
+              overflowWrap: 'break-word', // Additional word wrapping
             },
           }}
           error={!isValid && dataType !== 'UNKNOWN'}
           helperText={!isValid && dataType !== 'UNKNOWN' ? `The entered data does not conform to the expected ${dataType} format.` : ''}
         />
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Button
-            variant="contained"
+          <IconButton
+            color="primary"
             component="label"
-            startIcon={<UploadIcon />}
             sx={{
+              padding: '6px', // Smaller padding for smaller size
               backgroundColor: isAcceptable ? 'primary.main' : 'grey.500',
               '&:hover': {
                 backgroundColor: isAcceptable ? 'primary.dark' : 'grey.500',
               },
               cursor: isAcceptable ? 'pointer' : 'not-allowed',
+              marginRight: '10px',
+              color: 'white', // Ensure icon is visible
             }}
             disabled={!isAcceptable}
           >
-            Upload File
+            <UploadIcon fontSize="small" />
             <input
               type="file"
               hidden
               accept={acceptableExtensions.join(',')}
               onChange={handleFileUpload}
             />
-          </Button>
-          {fileName && <Typography sx={{ marginLeft: '10px', fontSize: '0.875rem' }}>{fileName}</Typography>}
+          </IconButton>
+          {fileName && <Typography sx={{ marginLeft: '10px', fontSize: '0.875rem', wordBreak: 'break-word' }}>{fileName}</Typography>}
         </Box>
       </Box>
       <Box sx={{ marginTop: '10px' }}>
