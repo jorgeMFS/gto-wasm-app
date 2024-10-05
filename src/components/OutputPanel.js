@@ -19,10 +19,15 @@ const OutputPanel = ({ outputData, setOutputData }) => {
             sx: { 
               height: '100%',
               alignItems: 'flex-start',
-              paddingTop: '10px', 
+              fontSize: '0.875rem', // Reduced font size
             },
           }}
-          sx={{ flexGrow: 1 }}
+          sx={{ 
+            flexGrow: 1,
+            fontSize: '0.875rem', // Reduced font size
+            maxHeight: '300px', // Set maximum height
+            overflowY: 'auto', // Enable vertical scrolling
+          }}
         />
       </Box>
     </Paper>

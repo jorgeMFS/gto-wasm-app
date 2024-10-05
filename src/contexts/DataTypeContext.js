@@ -3,7 +3,7 @@ import React, { createContext, useState } from 'react';
 export const DataTypeContext = createContext();
 
 /**
- * Provides the current data type and a function to update it.
+ * Provides the current data type and functions to update and validate it.
  */
 export const DataTypeProvider = ({ children }) => {
   const [dataType, setDataType] = useState('UNKNOWN');
@@ -11,45 +11,127 @@ export const DataTypeProvider = ({ children }) => {
   /**
    * Validates the data based on the detected data type.
    * @param {string} data - The data to validate.
+   * @param {string} type - The detected data type.
    * @returns {boolean} - True if data is valid for the detected type, else false.
    */
-  const validateData = (data) => {
-    if (dataType === 'FASTA') {
-      // Basic validation for FASTA: starts with '>' and contains at least one sequence line
-      return data.startsWith('>') && /\n[ACGTacgt]+/.test(data);
-    } else if (dataType === 'Multi-FASTA') {
-      // Validation for Multi-FASTA: contains multiple headers starting with '>'
-      const headers = data.match(/>[^>\n]+/g);
-      return headers && headers.length > 1 && /[ACGTacgt]+/.test(data);
-    } else if (dataType === 'FASTQ') {
-      // Basic validation for FASTQ: starts with '@' and follows FASTQ format structure
-      const lines = data.split('\n');
-      return (
-        data.startsWith('@') &&
-        lines.length % 4 === 0 &&
-        lines.every((line, index) => {
-          if (index % 4 === 0) return line.startsWith('@');
-          if (index % 4 === 2) return line.startsWith('+');
-          // Lines 1 and 3 should contain sequence and quality scores respectively
-          return /^[ACGTacgt]+$/.test(line) || /^[!-~]+$/.test(line);
-        })
-      );
-    } else if (dataType === 'POS') {
-      // Validation for POS: lines containing numeric position data
-      const lines = data.split('\n');
-      return lines.every(line => /^\d+(\.\d+)?\s+\d+(\.\d+)?$/.test(line));
-    } else if (dataType === 'SVG') {
-      // Validation for SVG: starts with '<svg' tag
-      return data.trim().startsWith('<svg');
-    } else if (dataType === 'NUM') {
-      // Validation for NUM: all content is numeric, possibly separated by whitespace
-      return /^\d+(\.\d+)?(\s+\d+(\.\d+)?)*/.test(data.trim());
-    } else if (dataType === 'text') {
-      // For text, we'll assume any non-empty string is valid
-      return data.trim().length > 0;
+  const validateData = (data, type) => {
+    const trimmedData = data.trim();
+
+    switch (type) {
+      case 'FASTA':
+        // Validation for FASTA: starts with '>' and contains valid sequence lines
+        const fastaLines = trimmedData.split(/\r?\n/).filter(line => !line.startsWith('>'));
+        const isFASTAValid =
+          trimmedData.startsWith('>') &&
+          fastaLines.length > 0 &&
+          fastaLines.every(line => /^[ACGTacgtNn]+$/.test(line.trim())); // Allowing 'N' and 'n'
+        if (!isFASTAValid) {
+          console.error('FASTA validation failed:', {
+            startsWithGreaterThan: trimmedData.startsWith('>'),
+            hasSequenceLines: fastaLines.length > 0,
+            allSequencesValid: fastaLines.every(line => /^[ACGTacgtNn]+$/.test(line.trim())),
+          });
+        }
+        return isFASTAValid;
+
+      case 'Multi-FASTA':
+        // Validation for Multi-FASTA: multiple headers and valid sequences
+        const headers = trimmedData.match(/>[^>\n]+/g);
+        if (headers && headers.length > 1) {
+          const fastaBlocks = trimmedData.split('>').slice(1); // Split and ignore the first empty element
+          const isMultiFastaValid = fastaBlocks.every(block => {
+            const lines = block.split(/\r?\n/).filter(line => line.trim() !== '');
+            if (lines.length < 2) return false; // At least one header and one sequence line
+            const sequence = lines.slice(1).join('');
+            return /^[ACGTacgtNn]+$/.test(sequence.trim()); // Allowing 'N' and 'n'
+          });
+          if (!isMultiFastaValid) {
+            console.error('Multi-FASTA validation failed.');
+          }
+          return isMultiFastaValid;
+        }
+        return false;
+
+      case 'FASTQ':
+        // Validation for FASTQ: starts with '@' and follows FASTQ format structure
+        const lines = trimmedData.split(/\r?\n/);
+        const isFASTQValid =
+          trimmedData.startsWith('@') &&
+          lines.length >= 4 &&
+          lines.length % 4 === 0 &&
+          lines.every((line, index) => {
+            if (index % 4 === 0) return line.startsWith('@');
+            if (index % 4 === 2) return line.startsWith('+');
+            // Lines 1 and 3 should contain sequence and quality scores respectively
+            return /^[ACGTacgtNn]+$/.test(line.trim()) || /^[!-~]+$/.test(line.trim());
+          });
+        if (!isFASTQValid) {
+          console.error('FASTQ validation failed.');
+        }
+        return isFASTQValid;
+
+      case 'POS':
+        // Validation for POS: lines containing numeric position data
+        const posLines = trimmedData.split(/\r?\n/);
+        const isPOSValid = posLines.every(line => /^\d+(\.\d+)?\s+\d+(\.\d+)?$/.test(line.trim()));
+        if (!isPOSValid) {
+          console.error('POS validation failed.');
+        }
+        return isPOSValid;
+
+      case 'SVG':
+        // Validation for SVG: starts with '<svg' tag
+        const isSVGValid = trimmedData.startsWith('<svg');
+        if (!isSVGValid) {
+          console.error('SVG validation failed.');
+        }
+        return isSVGValid;
+
+      case 'NUM':
+        // Validation for NUM: all content is numeric, possibly separated by whitespace
+        const isNUMValid = /^\d+(\.\d+)?(\s+\d+(\.\d+)?)*/.test(trimmedData);
+        if (!isNUMValid) {
+          console.error('NUM validation failed.');
+        }
+        return isNUMValid;
+
+      case 'DNA':
+        // Validation for DNA: only A, C, G, T (case-insensitive) and whitespace
+        const isDNAValid = /^[ACGTacgt\s]+$/.test(trimmedData);
+        if (!isDNAValid) {
+          console.error('DNA validation failed.');
+        }
+        return isDNAValid;
+
+      case 'RNA':
+        // Validation for RNA: only A, C, G, U (case-insensitive) and whitespace
+        const isRNAValid = /^[ACGUacgu\s]+$/.test(trimmedData);
+        if (!isRNAValid) {
+          console.error('RNA validation failed.');
+        }
+        return isRNAValid;
+
+      case 'AminoAcids':
+        // Validation for AminoAcids: only standard single-letter codes and whitespace
+        const isAminoAcidsValid = /^[ACDEFGHIKLMNPQRSTVWYacdefghiklmnpqrstvwy\s]+$/.test(trimmedData);
+        if (!isAminoAcidsValid) {
+          console.error('AminoAcids validation failed.');
+        }
+        return isAminoAcidsValid;
+
+      case 'text':
+        // For text, any non-empty string is considered valid
+        const isTextValid = trimmedData.length > 0;
+        if (!isTextValid) {
+          console.error('Text validation failed: Input is empty.');
+        }
+        return isTextValid;
+
+      default:
+        // For UNKNOWN or unhandled types, consider them invalid
+        console.error('Validation failed: Unknown data type.');
+        return false;
     }
-    // Add more validations for other data types if necessary
-    return true; // Default to true for UNKNOWN or unhandled types
   };
 
   return (
