@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useContext } from 'react';
 import { 
   List, 
   ListItemText, 
@@ -12,7 +12,8 @@ import {
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import debounce from 'lodash.debounce';
-
+import { getCompatibleTools } from '../utils/compatibility'; 
+import { DataTypeContext } from '../contexts/DataTypeContext';
 // Define categories and map operations to them
 const operationCategories = {
   "Sequence Manipulation": [
@@ -104,6 +105,7 @@ console.log('Operation categories:', operationCategories);
 const OperationsPanel = ({ onAddOperation, isOperationsPanelExpanded }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCategories, setExpandedCategories] = useState({});
+  const { dataType } = useContext(DataTypeContext); 
 
   // Debounced search handler
   const handleSearch = useMemo(
@@ -129,6 +131,14 @@ const OperationsPanel = ({ onAddOperation, isOperationsPanelExpanded }) => {
       op.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
   };
+
+  // Determine compatible tools
+  const compatibleTools = useMemo(() => {
+    if (!dataType || dataType === 'UNKNOWN') return new Set();
+    const compatible = getCompatibleTools(dataType);
+    // Assuming tool names in operationCategories do not have the 'gto_' prefix
+    return new Set(compatible.map(tool => tool.name.replace(/^gto_/, '')));
+  }, [dataType]);
 
   // Inside the OperationsPanel component, before the return statement
   console.log('Rendered operations:', Object.keys(operationCategories).flatMap(category => operationCategories[category]));
@@ -161,19 +171,37 @@ const OperationsPanel = ({ onAddOperation, isOperationsPanelExpanded }) => {
                   </ListItemButton>
                   <Collapse in={expandedCategories[category] || searchTerm !== ''} timeout="auto" unmountOnExit>
                     <List component="div" disablePadding sx={{ maxHeight: '200px', overflow: 'auto' }}>
-                      {filteredOps.map((operation) => (
-                        <Tooltip key={operation.name} title={operation.description} placement="right">
-                          <ListItemButton
-                            sx={{ pl: 4 }}
-                            onClick={() => {
-                              console.log(`Adding operation: ${operation.name}`);
-                              onAddOperation(operation.name);
-                            }}
-                          >
-                            <ListItemText primary={operation.name} />
-                          </ListItemButton>
-                        </Tooltip>
-                      ))}
+                      {filteredOps.map((operation) => {
+                        const isCompatible = compatibleTools.has(operation.name);
+                        return (
+                          <Tooltip key={operation.name} title={operation.description} placement="right">
+                            <ListItemButton
+                              sx={{ 
+                                pl: 4, 
+                                backgroundColor: isCompatible ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+                                '&:hover': {
+                                  backgroundColor: isCompatible ? 'rgba(76, 175, 80, 0.2)' : 'rgba(244, 67, 54, 0.2)',
+                                },
+                                cursor: isCompatible ? 'pointer' : 'not-allowed',
+                              }}
+                              onClick={() => {
+                                if (isCompatible) {
+                                  console.log(`Adding operation: ${operation.name}`);
+                                  onAddOperation(operation.name);
+                                }
+                              }}
+                              disabled={!isCompatible} // Optionally disable incompatible tools
+                            >
+                              <ListItemText 
+                                primary={operation.name} 
+                                primaryTypographyProps={{
+                                  color: isCompatible ? 'green' : 'red',
+                                }}
+                              />
+                            </ListItemButton>
+                          </Tooltip>
+                        );
+                      })}
                     </List>
                   </Collapse>
                 </React.Fragment>
