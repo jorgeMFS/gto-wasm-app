@@ -7,12 +7,10 @@ import OutputPanel from './components/OutputPanel';
 import ExecutionControls from './components/ExecutionControls';
 import { 
   Container, 
-  Grid, 
-  IconButton,
+  Grid,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 import Box from '@mui/material/Box';
 import BioChefLogo from '../img/BioChef.svg';
 
@@ -20,7 +18,6 @@ const App = () => {
   const [workflow, setWorkflow] = useState([]);
   const [inputData, setInputData] = useState('');
   const [outputData, setOutputData] = useState('');
-  const [isOperationsPanelExpanded, setIsOperationsPanelExpanded] = useState(true);
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
 
   const theme = useTheme();
@@ -42,15 +39,12 @@ const App = () => {
     setWorkflow([...workflow, newOperation]);
   };
 
-  const toggleOperationsPanel = () => {
-    setIsOperationsPanelExpanded(!isOperationsPanelExpanded);
-  };
-
   const containerStyle = {
     height: isMobile ? 'auto' : `${windowHeight}px`,
     overflow: isMobile ? 'auto' : 'hidden',
     display: 'flex',
     flexDirection: 'column',
+    backgroundColor: 'transparent',
   };
 
   const mainContentStyle = {
@@ -63,27 +57,20 @@ const App = () => {
   return (
     <ErrorBoundary>
       <Container maxWidth="xl" style={containerStyle}>
-        {/* Adjusted Box component */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', marginY: 2 }}>
-          <BioChefLogo style={{ maxWidth: '150px', width: '100%', height: 'auto' }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', marginY: 4 }}>
+          <BioChefLogo style={{ maxWidth: '200px', width: '100%', height: 'auto' }} />
         </Box>
         <div style={mainContentStyle}>
-          <Grid container spacing={2} style={{ flex: 1, minHeight: 0 }}>
+          <Grid container spacing={3} style={{ flex: 1, minHeight: 0 }}>
             {/* Operations Panel */}
-            <Grid item xs={3} style={{ height: '100%', overflow: 'hidden' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <IconButton onClick={toggleOperationsPanel}>
-                  {isOperationsPanelExpanded ? <ChevronLeft /> : <ChevronRight />}
-                </IconButton>
-              </div>
+            <Grid item xs={12} sm={3} md={3} lg={3} xl={3} style={{ height: '100%', overflow: 'hidden' }}>
               <OperationsPanel 
                 onAddOperation={handleAddOperation} 
-                isOperationsPanelExpanded={isOperationsPanelExpanded}
               />
             </Grid>
 
             {/* Recipe/Workflow Panel */}
-            <Grid item xs={6} style={{ height: '100%', overflow: 'auto' }}>
+            <Grid item xs={12} sm={6} md={6} lg={6} xl={6} style={{ height: '100%', overflow: 'auto' }}>
               <RecipePanel 
                 workflow={workflow} 
                 setWorkflow={setWorkflow} 
@@ -91,25 +78,21 @@ const App = () => {
             </Grid>
 
             {/* Input and Output Panels */}
-            <Grid item xs={3} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                <Box sx={{ flex: 1, minHeight: 0, marginBottom: '10px' }}>
-                  <InputPanel inputData={inputData} setInputData={setInputData} />
-                </Box>
-                <Box sx={{ flex: 1, minHeight: 0 }}>
-                  <OutputPanel outputData={outputData} setOutputData={setOutputData} />
-                </Box>
-              </Box>
+            <Grid item xs={12} sm={3} md={3} lg={3} xl={3} style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <InputPanel inputData={inputData} setInputData={setInputData} />
+              <OutputPanel outputData={outputData} setOutputData={setOutputData} />
             </Grid>
           </Grid>
         </div>
         
         {/* Execution Controls */}
-        <ExecutionControls 
-          workflow={workflow} 
-          inputData={inputData} 
-          setOutputData={setOutputData} 
-        />
+        <Box sx={{ marginTop: 4, display: 'flex', justifyContent: 'center' }}>
+          <ExecutionControls 
+            workflow={workflow} 
+            inputData={inputData} 
+            setOutputData={setOutputData} 
+          />
+        </Box>
       </Container>
     </ErrorBoundary>
   );

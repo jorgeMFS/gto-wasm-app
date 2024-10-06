@@ -14,6 +14,7 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import debounce from 'lodash.debounce';
 import { getCompatibleTools } from '../utils/compatibility'; 
 import { DataTypeContext } from '../contexts/DataTypeContext';
+
 // Define categories and map operations to them
 const operationCategories = {
   "Sequence Manipulation": [
@@ -99,10 +100,9 @@ const operationCategories = {
   ]
 };
 
-// At the beginning of the file, after imports
 console.log('Operation categories:', operationCategories);
 
-const OperationsPanel = ({ onAddOperation, isOperationsPanelExpanded }) => {
+const OperationsPanel = ({ onAddOperation }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCategories, setExpandedCategories] = useState({});
   const { dataType } = useContext(DataTypeContext); 
@@ -148,68 +148,64 @@ const OperationsPanel = ({ onAddOperation, isOperationsPanelExpanded }) => {
       <Typography variant="h6" align="center" gutterBottom>
         Operations
       </Typography>
-      {isOperationsPanelExpanded && (
-        <>
-          <TextField
-            label="Search Operations"
-            variant="outlined"
-            size="small"
-            fullWidth
-            onChange={onChange}
-            sx={{ margin: '10px 0' }}
-          />
-          <List sx={{ overflow: 'auto', flexGrow: 1 }}>
-            {Object.entries(operationCategories).map(([category, operations]) => {
-              const filteredOps = filterOperations(operations);
-              if (filteredOps.length === 0 && searchTerm !== '') return null;
+      <TextField
+        label="Search Operations"
+        variant="outlined"
+        size="small"
+        fullWidth
+        onChange={onChange}
+        sx={{ margin: '10px 0' }}
+      />
+      <List sx={{ overflow: 'auto', flexGrow: 1 }}>
+        {Object.entries(operationCategories).map(([category, operations]) => {
+          const filteredOps = filterOperations(operations);
+          if (filteredOps.length === 0 && searchTerm !== '') return null;
 
-              return (
-                <React.Fragment key={category}>
-                  <ListItemButton onClick={() => handleCategoryClick(category)}>
-                    <ListItemText primary={category} />
-                    {expandedCategories[category] ? <ExpandLess /> : <ExpandMore />}
-                  </ListItemButton>
-                  <Collapse in={expandedCategories[category] || searchTerm !== ''} timeout="auto" unmountOnExit>
-                    <List component="div" disablePadding sx={{ maxHeight: '200px', overflow: 'auto' }}>
-                      {filteredOps.map((operation) => {
-                        const isCompatible = compatibleTools.has(operation.name);
-                        return (
-                          <Tooltip key={operation.name} title={operation.description} placement="right">
-                            <ListItemButton
-                              sx={{ 
-                                pl: 4, 
-                                backgroundColor: isCompatible ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
-                                '&:hover': {
-                                  backgroundColor: isCompatible ? 'rgba(76, 175, 80, 0.2)' : 'rgba(244, 67, 54, 0.2)',
-                                },
-                                cursor: isCompatible ? 'pointer' : 'not-allowed',
-                              }}
-                              onClick={() => {
-                                if (isCompatible) {
-                                  console.log(`Adding operation: ${operation.name}`);
-                                  onAddOperation(operation.name);
-                                }
-                              }}
-                              disabled={!isCompatible} // Optionally disable incompatible tools
-                            >
-                              <ListItemText 
-                                primary={operation.name} 
-                                primaryTypographyProps={{
-                                  color: isCompatible ? 'green' : 'red',
-                                }}
-                              />
-                            </ListItemButton>
-                          </Tooltip>
-                        );
-                      })}
-                    </List>
-                  </Collapse>
-                </React.Fragment>
-              );
-            })}
-          </List>
-        </>
-      )}
+          return (
+            <React.Fragment key={category}>
+              <ListItemButton onClick={() => handleCategoryClick(category)}>
+                <ListItemText primary={category} />
+                {expandedCategories[category] ? <ExpandLess /> : <ExpandMore />}
+              </ListItemButton>
+              <Collapse in={expandedCategories[category] || searchTerm !== ''} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding sx={{ maxHeight: '200px', overflow: 'auto' }}>
+                  {filteredOps.map((operation) => {
+                    const isCompatible = compatibleTools.has(operation.name);
+                    return (
+                      <Tooltip key={operation.name} title={operation.description} placement="right">
+                        <ListItemButton
+                          sx={{ 
+                            pl: 4, 
+                            backgroundColor: isCompatible ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+                            '&:hover': {
+                              backgroundColor: isCompatible ? 'rgba(76, 175, 80, 0.2)' : 'rgba(244, 67, 54, 0.2)',
+                            },
+                            cursor: isCompatible ? 'pointer' : 'not-allowed',
+                          }}
+                          onClick={() => {
+                            if (isCompatible) {
+                              console.log(`Adding operation: ${operation.name}`);
+                              onAddOperation(operation.name);
+                            }
+                          }}
+                          disabled={!isCompatible} // Optionally disable incompatible tools
+                        >
+                          <ListItemText 
+                            primary={operation.name} 
+                            primaryTypographyProps={{
+                              color: isCompatible ? 'green' : 'red',
+                            }}
+                          />
+                        </ListItemButton>
+                      </Tooltip>
+                    );
+                  })}
+                </List>
+              </Collapse>
+            </React.Fragment>
+          );
+        })}
+      </List>
     </Box>
   );
 };
