@@ -10,7 +10,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import ErrorBoundary from './components/ErrorBoundary'; // Ensure this component exists
-import BioChefLogo from '../img/BioChef.svg'; // Ensure this component exists
+import BioChefLogo from '../img/BioChefWhite.svg'; // Ensure this component exists
 import OperationsPanel from './components/OperationsPanel';
 import RecipePanel from './components/RecipePanel';
 import InputPanel from './components/InputPanel';
@@ -41,9 +41,9 @@ const App = () => {
         {/* Header Section */}
         <AppBar position="static" color="primary" elevation={0}>
           <Toolbar>
-            <BioChefLogo style={{ maxWidth: '50px', marginRight: '15px' }} />
+            <BioChefLogo style={{ maxWidth: '75px', marginRight: '15px' }} />
             <Typography variant="h6" color="inherit" noWrap>
-              BioChef Workflow Builder
+              Workflow Builder
             </Typography>
           </Toolbar>
         </AppBar>
