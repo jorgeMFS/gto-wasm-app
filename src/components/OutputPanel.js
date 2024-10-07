@@ -1,13 +1,24 @@
 import React from 'react';
-import { Paper, Typography, TextField, Box } from '@mui/material';
+import { Paper, Typography, TextField, Box, IconButton, Tooltip } from '@mui/material';
+import SaveIcon from '@mui/icons-material/Save';
 
-const OutputPanel = ({ outputData, setOutputData }) => {
+const OutputPanel = ({ outputData }) => {
+  const handleSaveOutput = () => {
+    const blob = new Blob([outputData], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = 'output.txt';
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <Paper sx={{ padding: '20px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Paper elevation={3} sx={{ padding: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Typography variant="h6" gutterBottom>
         Output
       </Typography>
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         <TextField
           label="Output Data"
           multiline
@@ -16,23 +27,29 @@ const OutputPanel = ({ outputData, setOutputData }) => {
           value={outputData}
           InputProps={{
             readOnly: true,
-            sx: { 
+            sx: {
               alignItems: 'flex-start',
-              fontSize: '0.875rem', // Reduced font size
-              whiteSpace: 'pre-wrap', // Ensure text wraps correctly
-              overflowWrap: 'break-word', // Additional word wrapping
+              fontSize: '0.875rem',
+              whiteSpace: 'pre-wrap',
+              overflowWrap: 'break-word',
             },
           }}
-          sx={{ 
+          sx={{
             flexGrow: 1,
-            fontSize: '0.875rem', // Reduced font size
-            maxHeight: '300px', // Set maximum height
-            overflowY: 'auto', // Enable vertical scrolling
-            wordBreak: 'break-word', // Prevent text overflow
-            whiteSpace: 'pre-wrap', // Ensure text wraps correctly
+            fontSize: '0.875rem',
+            overflowY: 'auto',
+            wordBreak: 'break-word',
+            whiteSpace: 'pre-wrap',
           }}
           placeholder="Processed output will appear here..."
         />
+        <Box sx={{ marginTop: 1, textAlign: 'right' }}>
+          <Tooltip title="Save Output">
+            <IconButton color="primary" onClick={handleSaveOutput}>
+              <SaveIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
     </Paper>
   );

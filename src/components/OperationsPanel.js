@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useContext } from 'react';
-import { 
-  List, 
-  ListItemText, 
+import {
+  List,
+  ListItemText,
   Collapse,
-  TextField, 
+  TextField,
   Typography,
-  Box,
   Tooltip,
-  ListItemButton
+  ListItemButton,
+  Divider,
+  Paper,
 } from '@mui/material';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
@@ -105,7 +106,7 @@ console.log('Operation categories:', operationCategories);
 const OperationsPanel = ({ onAddOperation }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCategories, setExpandedCategories] = useState({});
-  const { dataType } = useContext(DataTypeContext); 
+  const { dataType } = useContext(DataTypeContext);
 
   // Debounced search handler
   const handleSearch = useMemo(
@@ -118,17 +119,18 @@ const OperationsPanel = ({ onAddOperation }) => {
   };
 
   const handleCategoryClick = (category) => {
-    setExpandedCategories(prev => ({
+    setExpandedCategories((prev) => ({
       ...prev,
-      [category]: !prev[category]
+      [category]: !prev[category],
     }));
   };
 
   // Filter operations based on search term
   const filterOperations = (operations) => {
-    return operations.filter((op) =>
-      op.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      op.description.toLowerCase().includes(searchTerm.toLowerCase())
+    return operations.filter(
+      (op) =>
+        op.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        op.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
   };
 
@@ -137,14 +139,11 @@ const OperationsPanel = ({ onAddOperation }) => {
     if (!dataType || dataType === 'UNKNOWN') return new Set();
     const compatible = getCompatibleTools(dataType);
     // Assuming tool names in operationCategories do not have the 'gto_' prefix
-    return new Set(compatible.map(tool => tool.name.replace(/^gto_/, '')));
+    return new Set(compatible.map((tool) => tool.name.replace(/^gto_/, '')));
   }, [dataType]);
 
-  // Inside the OperationsPanel component, before the return statement
-  console.log('Rendered operations:', Object.keys(operationCategories).flatMap(category => operationCategories[category]));
-
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Paper elevation={3} sx={{ padding: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Typography variant="h6" align="center" gutterBottom>
         Operations
       </Typography>
@@ -154,9 +153,9 @@ const OperationsPanel = ({ onAddOperation }) => {
         size="small"
         fullWidth
         onChange={onChange}
-        sx={{ margin: '10px 0' }}
+        sx={{ marginBottom: 2 }}
       />
-      <List sx={{ overflow: 'auto', flexGrow: 1 }}>
+      <List sx={{ overflowY: 'auto', flexGrow: 1 }}>
         {Object.entries(operationCategories).map(([category, operations]) => {
           const filteredOps = filterOperations(operations);
           if (filteredOps.length === 0 && searchTerm !== '') return null;
@@ -168,14 +167,14 @@ const OperationsPanel = ({ onAddOperation }) => {
                 {expandedCategories[category] ? <ExpandLess /> : <ExpandMore />}
               </ListItemButton>
               <Collapse in={expandedCategories[category] || searchTerm !== ''} timeout="auto" unmountOnExit>
-                <List component="div" disablePadding sx={{ maxHeight: '200px', overflow: 'auto' }}>
+                <List component="div" disablePadding>
                   {filteredOps.map((operation) => {
                     const isCompatible = compatibleTools.has(operation.name);
                     return (
                       <Tooltip key={operation.name} title={operation.description} placement="right">
                         <ListItemButton
-                          sx={{ 
-                            pl: 4, 
+                          sx={{
+                            pl: 4,
                             backgroundColor: isCompatible ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
                             '&:hover': {
                               backgroundColor: isCompatible ? 'rgba(76, 175, 80, 0.2)' : 'rgba(244, 67, 54, 0.2)',
@@ -184,14 +183,13 @@ const OperationsPanel = ({ onAddOperation }) => {
                           }}
                           onClick={() => {
                             if (isCompatible) {
-                              console.log(`Adding operation: ${operation.name}`);
                               onAddOperation(operation.name);
                             }
                           }}
-                          disabled={!isCompatible} // Optionally disable incompatible tools
+                          disabled={!isCompatible}
                         >
-                          <ListItemText 
-                            primary={operation.name} 
+                          <ListItemText
+                            primary={operation.name}
                             primaryTypographyProps={{
                               color: isCompatible ? 'green' : 'red',
                             }}
@@ -202,11 +200,12 @@ const OperationsPanel = ({ onAddOperation }) => {
                   })}
                 </List>
               </Collapse>
+              <Divider />
             </React.Fragment>
           );
         })}
       </List>
-    </Box>
+    </Paper>
   );
 };
 

@@ -4,17 +4,23 @@ import App from './App';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { NotificationProvider } from './contexts/NotificationContext';
-import { DataTypeProvider } from './contexts/DataTypeContext'; // Import DataTypeProvider
+import { DataTypeProvider } from './contexts/DataTypeContext';
 
 const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#1976d2', // Default MUI primary color
+      main: '#009688', // Teal
     },
     secondary: {
-      main: '#dc004e', // Default MUI secondary color
+      main: '#ff5722', // Deep Orange
     },
+    background: {
+      default: '#f5f5f5',
+    },
+  },
+  typography: {
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
   },
 });
 
@@ -23,7 +29,7 @@ root.render(
   <React.StrictMode>
     <ThemeProvider theme={theme}>
       <NotificationProvider>
-        <DataTypeProvider> {/* Wrap App with DataTypeProvider */}
+        <DataTypeProvider>
           <CssBaseline />
           <App />
         </DataTypeProvider>

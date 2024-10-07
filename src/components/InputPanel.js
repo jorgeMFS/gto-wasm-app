@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Paper, Typography, TextField, Box, IconButton } from '@mui/material';
-import { Upload as UploadIcon } from '@mui/icons-material';
+import { Paper, Typography, TextField, Box, IconButton, Tooltip } from '@mui/material';
+import UploadIcon from '@mui/icons-material/Upload';
 import { NotificationContext } from '../contexts/NotificationContext';
 import { DataTypeContext } from '../contexts/DataTypeContext';
 import { detectDataType } from '../utils/detectDataType';
@@ -39,7 +39,6 @@ const InputPanel = ({ inputData, setInputData }) => {
         const content = e.target.result;
         setInputData(content);
         const detectedType = detectDataType(file.name, content);
-        console.log(`Detected Type for uploaded file: ${detectedType}`); // Debugging
         setDataType(detectedType);
         const valid = validateData(content, detectedType); // Pass detectedType
         setIsValid(valid);
@@ -74,7 +73,6 @@ const InputPanel = ({ inputData, setInputData }) => {
       }
 
       const detectedType = detectDataType('input.txt', content);
-      console.log(`Detected Type for manual input: ${detectedType}`); // Debugging
       setDataType(detectedType);
       const valid = validateData(content, detectedType);
 
@@ -98,11 +96,11 @@ const InputPanel = ({ inputData, setInputData }) => {
   }, [debounceTimer]);
 
   return (
-    <Paper elevation={3} sx={{ padding: '20px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Paper elevation={3} sx={{ padding: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Typography variant="h6" gutterBottom>
         Input
       </Typography>
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         <TextField
           multiline
           variant="outlined"
@@ -110,55 +108,59 @@ const InputPanel = ({ inputData, setInputData }) => {
           value={inputData}
           onChange={handleTextChange}
           placeholder="e.g., >Sequence1\nACGT..."
-          sx={{ 
-            flexGrow: 1, 
-            marginBottom: '10px',
-            fontSize: '0.875rem', // Reduced font size
-            maxHeight: '300px', // Set maximum height
-            overflowY: 'auto', // Enable vertical scrolling
-            wordBreak: 'break-word', // Prevent text overflow
-            whiteSpace: 'pre-wrap', // Ensure text wraps correctly
+          sx={{
+            flexGrow: 1,
+            marginBottom: 1,
+            fontSize: '0.875rem',
+            overflowY: 'auto',
+            wordBreak: 'break-word',
+            whiteSpace: 'pre-wrap',
           }}
           InputProps={{
             readOnly: false,
-            sx: { 
+            sx: {
               alignItems: 'flex-start',
-              fontSize: '0.875rem', // Ensure font size inside input matches
-              whiteSpace: 'pre-wrap', // Ensure text wraps correctly
-              overflowWrap: 'break-word', // Additional word wrapping
+              fontSize: '0.875rem',
+              whiteSpace: 'pre-wrap',
+              overflowWrap: 'break-word',
             },
           }}
           error={!isValid && dataType !== 'UNKNOWN'}
           helperText={!isValid && dataType !== 'UNKNOWN' ? `The entered data does not conform to the expected ${dataType} format.` : ''}
         />
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <IconButton
-            color="primary"
-            component="label"
-            sx={{
-              padding: '6px', // Smaller padding for smaller size
-              backgroundColor: isAcceptable ? 'primary.main' : 'grey.500',
-              '&:hover': {
-                backgroundColor: isAcceptable ? 'primary.dark' : 'grey.500',
-              },
-              cursor: isAcceptable ? 'pointer' : 'not-allowed',
-              marginRight: '10px',
-              color: 'white', // Ensure icon is visible
-            }}
-            disabled={!isAcceptable}
-          >
-            <UploadIcon fontSize="small" />
-            <input
-              type="file"
-              hidden
-              accept={acceptableExtensions.join(',')}
-              onChange={handleFileUpload}
-            />
-          </IconButton>
-          {fileName && <Typography sx={{ marginLeft: '10px', fontSize: '0.875rem', wordBreak: 'break-word' }}>{fileName}</Typography>}
+          <Tooltip title="Upload File">
+            <IconButton
+              color="primary"
+              component="label"
+              sx={{
+                padding: '6px',
+                backgroundColor: isAcceptable ? 'primary.main' : 'grey.500',
+                '&:hover': {
+                  backgroundColor: isAcceptable ? 'primary.dark' : 'grey.500',
+                },
+                cursor: isAcceptable ? 'pointer' : 'not-allowed',
+                color: 'white',
+              }}
+              disabled={!isAcceptable}
+            >
+              <UploadIcon fontSize="small" />
+              <input
+                type="file"
+                hidden
+                accept={acceptableExtensions.join(',')}
+                onChange={handleFileUpload}
+              />
+            </IconButton>
+          </Tooltip>
+          {fileName && (
+            <Typography sx={{ marginLeft: 1, fontSize: '0.875rem', wordBreak: 'break-word' }}>
+              {fileName}
+            </Typography>
+          )}
         </Box>
       </Box>
-      <Box sx={{ marginTop: '10px' }}>
+      <Box sx={{ marginTop: 1 }}>
         <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
           Current Data Type: {dataType}
         </Typography>
