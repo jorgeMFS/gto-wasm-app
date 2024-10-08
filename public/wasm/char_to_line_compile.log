@@ -1,0 +1,18 @@
+emcc: error: Attempt to set a non-existent setting: 'AUTO_RUN'
+ - perhaps a typo in emcc's  -sX=Y  notation?
+ - (see src/settings.js for valid values)
+cache:INFO: generating system asset: symbol_lists/e9f6f548984b0ad1f5109bee5d0cce82c542c324.json... (this will be cached in "/home/jorge/GTOChef/emsdk/upstream/emscripten/cache/symbol_lists/e9f6f548984b0ad1f5109bee5d0cce82c542c324.json" for subsequent builds)
+cache:INFO:  - ok
+cache:INFO: generating system asset: symbol_lists/04151abbb05b66164907f206c28e7ce73dec38b0.json... (this will be cached in "/home/jorge/GTOChef/emsdk/upstream/emscripten/cache/symbol_lists/04151abbb05b66164907f206c28e7ce73dec38b0.json" for subsequent builds)
+cache:INFO:  - ok
+cache:INFO: generating system asset: symbol_lists/7c3341359d1d624380b469f4fcc40868cf0c6743.json... (this will be cached in "/home/jorge/GTOChef/emsdk/upstream/emscripten/cache/symbol_lists/7c3341359d1d624380b469f4fcc40868cf0c6743.json" for subsequent builds)
+cache:INFO:  - ok
+emcc: error: EXPORT_NAME is not a valid JS identifier: `window['char_to_line']`
+cache:INFO: generating system asset: symbol_lists/527871d5157ff7eb9daa4fb4ab83ec433c9c0770.json... (this will be cached in "/home/jorge/GTOChef/emsdk/upstream/emscripten/cache/symbol_lists/527871d5157ff7eb9daa4fb4ab83ec433c9c0770.json" for subsequent builds)
+cache:INFO:  - ok
+wasm-ld: error: duplicate symbol: real_main
+>>> defined in /tmp/emscripten_temp_b810v1x9/CharToLine_0.o
+>>> defined in /tmp/emscripten_temp_b810v1x9/main_wrapper_1.o
+emcc: error: '/home/jorge/GTOChef/emsdk/upstream/bin/wasm-ld -o /home/jorge/GTOChef/gto-wasm-app/public/wasm/char_to_line.wasm /tmp/emscripten_temp_b810v1x9/CharToLine_0.o /tmp/emscripten_temp_b810v1x9/main_wrapper_1.o argparse.o buffer.o common.o csmodel.o dna.o fcm.o labels.o mem.o misc.o parser.o phash.o reads.o -L/home/jorge/GTOChef/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten -lGL-getprocaddr -lal -lhtml5 -lstubs -lnoexit -lc -ldlmalloc -lcompiler_rt -lc++-noexcept -lc++abi-noexcept -lsockets -mllvm -combiner-global-alias-analysis=false -mllvm -enable-emscripten-sjlj -mllvm -disable-lsr /tmp/tmp1tv334hdlibemscripten_js_symbols.so --strip-debug --export=real_main --export=malloc --export=free --export=_emscripten_stack_alloc --export=__get_temp_ret --export=__set_temp_ret --export=__wasm_call_ctors --export=emscripten_stack_get_current --export=_emscripten_stack_restore --export-if-defined=__start_em_asm --export-if-defined=__stop_em_asm --export-if-defined=__start_em_lib_deps --export-if-defined=__stop_em_lib_deps --export-if-defined=__start_em_js --export-if-defined=__stop_em_js --export-if-defined=main --export-if-defined=__main_argc_argv --export-table -z stack-size=65536 --max-memory=2147483648 --initial-heap=16777216 --no-entry --table-base=1 --global-base=1024' failed (returned 1)
+cache:INFO: generating system asset: symbol_lists/a13a8b0a348829c3ba27b56afc0eca7a1f590013.json... (this will be cached in "/home/jorge/GTOChef/emsdk/upstream/emscripten/cache/symbol_lists/a13a8b0a348829c3ba27b56afc0eca7a1f590013.json" for subsequent builds)
+cache:INFO:  - ok

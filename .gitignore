@@ -13,10 +13,6 @@
 /emsdk
 
 # WebAssembly files
-/public/wasm/*.wasm
-/public/wasm/*.log
-/public/wasm/*.js
-public/wasm/
 /dist/*
 
 
