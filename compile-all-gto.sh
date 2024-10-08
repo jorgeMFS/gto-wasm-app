@@ -109,10 +109,11 @@ for ((i=0; i<tool_count; i++)); do
             -sMODULARIZE=1
             -sEXPORT_NAME="$module_name"
             -sENVIRONMENT=web,worker
-            -sEXPORTED_FUNCTIONS='["_main","_malloc","_free"]'
+            -sEXPORTED_FUNCTIONS='["_main","_real_main","_malloc","_free"]'
             -sEXPORTED_RUNTIME_METHODS='["ccall","cwrap","FS","setValue","stringToUTF8","callMain"]'
+            -sEXIT_RUNTIME=1   # Add this line
         )
-        
+
         # Determine which object files to link
         if [[ "$prog" == "gto_comparative_map" ]]; then
             link_objects="$additional_cmap_objects"
@@ -124,10 +125,19 @@ for ((i=0; i<tool_count; i++)); do
         post_js_content="window['$module_name'] = $module_name;"
         echo "$post_js_content" > "$WASM_DIR/${module_name}_post.js"
 
-        # Compile the program with --post-js
-        echo "Command: emcc ${emcc_flags[*]} \"$full_source_path\" $link_objects -o \"$output_js\" -lm --post-js \"$WASM_DIR/${module_name}_post.js\"" | tee -a "$MAIN_LOG_FILE"
-        emcc "${emcc_flags[@]}" "$full_source_path" $link_objects -o "$output_js" -lm \
+        # Create a temporary copy of the source file
+        temp_source="$SCRIPT_DIR/gto/src/temp_${module_name}.c"
+        cp "$full_source_path" "$temp_source"
+
+        # Replace 'main' with 'real_main' in the temporary source file
+        sed -i 's/\bmain\b/real_main/g' "$temp_source"
+
+        # Compile the temp source file with main_wrapper.c
+        emcc "${emcc_flags[@]}" "$temp_source" "$SCRIPT_DIR/gto/src/main_wrapper.c" $link_objects -o "$output_js" -lm \
             --post-js "$WASM_DIR/${module_name}_post.js" >> "$compile_log" 2>&1
+
+        # Remove the temporary source file
+        rm -f "$temp_source"
 
         if [[ $? -eq 0 ]]; then
             echo "Successfully compiled ${module_name}." | tee -a "$MAIN_LOG_FILE"
@@ -150,7 +160,7 @@ for ((i=0; i<tool_count; i++)); do
             failed_programs=$((failed_programs + 1))
             failed_list+=("$module_name")
             echo "Failed to compile ${module_name}. Check $compile_log for details." | tee -a "$MAIN_LOG_FILE"
-            
+
             # Extract and display relevant error messages
             echo "Analyzing compilation errors for ${module_name}..." | tee -a "$MAIN_LOG_FILE"
             if grep -q "error:" "$compile_log"; then
