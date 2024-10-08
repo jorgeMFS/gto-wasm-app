@@ -1,46 +1,118 @@
-# GTO BioChef
 
-A web-based GTO tool, utilizing GTO WebAssembly modules for data processing.
+![BioChef](img/BioChef.svg)
+
+[![Downloads](https://img.shields.io/github/downloads/jorgeMFS/gto-wasm-app/total)](https://github.com/jorgeMFS/gto-wasm-app/releases)
+[![License](https://img.shields.io/github/license/jorgeMFS/gto-wasm-app)](LICENSE)
+[![Version](https://img.shields.io/github/v/tag/jorgeMFS/gto-wasm-app)](https://github.com/jorgeMFS/gto-wasm-app/releases)
+
+GTO BioChef is a powerful web-based application for genomic sequence analysis and manipulation. It provides a user-friendly interface to execute various genomic tools from the GTO (Genomic Toolkit Operations) suite directly in your browser using WebAssembly technology.
+
+## Table of Contents
+
+- [Features](#features)
+- [Tools Available](#tools-available)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+- [Usage](#usage)
+- [Development](#development)
+- [Contributing](#contributing)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
 
 ## Features
 
-- Select and run various GTO tools.
-- Input data via text or file.
-- View output in real-time.
-- Responsive and user-friendly UI built with Material-UI.
+- **Interactive Workflow Builder**: Drag-and-drop interface to create custom genomic analysis workflows.
+- **Wide Range of Tools**: Access to numerous GTO tools for sequence manipulation, format conversion, and analysis.
+- **Real-time Execution**: Run your workflows directly in the browser without the need for server-side processing.
+- **Input/Output Management**: Easy-to-use panels for managing input data and viewing results.
+- **Data Type Detection**: Automatic detection and validation of input data types (FASTA, FASTQ, etc.).
+- **Compatibility Checks**: Visual indicators for tool compatibility based on current input data.
+- **Recipe Saving**: Save and load your custom workflows for future use.
 
-## Setup
+## Tools Available
 
-1. **Install dependencies:**
+GTO BioChef includes a wide array of genomic tools, categorized for easy access:
 
-   ```bash
+1. Sequence Manipulation (e.g., FASTA extraction, reverse, complement)
+2. Format Conversion (e.g., FASTA to SEQ, FASTQ to FASTA)
+3. Genomic Operations (e.g., genomic complement, random DNA generation)
+4. Amino Acid Operations
+5. Information and Analysis
+6. Mathematical Operations
+7. Text Processing
+
+
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v14 or later)
+- Emscripten (for compiling C code to WebAssembly)
+
+### Installation
+
+1. Clone the repository:
+   ```
+   git clone https://github.com/jorgeMFS/gto-wasm-app.git
+   cd gto-wasm-app
+   ```
+
+2. Install dependencies:
+   ```
    npm install
    ```
 
-2. **Start the development server:**
+3. Compile GTO tools to WebAssembly:
+   ```
+   npm run build-wasm
+   ```
 
-   ```bash
+4. Start the development server:
+   ```
    npm start
    ```
 
-3. **Build for production:**
+5. Open your browser and navigate to `http://localhost:8082`.
 
-   ```bash
-   npm run build
-   ```
+For more detailed installation instructions, including troubleshooting tips, please see our [Installation Guide](docs/INSTALLATION.md).
 
-4. **Copy WASM files to `public/wasm`:**
+## Usage
 
-   ```bash
-   npm run copy-wasm
-   ```
+1. **Input Data**: Paste your genomic sequence or upload a file in the Input Panel.
+2. **Build Workflow**: Drag tools from the Operations Panel to the Recipe Panel to create your workflow.
+3. **Set Parameters**: Adjust tool parameters as needed in the Recipe Panel.
+4. **Execute**: Run individual tools or the entire workflow using the execution controls.
+5. **View Results**: See the output in the Output Panel and save results as needed.
 
-## Adding New Tools
 
-1. **Place the `.wasm` and `.js` files in the `public/wasm` directory.**
-2. **Update the `predefinedToolNames` array in `App.js` with the new tool name.**
-3. **Ensure the tool is properly loaded and handled in `gtoWasm.js`.**
+## Development
+
+- The project uses React for the frontend, with Material-UI for styling.
+- WebAssembly modules are generated from C source code using Emscripten.
+- Webpack is used for bundling and serving the application.
+
+### Key Files
+
+- `src/App.js`: Main application component
+- `src/components/`: React components for various UI elements
+- `src/utils/`: Utility functions including data type detection
+- `src/gtoWasm.js`: WebAssembly module loading logic
+- `compile-all-gto.sh`: Script for compiling GTO tools to WebAssembly
+- `generate_wrapper.py`: Python script for generating JavaScript wrappers for WebAssembly modules
+
+
+## Contributing
+
+We welcome contributions to GTO BioChef! Whether it's bug reports, feature requests, or code contributions, please refer to our [Contributing Guidelines](CONTRIBUTING.md) for more information on how to get started.
 
 ## License
 
-MIT License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- The GTO (Genomic Toolkit) suite developers
+- The Emscripten team for enabling C-to-WebAssembly compilation
+- All contributors and users of GTO BioChef
