@@ -51,3 +51,16 @@ Thumbs.db
 # python env
 /env
 /venv
+
+# .gitignore of gto directory
+/gto/manual/manual.aux
+/gto/manual/manual.log
+/gto/manual/manual.toc
+/gto/manual/manual.bbl
+/gto/manual/manual.blg
+/gto/src/xs
+/gto/src/ac
+/gto/src/geco2
+/gto/src/falcon
+/gto/src/chester
+/gto/src/*.o
