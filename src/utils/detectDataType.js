@@ -70,7 +70,7 @@ export const detectDataType = (fileName, content) => {
           }
           break;
 
-        case 'FASTQ':
+        case 'FASTQ':             // Fix this
           if (trimmedContent.startsWith('@')) {
             const lines = trimmedContent.split(/\r?\n/);
             if (

@@ -11,7 +11,9 @@
         "type": "stdout",
         "format": "FASTA"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastqToFasta.c"
     },
@@ -26,7 +28,9 @@
         "type": "stdout",
         "format": "Multi-FASTA"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastqToMFasta.c"
     },
@@ -41,10 +45,13 @@
         "type": "stdout",
         "format": "FASTQ"
       },
-      "flags": [],
+      "flags": [
+        "-h",
+        "-m"
+      ],
       "parameters": [
         {
-          "name": "minimum_n_symbols",
+          "name": "max",
           "type": "integer"
         }
       ],
@@ -61,7 +68,9 @@
         "type": "stdout",
         "format": "text"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastqExtractQS.c"
     },
@@ -76,7 +85,9 @@
         "type": "stdout",
         "format": "text"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastqInfo.c"
     },
@@ -91,10 +102,13 @@
         "type": "stdout",
         "format": "FASTQ"
       },
-      "flags": [],
+      "flags": [
+        "-h",
+        "-s"
+      ],
       "parameters": [
         {
-          "name": "maximum_read_size",
+          "name": "size",
           "type": "integer"
         }
       ],
@@ -111,11 +125,14 @@
         "type": "stdout",
         "format": "FASTQ"
       },
-      "flags": [],
+      "flags": [
+        "-h",
+        "-m"
+      ],
       "parameters": [
         {
-          "name": "minimum_quality_score",
-          "type": "float"
+          "name": "min",
+          "type": "integer"
         }
       ],
       "source": "gto/src/FastqMinimumQualityScore.c"
@@ -131,10 +148,13 @@
         "type": "stdout",
         "format": "FASTQ"
       },
-      "flags": [],
+      "flags": [
+        "-h",
+        "-s"
+      ],
       "parameters": [
         {
-          "name": "minimum_read_size",
+          "name": "size",
           "type": "integer"
         }
       ],
@@ -151,7 +171,9 @@
         "type": "stdout",
         "format": "FASTQ"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastqRandExtraChars.c"
     },
@@ -166,7 +188,9 @@
         "type": "stdout",
         "format": "FASTQ"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastqFromSeq.c"
     },
@@ -181,7 +205,9 @@
         "type": "stdout",
         "format": "FASTQ"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [
         {
           "name": "mutation_rate",
@@ -210,6 +236,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-f",
         "-r"
       ],
@@ -237,6 +264,7 @@
         "format": "FASTQ"
       },
       "flags": [
+        "-h",
         "-s"
       ],
       "parameters": [],
@@ -254,6 +282,7 @@
         "format": "FASTQ"
       },
       "flags": [
+        "-h",
         "-s"
       ],
       "parameters": [],
@@ -271,6 +300,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-m"
       ],
       "parameters": [
@@ -293,6 +323,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-m"
       ],
       "parameters": [
@@ -315,6 +346,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-m"
       ],
       "parameters": [
@@ -337,6 +369,7 @@
         "format": "FASTQ"
       },
       "flags": [
+        "-h",
         "-i",
         "-e"
       ],
@@ -364,6 +397,7 @@
         "format": "FASTQ"
       },
       "flags": [
+        "-h",
         "-k",
         "-w",
         "-m"
@@ -396,6 +430,7 @@
         "format": "FASTQ"
       },
       "flags": [
+        "-h",
         "-k",
         "-w",
         "-m"
@@ -553,6 +588,7 @@
         "format": "FASTQ"
       },
       "flags": [
+        "-h",
         "-c"
       ],
       "parameters": [
@@ -574,7 +610,9 @@
         "type": "stdout",
         "format": "FASTQ"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastqComplement.c"
     },
@@ -589,7 +627,9 @@
         "type": "stdout",
         "format": "FASTQ"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastqReverse.c"
     },
@@ -605,6 +645,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-v",
         "-a",
         "-s",
@@ -652,6 +693,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-v",
         "-a",
         "-t",
@@ -694,6 +736,7 @@
         "format": "SVG"
       },
       "flags": [
+        "-h",
         "-v",
         "-a",
         "-e"
@@ -790,7 +833,9 @@
         "type": "stdout",
         "format": "SEQ"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastaToSeq.c"
     },
@@ -806,6 +851,7 @@
         "format": "FASTA"
       },
       "flags": [
+        "-h",
         "-n",
         "-l"
       ],
@@ -833,6 +879,7 @@
         "format": "SEQ"
       },
       "flags": [
+        "-h",
         "-i",
         "-e"
       ],
@@ -860,6 +907,7 @@
         "format": "Multi-FASTA"
       },
       "flags": [
+        "-h",
         "-i",
         "-e"
       ],
@@ -886,7 +934,9 @@
         "type": "stdout",
         "format": "text"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastaInfo.c"
     },
@@ -940,7 +990,9 @@
         "type": "stdout",
         "format": "FASTA"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastaRandExtraChars.c"
     },
@@ -956,6 +1008,7 @@
         "format": "Multi-FASTA"
       },
       "flags": [
+        "-h",
         "-p"
       ],
       "parameters": [
@@ -977,7 +1030,9 @@
         "type": "stdout",
         "format": "text"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastaFindNPos.c"
     },
@@ -993,6 +1048,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-l"
       ],
       "parameters": [
@@ -1014,7 +1070,9 @@
         "type": "stdout",
         "format": "FASTA"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastaRenameHumanHeaders.c"
     },
@@ -1030,6 +1088,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-p"
       ],
       "parameters": [
@@ -1051,7 +1110,9 @@
         "type": "stdout",
         "format": "FASTA"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastaComplement.c"
     },
@@ -1066,7 +1127,9 @@
         "type": "stdout",
         "format": "FASTA"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastaReverse.c"
     },
@@ -1082,6 +1145,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-v",
         "-a",
         "-s",
@@ -1129,6 +1193,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-v",
         "-a",
         "-t",
@@ -1171,6 +1236,7 @@
         "format": "SVG"
       },
       "flags": [
+        "-h",
         "-v",
         "-a",
         "-e"
@@ -1203,6 +1269,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-e",
         "-d",
         "-H"
@@ -1235,6 +1302,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-e",
         "-d",
         "-H"
@@ -1266,7 +1334,9 @@
         "type": "stdout",
         "format": "GROUP"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/AminoAcidToGroup.c"
     },
@@ -1281,7 +1351,9 @@
         "type": "stdout",
         "format": "DNA"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/AminoAcidToPseudoDNA.c"
     },
@@ -1416,23 +1488,6 @@
         }
       ],
       "source": "gto/src/AminoAcidFromSeq.c"
-    },
-    {
-      "name": "gto_amino_acid_to_seq",
-      "description": "Converts amino acid sequences to DNA sequences.",
-      "input": {
-        "type": "stdin",
-        "format": "PROT"
-      },
-      "output": {
-        "type": "stdout",
-        "format": "SEQ"
-      },
-      "flags": [
-        "-h"
-      ],
-      "parameters": [],
-      "source": "gto/src/AminoAcidToSeq.c"
     },
     {
       "name": "gto_genomic_gen_random_dna",
