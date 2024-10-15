@@ -19,7 +19,7 @@ export const detectDataType = (fileName, content) => {
     fq: ['FASTQ'],
     pos: ['POS'],
     svg: ['SVG'],
-    txt: ['Multi-FASTA', 'FASTA', 'DNA', 'RNA', 'AminoAcids', 'text'], // Prioritize specific types
+    txt: ['Multi-FASTA', 'FASTA', 'FASTQ', 'DNA', 'RNA', 'AminoAcids', 'text'], // Prioritize specific types
     num: ['NUM'],
     // Add more mappings if necessary
   };
@@ -70,7 +70,7 @@ export const detectDataType = (fileName, content) => {
           }
           break;
 
-        case 'FASTQ':             // Fix this
+        case 'FASTQ':
           if (trimmedContent.startsWith('@')) {
             const lines = trimmedContent.split(/\r?\n/);
             if (
