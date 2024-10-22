@@ -97,7 +97,7 @@ export const DataTypeProvider = ({ children }) => {
 
       case 'DNA':
         // Validation for DNA: only A, C, G, T (case-insensitive) and whitespace
-        const isDNAValid = /^[ACGTacgt\s]+$/.test(trimmedData);
+        const isDNAValid = /^[ACGTNacgtn\s]+$/.test(trimmedData);
         if (!isDNAValid) {
           console.error('DNA validation failed.');
         }
