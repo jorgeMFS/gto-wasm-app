@@ -25,7 +25,7 @@ export const detectDataType = (fileName, content) => {
   };
 
   // Define regex patterns for new data types
-  const dnaPattern = /^[ACGTacgt\s]+$/;
+  const dnaPattern = /^[ACGTNacgtn\s]+$/;
   const rnaPattern = /^[ACGUacgu\s]+$/;
   const aminoAcidsPattern = /^[ACDEFGHIKLMNPQRSTVWYacdefghiklmnpqrstvwy\s]+$/;
 
