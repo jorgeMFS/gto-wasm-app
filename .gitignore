@@ -13,6 +13,10 @@
 /emsdk
 
 # WebAssembly files
+/public/wasm/*.wasm
+/public/wasm/*.log
+/public/wasm/*.js
+public/wasm/
 /dist/*
 
 
@@ -43,3 +47,20 @@ yarn-error.log*
 ehthumbs.db
 Thumbs.db
 .vscode/gto
+
+# python env
+/env
+/venv
+
+# .gitignore of gto directory
+/gto/manual/manual.aux
+/gto/manual/manual.log
+/gto/manual/manual.toc
+/gto/manual/manual.bbl
+/gto/manual/manual.blg
+/gto/src/xs
+/gto/src/ac
+/gto/src/geco2
+/gto/src/falcon
+/gto/src/chester
+/gto/src/*.o

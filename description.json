@@ -11,7 +11,9 @@
         "type": "stdout",
         "format": "FASTA"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastqToFasta.c"
     },
@@ -26,7 +28,9 @@
         "type": "stdout",
         "format": "Multi-FASTA"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastqToMFasta.c"
     },
@@ -41,10 +45,13 @@
         "type": "stdout",
         "format": "FASTQ"
       },
-      "flags": [],
+      "flags": [
+        "-h",
+        "-m"
+      ],
       "parameters": [
         {
-          "name": "minimum_n_symbols",
+          "name": "max",
           "type": "integer"
         }
       ],
@@ -61,7 +68,9 @@
         "type": "stdout",
         "format": "text"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastqExtractQS.c"
     },
@@ -76,7 +85,9 @@
         "type": "stdout",
         "format": "text"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastqInfo.c"
     },
@@ -91,10 +102,13 @@
         "type": "stdout",
         "format": "FASTQ"
       },
-      "flags": [],
+      "flags": [
+        "-h",
+        "-s"
+      ],
       "parameters": [
         {
-          "name": "maximum_read_size",
+          "name": "size",
           "type": "integer"
         }
       ],
@@ -111,11 +125,14 @@
         "type": "stdout",
         "format": "FASTQ"
       },
-      "flags": [],
+      "flags": [
+        "-h",
+        "-m"
+      ],
       "parameters": [
         {
-          "name": "minimum_quality_score",
-          "type": "float"
+          "name": "min",
+          "type": "integer"
         }
       ],
       "source": "gto/src/FastqMinimumQualityScore.c"
@@ -131,10 +148,13 @@
         "type": "stdout",
         "format": "FASTQ"
       },
-      "flags": [],
+      "flags": [
+        "-h",
+        "-s"
+      ],
       "parameters": [
         {
-          "name": "minimum_read_size",
+          "name": "size",
           "type": "integer"
         }
       ],
@@ -151,7 +171,9 @@
         "type": "stdout",
         "format": "FASTQ"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastqRandExtraChars.c"
     },
@@ -160,13 +182,15 @@
       "description": "Converts a genomic sequence to pseudo FASTQ file format.",
       "input": {
         "type": "stdin",
-        "format": "SEQ"
+        "format": "DNA, RNA, AminoAcids"
       },
       "output": {
         "type": "stdout",
         "format": "FASTQ"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastqFromSeq.c"
     },
@@ -181,7 +205,9 @@
         "type": "stdout",
         "format": "FASTQ"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [
         {
           "name": "mutation_rate",
@@ -210,6 +236,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-f",
         "-r"
       ],
@@ -237,6 +264,7 @@
         "format": "FASTQ"
       },
       "flags": [
+        "-h",
         "-s"
       ],
       "parameters": [],
@@ -254,6 +282,7 @@
         "format": "FASTQ"
       },
       "flags": [
+        "-h",
         "-s"
       ],
       "parameters": [],
@@ -271,6 +300,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-m"
       ],
       "parameters": [
@@ -293,6 +323,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-m"
       ],
       "parameters": [
@@ -315,6 +346,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-m"
       ],
       "parameters": [
@@ -337,6 +369,7 @@
         "format": "FASTQ"
       },
       "flags": [
+        "-h",
         "-i",
         "-e"
       ],
@@ -364,6 +397,7 @@
         "format": "FASTQ"
       },
       "flags": [
+        "-h",
         "-k",
         "-w",
         "-m"
@@ -396,6 +430,7 @@
         "format": "FASTQ"
       },
       "flags": [
+        "-h",
         "-k",
         "-w",
         "-m"
@@ -553,6 +588,7 @@
         "format": "FASTQ"
       },
       "flags": [
+        "-h",
         "-c"
       ],
       "parameters": [
@@ -574,7 +610,9 @@
         "type": "stdout",
         "format": "FASTQ"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastqComplement.c"
     },
@@ -589,7 +627,9 @@
         "type": "stdout",
         "format": "FASTQ"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastqReverse.c"
     },
@@ -605,6 +645,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-v",
         "-a",
         "-s",
@@ -652,6 +693,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-v",
         "-a",
         "-t",
@@ -694,6 +736,7 @@
         "format": "SVG"
       },
       "flags": [
+        "-h",
         "-v",
         "-a",
         "-e"
@@ -788,9 +831,11 @@
       },
       "output": {
         "type": "stdout",
-        "format": "SEQ"
+        "format": "DNA, RNA, AminoAcids"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastaToSeq.c"
     },
@@ -799,13 +844,14 @@
       "description": "Converts a genomic sequence to pseudo FASTA file format.",
       "input": {
         "type": "stdin",
-        "format": "SEQ"
+        "format": "DNA, RNA, AminoAcids"
       },
       "output": {
         "type": "stdout",
         "format": "FASTA"
       },
       "flags": [
+        "-h",
         "-n",
         "-l"
       ],
@@ -830,9 +876,10 @@
       },
       "output": {
         "type": "stdout",
-        "format": "SEQ"
+        "format": "DNA, RNA, AminoAcids"
       },
       "flags": [
+        "-h",
         "-i",
         "-e"
       ],
@@ -860,6 +907,7 @@
         "format": "Multi-FASTA"
       },
       "flags": [
+        "-h",
         "-i",
         "-e"
       ],
@@ -886,7 +934,9 @@
         "type": "stdout",
         "format": "text"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastaInfo.c"
     },
@@ -940,7 +990,9 @@
         "type": "stdout",
         "format": "FASTA"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastaRandExtraChars.c"
     },
@@ -956,6 +1008,7 @@
         "format": "Multi-FASTA"
       },
       "flags": [
+        "-h",
         "-p"
       ],
       "parameters": [
@@ -977,7 +1030,9 @@
         "type": "stdout",
         "format": "text"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastaFindNPos.c"
     },
@@ -993,6 +1048,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-l"
       ],
       "parameters": [
@@ -1014,7 +1070,9 @@
         "type": "stdout",
         "format": "FASTA"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastaRenameHumanHeaders.c"
     },
@@ -1030,6 +1088,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-p"
       ],
       "parameters": [
@@ -1051,7 +1110,9 @@
         "type": "stdout",
         "format": "FASTA"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastaComplement.c"
     },
@@ -1066,7 +1127,9 @@
         "type": "stdout",
         "format": "FASTA"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/FastaReverse.c"
     },
@@ -1082,6 +1145,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-v",
         "-a",
         "-s",
@@ -1129,6 +1193,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-v",
         "-a",
         "-t",
@@ -1171,6 +1236,7 @@
         "format": "SVG"
       },
       "flags": [
+        "-h",
         "-v",
         "-a",
         "-e"
@@ -1203,6 +1269,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-e",
         "-d",
         "-H"
@@ -1235,6 +1302,7 @@
         "format": "text"
       },
       "flags": [
+        "-h",
         "-e",
         "-d",
         "-H"
@@ -1260,13 +1328,15 @@
       "description": "Converts an amino acid sequence to a group sequence.",
       "input": {
         "type": "stdin",
-        "format": "PROT"
+        "format": "AminoAcids"
       },
       "output": {
         "type": "stdout",
         "format": "GROUP"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/AminoAcidToGroup.c"
     },
@@ -1275,13 +1345,15 @@
       "description": "Converts an amino acid (protein) sequence to a pseudo DNA sequence.",
       "input": {
         "type": "stdin",
-        "format": "PROT"
+        "format": "AminoAcids"
       },
       "output": {
         "type": "stdout",
         "format": "DNA"
       },
-      "flags": [],
+      "flags": [
+        "-h"
+      ],
       "parameters": [],
       "source": "gto/src/AminoAcidToPseudoDNA.c"
     },
@@ -1290,11 +1362,11 @@
       "description": "A new lossless compressor to compress efficiently amino acid sequences (proteins). It uses a cooperation between multiple context and substitutional tolerant context models. The cooperation between models is balanced with weights that benefit the models with better performance according to a forgetting function specific for each model.",
       "input": {
         "type": "stdin",
-        "format": "PROT"
+        "format": "AminoAcids"
       },
       "output": {
         "type": "stdout",
-        "format": "PROT"
+        "format": "AminoAcids"
       },
       "flags": [
         "-h",
@@ -1357,7 +1429,7 @@
       },
       "output": {
         "type": "stdout",
-        "format": "PROT"
+        "format": "AminoAcids"
       },
       "flags": [
         "-h",
@@ -1380,7 +1452,7 @@
       },
       "output": {
         "type": "stdout",
-        "format": "PROT"
+        "format": "AminoAcids"
       },
       "flags": [
         "-h",
@@ -1399,11 +1471,11 @@
       "description": "Converts DNA sequence to an amino acid sequence.",
       "input": {
         "type": "stdin",
-        "format": "SEQ"
+        "format": "DNA"
       },
       "output": {
         "type": "stdout",
-        "format": "PROT"
+        "format": "AminoAcids"
       },
       "flags": [
         "-h",
@@ -1418,28 +1490,11 @@
       "source": "gto/src/AminoAcidFromSeq.c"
     },
     {
-      "name": "gto_amino_acid_to_seq",
-      "description": "Converts amino acid sequences to DNA sequences.",
-      "input": {
-        "type": "stdin",
-        "format": "PROT"
-      },
-      "output": {
-        "type": "stdout",
-        "format": "SEQ"
-      },
-      "flags": [
-        "-h"
-      ],
-      "parameters": [],
-      "source": "gto/src/AminoAcidToSeq.c"
-    },
-    {
       "name": "gto_genomic_gen_random_dna",
       "description": "Generates a synthetic DNA.",
       "input": {
-        "type": "stdin",
-        "format": "SEQ"
+        "type": "",
+        "format": ""
       },
       "output": {
         "type": "stdout",
@@ -1472,11 +1527,11 @@
       "description": "Substitutes in the DNA sequence the outside ACGT chars by random ACGT symbols. It works in sequence file formats.",
       "input": {
         "type": "stdin",
-        "format": "SEQ"
+        "format": "DNA"
       },
       "output": {
         "type": "stdout",
-        "format": "SEQ"
+        "format": "DNA"
       },
       "flags": [
         "-h"
@@ -1489,11 +1544,11 @@
       "description": "Creates a synthetic mutation of a sequence file given specific rates of mutations, deletions and additions.",
       "input": {
         "type": "stdin",
-        "format": "SEQ"
+        "format": "DNA"
       },
       "output": {
         "type": "stdout",
-        "format": "SEQ"
+        "format": "DNA"
       },
       "flags": [
         "-h",
@@ -1528,11 +1583,11 @@
       "description": "Extracts sequences from a sequence file, which the range is defined by the user in the parameters.",
       "input": {
         "type": "stdin",
-        "format": "SEQ"
+        "format": "DNA"
       },
       "output": {
         "type": "stdout",
-        "format": "SEQ"
+        "format": "DNA"
       },
       "flags": [
         "-h",
@@ -1556,7 +1611,7 @@
       "description": "Calculates the best order depth of a sequence, using FCMs. It only works \"ACGT\", while the rest will be discarded.",
       "input": {
         "type": "stdin",
-        "format": "SEQ"
+        "format": "DNA"
       },
       "output": {
         "type": "stdout",
@@ -1573,7 +1628,7 @@
       "description": "Counts the number of bases in sequence, FASTA or FASTQ files.",
       "input": {
         "type": "stdin",
-        "format": "SEQ"
+        "format": "DNA, FASTA, FASTQ"
       },
       "output": {
         "type": "stdout",
@@ -1658,11 +1713,11 @@
       "description": "Replaces the ACGT bases with their complements in a DNA sequence. It works in sequence file formats.",
       "input": {
         "type": "stdin",
-        "format": "SEQ"
+        "format": "DNA"
       },
       "output": {
         "type": "stdout",
-        "format": "SEQ"
+        "format": "DNA"
       },
       "flags": [
         "-h"
@@ -1675,11 +1730,11 @@
       "description": "Reverses the ACGT bases order for each read in a sequence file.",
       "input": {
         "type": "stdin",
-        "format": "SEQ"
+        "format": "DNA"
       },
       "output": {
         "type": "stdout",
-        "format": "SEQ"
+        "format": "DNA"
       },
       "flags": [
         "-h"
@@ -1692,11 +1747,11 @@
       "description": "Splits a sequence into lines, creating an output sequence which has a char for each line.",
       "input": {
         "type": "stdin",
-        "format": "SEQ"
+        "format": "DNA, RNA, AminoAcids"
       },
       "output": {
         "type": "stdout",
-        "format": "SEQ"
+        "format": "DNA, RNA, AminoAcids"
       },
       "flags": [
         "-h"
@@ -1772,7 +1827,7 @@
       "description": "Generates all combinations, line by line, for an inputted alphabet and specific size.",
       "input": {
         "type": "stdin",
-        "format": "SEQ"
+        "format": "text"
       },
       "output": {
         "type": "stdout",
@@ -1929,7 +1984,7 @@
       "description": "Gives the basic properties of the file, namely size, cardinality, distribution percentage of the symbols, among others.",
       "input": {
         "type": "stdin",
-        "format": "SEQ"
+        "format": "text, Multi-FASTA, FASTA, FASTQ, NUM, DNA, RNA, AminoAcids"
       },
       "output": {
         "type": "stdout",

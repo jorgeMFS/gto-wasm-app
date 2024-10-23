@@ -1,20 +1,20 @@
-import React, { useState, useMemo, useContext } from 'react';
-import {
-  List,
-  ListItemText,
-  Collapse,
-  TextField,
-  Typography,
-  Tooltip,
-  ListItemButton,
-  Divider,
-  Paper,
-} from '@mui/material';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
+import {
+  Collapse,
+  Divider,
+  List,
+  ListItemButton,
+  ListItemText,
+  Paper,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import debounce from 'lodash.debounce';
-import { getCompatibleTools } from '../utils/compatibility'; 
+import React, { useContext, useMemo, useState } from 'react';
 import { DataTypeContext } from '../contexts/DataTypeContext';
+import { getCompatibleTools } from '../utils/compatibility';
 
 // Define categories and map operations to them
 const operationCategories = {
@@ -103,7 +103,7 @@ const operationCategories = {
 
 console.log('Operation categories:', operationCategories);
 
-const OperationsPanel = ({ onAddOperation }) => {
+const OperationsPanel = ({ onAddOperation, isWorkflowEmpty }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCategories, setExpandedCategories] = useState({});
   const { dataType } = useContext(DataTypeContext);
@@ -136,8 +136,14 @@ const OperationsPanel = ({ onAddOperation }) => {
 
   // Determine compatible tools
   const compatibleTools = useMemo(() => {
+    if (isWorkflowEmpty) {
+      // Execute getCompatibleTools even if dataType is 'UNKNOWN' when the workflow is empty
+      const compatible = getCompatibleTools(dataType, isWorkflowEmpty);
+      return new Set(compatible.map((tool) => tool.name.replace(/^gto_/, '')));
+    }
+
     if (!dataType || dataType === 'UNKNOWN') return new Set();
-    const compatible = getCompatibleTools(dataType);
+    const compatible = getCompatibleTools(dataType, isWorkflowEmpty);
     // Assuming tool names in operationCategories do not have the 'gto_' prefix
     return new Set(compatible.map((tool) => tool.name.replace(/^gto_/, '')));
   }, [dataType]);

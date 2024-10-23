@@ -1,14 +1,14 @@
-import React, { useState, useContext, useEffect } from 'react';
-import { Paper, Typography, TextField, Box, IconButton, Tooltip } from '@mui/material';
 import UploadIcon from '@mui/icons-material/Upload';
-import { NotificationContext } from '../contexts/NotificationContext';
+import { Box, IconButton, Paper, TextField, Tooltip, Typography } from '@mui/material';
+import React, { useContext, useEffect, useState } from 'react';
 import { DataTypeContext } from '../contexts/DataTypeContext';
+import { NotificationContext } from '../contexts/NotificationContext';
 import { detectDataType } from '../utils/detectDataType';
 
 const InputPanel = ({ inputData, setInputData }) => {
   const [fileName, setFileName] = useState('');
   const showNotification = useContext(NotificationContext);
-  const { setDataType, validateData, dataType } = useContext(DataTypeContext);
+  const { setInputDataType, validateData, inputDataType } = useContext(DataTypeContext);
   const [isValid, setIsValid] = useState(true);
   const [isAcceptable, setIsAcceptable] = useState(true);
 
@@ -28,7 +28,7 @@ const InputPanel = ({ inputData, setInputData }) => {
         setFileName('');
         setInputData('');
         setIsValid(false);
-        setDataType('UNKNOWN'); // Reset data type
+        setInputDataType('UNKNOWN'); // Reset data type
         return;
       }
 
@@ -39,7 +39,7 @@ const InputPanel = ({ inputData, setInputData }) => {
         const content = e.target.result;
         setInputData(content);
         const detectedType = detectDataType(file.name, content);
-        setDataType(detectedType);
+        setInputDataType(detectedType);
         const valid = validateData(content, detectedType); // Pass detectedType
         setIsValid(valid);
         if (!valid && detectedType !== 'UNKNOWN') {
@@ -67,13 +67,13 @@ const InputPanel = ({ inputData, setInputData }) => {
     const timer = setTimeout(() => {
       if (content.trim() === '') {
         // If input is empty, reset data type and validation
-        setDataType('UNKNOWN');
+        setInputDataType('UNKNOWN');
         setIsValid(true); // Treat empty input as valid. Adjust based on requirements
         return;
       }
 
       const detectedType = detectDataType('input.txt', content);
-      setDataType(detectedType);
+      setInputDataType(detectedType);
       const valid = validateData(content, detectedType);
 
       setIsValid(valid);
@@ -125,8 +125,8 @@ const InputPanel = ({ inputData, setInputData }) => {
               overflowWrap: 'break-word',
             },
           }}
-          error={!isValid && dataType !== 'UNKNOWN'}
-          helperText={!isValid && dataType !== 'UNKNOWN' ? `The entered data does not conform to the expected ${dataType} format.` : ''}
+          error={!isValid && inputDataType !== 'UNKNOWN'}
+          helperText={!isValid && inputDataType !== 'UNKNOWN' ? `The entered data does not conform to the expected ${inputDataType} format.` : ''}
         />
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Tooltip title="Upload File">
@@ -162,11 +162,11 @@ const InputPanel = ({ inputData, setInputData }) => {
       </Box>
       <Box sx={{ marginTop: 1 }}>
         <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
-          Current Data Type: {dataType}
+          Input Data Type: {inputDataType}
         </Typography>
-        {!isValid && dataType !== 'UNKNOWN' && (
+        {!isValid && inputDataType !== 'UNKNOWN' && (
           <Typography variant="body2" color="error" sx={{ fontSize: '0.875rem' }}>
-            The entered data does not conform to the expected {dataType} format.
+            The entered data does not conform to the expected {inputDataType} format.
           </Typography>
         )}
       </Box>

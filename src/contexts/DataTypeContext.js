@@ -7,6 +7,7 @@ export const DataTypeContext = createContext();
  */
 export const DataTypeProvider = ({ children }) => {
   const [dataType, setDataType] = useState('UNKNOWN');
+  const [inputDataType, setInputDataType] = useState('UNKNOWN');
 
   /**
    * Validates the data based on the detected data type.
@@ -97,7 +98,7 @@ export const DataTypeProvider = ({ children }) => {
 
       case 'DNA':
         // Validation for DNA: only A, C, G, T (case-insensitive) and whitespace
-        const isDNAValid = /^[ACGTacgt\s]+$/.test(trimmedData);
+        const isDNAValid = /^[ACGTNacgtn\s]+$/.test(trimmedData);
         if (!isDNAValid) {
           console.error('DNA validation failed.');
         }
@@ -135,7 +136,7 @@ export const DataTypeProvider = ({ children }) => {
   };
 
   return (
-    <DataTypeContext.Provider value={{ dataType, setDataType, validateData }}>
+    <DataTypeContext.Provider value={{ dataType, setDataType, validateData, inputDataType, setInputDataType }}>
       {children}
     </DataTypeContext.Provider>
   );

@@ -19,13 +19,13 @@ export const detectDataType = (fileName, content) => {
     fq: ['FASTQ'],
     pos: ['POS'],
     svg: ['SVG'],
-    txt: ['Multi-FASTA', 'FASTA', 'DNA', 'RNA', 'AminoAcids', 'text'], // Prioritize specific types
+    txt: ['Multi-FASTA', 'FASTA', 'FASTQ', 'DNA', 'RNA', 'AminoAcids', 'text'], // Prioritize specific types
     num: ['NUM'],
     // Add more mappings if necessary
   };
 
   // Define regex patterns for new data types
-  const dnaPattern = /^[ACGTacgt\s]+$/;
+  const dnaPattern = /^[ACGTNacgtn\s]+$/;
   const rnaPattern = /^[ACGUacgu\s]+$/;
   const aminoAcidsPattern = /^[ACDEFGHIKLMNPQRSTVWYacdefghiklmnpqrstvwy\s]+$/;
 

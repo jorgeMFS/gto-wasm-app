@@ -7,7 +7,7 @@ set +e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 
 # Set the path to the emsdk directory
-EMSDK_PATH="/home/jorge/GTOChef/emsdk"
+EMSDK_PATH="/home/jake/Desktop/Uni/Bolsa/emsdk"
 
 # Ensure Emscripten is in the PATH
 source "$EMSDK_PATH/emsdk_env.sh"
@@ -29,6 +29,28 @@ mkdir -p "$WASM_DIR"
 MAIN_LOG_FILE="$WASM_DIR/compilation_log.txt"
 echo "Compilation Log" > "$MAIN_LOG_FILE"
 echo "=================" >> "$MAIN_LOG_FILE"
+
+# Create and activate a virtual environment
+VENV_DIR="$SCRIPT_DIR/venv"
+if [[ ! -d "$VENV_DIR" ]]; then
+    echo "Creating virtual environment..." | tee -a "$MAIN_LOG_FILE"
+    python3 -m venv "$VENV_DIR" >> "$MAIN_LOG_FILE" 2>&1
+    if [[ $? -ne 0 ]]; then
+        echo "Error creating virtual environment. Check $MAIN_LOG_FILE for details."
+        exit 1
+    fi
+fi
+
+echo "Activating virtual environment..." | tee -a "$MAIN_LOG_FILE"
+source "$VENV_DIR/bin/activate"
+
+# Install Python dependencies
+echo "Installing Python dependencies..." | tee -a "$MAIN_LOG_FILE"
+pip install -r "$SCRIPT_DIR/requirements.txt" >> "$MAIN_LOG_FILE" 2>&1
+if [[ $? -ne 0 ]]; then
+    echo "Error installing Python dependencies. Check $MAIN_LOG_FILE for details."
+    exit 1
+fi
 
 # Compile common source files
 common_sources="argparse.c buffer.c common.c csmodel.c dna.c fcm.c labels.c mem.c misc.c parser.c phash.c reads.c"
@@ -204,3 +226,6 @@ echo -e "\nDetailed compilation log available at: $MAIN_LOG_FILE"
 
 # Remove any remaining files in src/wasm directory
 rm -rf "$SCRIPT_DIR/src/wasm"/*.wasm "$SCRIPT_DIR/src/wasm"/*.js
+
+# Deactivate the virtual environment
+deactivate
