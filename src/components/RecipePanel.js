@@ -1,39 +1,43 @@
 // RecipePanel.jsx
-import React, { useState, useContext } from 'react';
-import {
-  Paper,
-  Typography,
-  Button,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Divider,
-  Box,
-  CircularProgress,
-  Switch,
-  FormControlLabel,
-} from '@mui/material';
-import { Save, FolderOpen, PlayArrow } from '@mui/icons-material';
 import {
   DndContext,
+  DragOverlay,
+  MouseSensor,
+  TouchSensor,
   closestCenter,
   useSensor,
   useSensors,
-  MouseSensor,
-  TouchSensor,
-  DragOverlay,
 } from '@dnd-kit/core';
 import {
   SortableContext,
   arrayMove,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import SortableItem from './SortableItem';
+import { Clear, FolderOpen, PlayArrow, Save } from '@mui/icons-material';
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  FormControlLabel,
+  IconButton,
+  Paper,
+  Switch,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import React, { useContext, useEffect, useState } from 'react';
 import description from '../../description.json';
+import { DataTypeContext } from '../contexts/DataTypeContext';
 import { NotificationContext } from '../contexts/NotificationContext';
 import { loadWasmModule } from '../gtoWasm';
+import { detectDataType } from '../utils/detectDataType';
+import SortableItem from './SortableItem';
 
 const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   const [openSaveDialog, setOpenSaveDialog] = useState(false);
@@ -41,6 +45,10 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   const [recipeName, setRecipeName] = useState('');
   const [openLoadDialog, setOpenLoadDialog] = useState(false);
   const [activeId, setActiveId] = useState(null);
+  const { setDataType, dataType, inputDataType } = useContext(DataTypeContext); // To update data type context
+  const [invalidItemIds, setInvalidItemIds] = useState([]); // To store invalid item IDs
+  const [outputTypesMap, setOutputTypesMap] = useState({}); // To store output types of tools
+
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -49,22 +57,105 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
 
   const showNotification = useContext(NotificationContext);
 
+  useEffect(() => {
+    // Set the initial data type to input data type when the component mounts
+    setDataType(inputDataType);
+  }, [inputDataType, setDataType]);
+
+  const validateWorkflow = (workflow) => {
+    for (let i = 0; i < workflow.length - 1; i++) {
+      const currentTool = description.tools.find((t) => `gto_${workflow[i].toolName}` === t.name);
+      const nextTool = description.tools.find((t) => `gto_${workflow[i + 1].toolName}` === t.name);
+
+      if (!currentTool || !nextTool) {
+        return false;
+      }
+
+      const currentOutputFormats = currentTool.output.format.split(',').map(f => f.trim());
+      const nextInputFormats = nextTool.input.format.split(',').map(f => f.trim());
+
+      // Check if there is a common format between the output of the current tool and the input of the next tool
+      const isValid = currentOutputFormats.some((format) => nextInputFormats.includes(format));
+
+      if (!isValid) {
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handleDragStart = (event) => {
     setActiveId(event.active.id);
   };
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
-    setActiveId(null);
+
     if (active && over && active.id !== over.id) {
       const oldIndex = workflow.findIndex((item) => item.id === active.id);
       const newIndex = workflow.findIndex((item) => item.id === over.id);
-      setWorkflow(arrayMove(workflow, oldIndex, newIndex));
+
+      const newWorkflow = arrayMove(workflow, oldIndex, newIndex);
+
+      // Validate resulting workflow
+      if (validateWorkflow(newWorkflow)) {
+        setWorkflow(newWorkflow);
+      } else {
+        showNotification('Invalid operation: resulting workflow has incompatible steps.', 'error');
+
+        const id = active.id;
+        setInvalidItemIds((prev) => [...prev, id]);
+
+        // Remove the highlight after 3 seconds
+        setTimeout(() => {
+          setInvalidItemIds((prev) => prev.filter((itemId) => itemId !== id));
+        }, 3000);
+      }
     }
+    setActiveId(null);
   };
 
   const handleDelete = (id) => {
-    setWorkflow(workflow.filter((item) => item.id !== id));
+    const newWorkflow = workflow.filter((item) => item.id !== id);
+
+    if (newWorkflow.length === 0) {
+      setWorkflow(newWorkflow);
+      // If no more items in workflow, reset to input data type
+      setDataType(inputDataType);
+      setOutputTypesMap({}); // Clear the output types map
+      showNotification('All operations removed. Data type reset to input type.', 'info');
+    } else {
+      if (validateWorkflow(newWorkflow)) {
+        setWorkflow(newWorkflow);
+
+        // Update the data type based on the last valid tool in the workflow
+        const lastToolInWorkflow = newWorkflow[newWorkflow.length - 1];
+        const lastToolId = lastToolInWorkflow.id;
+        const lastOutputType = outputTypesMap[lastToolId];
+
+        if (lastOutputType) {
+          setDataType(lastOutputType); // Use the actual output type from the map
+          showNotification(`Data type updated to ${lastOutputType}`, 'info');
+        }
+      } else {
+        showNotification('Invalid operation: resulting workflow has incompatible steps.', 'error');
+
+        setInvalidItemIds((prev) => [...prev, id]);
+
+        // Remove the highlight after 3 seconds
+        setTimeout(() => {
+          setInvalidItemIds((prev) => prev.filter((itemId) => itemId !== id));
+        }, 3000);
+      }
+    }
+  };
+
+
+  // Clear the workflow and reset the data type to the original input type
+  const handleClearWorkflow = () => {
+    setWorkflow([]);
+    setDataType(inputDataType);
+    showNotification('Pipeline cleared and data type reset to input type.', 'info');
   };
 
   const handleSaveRecipe = () => {
@@ -137,6 +228,18 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
         showNotification(`Error in ${tool.toolName}: ${outputData.stderr}`, 'error');
         throw new Error(outputData.stderr);
       }
+
+      // Detect data type of the output
+      const detectedType = detectDataType('output.txt', outputData.stdout);
+
+      // Update the output types map with the real output type from the current tool
+      setOutputTypesMap((prevMap) => ({
+        ...prevMap,
+        [tool.id]: detectedType,
+      }));
+
+      setDataType(detectedType); // Update data type context
+      showNotification(`Data type updated to ${detectedType}`, 'info');
 
       return outputData.stdout;
     } catch (error) {
@@ -248,9 +351,19 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       elevation={3}
       sx={{ padding: 2, height: '100%', display: 'flex', flexDirection: 'column' }}
     >
-      <Typography variant="h6" gutterBottom>
-        Workflow
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h6" gutterBottom>
+          Workflow
+        </Typography>
+        <Typography variant="body2" color="textSecondary" sx={{ marginLeft: 2, textAlign: 'center', flexGrow: 1 }}>
+          Current Data Type: {dataType}
+        </Typography>
+        <Tooltip title="Clear Workflow">
+          <IconButton onClick={handleClearWorkflow} color="secondary">
+            <Clear />
+          </IconButton>
+        </Tooltip>
+      </Box>
       <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
         <DndContext
           sensors={sensors}
@@ -268,6 +381,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                 id={tool.id}
                 toolName={tool.toolName}
                 onDelete={() => handleDelete(tool.id)}
+                isInvalid={invalidItemIds.includes(tool.id)} // Is true if the tool is invalid
               >
                 {renderParameters(tool)}
                 <Box sx={{ display: 'flex', alignItems: 'center', marginTop: 1 }}>
@@ -303,7 +417,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
               <SortableItem
                 id={activeId}
                 toolName={workflow.find((item) => item.id === activeId).toolName}
-                onDelete={() => {}}
+                onDelete={() => { }}
                 isDragging
               />
             ) : null}

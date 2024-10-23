@@ -1,12 +1,15 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { Button, FormControlLabel, Checkbox, CircularProgress, Box } from '@mui/material';
-import { loadWasmModule } from '../gtoWasm';
+import { Box, Button, Checkbox, CircularProgress, FormControlLabel } from '@mui/material';
+import React, { useContext, useEffect, useState } from 'react';
 import description from '../../description.json';
+import { DataTypeContext } from '../contexts/DataTypeContext';
 import { NotificationContext } from '../contexts/NotificationContext';
+import { loadWasmModule } from '../gtoWasm';
+import { detectDataType } from '../utils/detectDataType';
 
 const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [autoExecute, setAutoExecute] = useState(false);
+  const { setDataType } = useContext(DataTypeContext); // To update data type context
   const showNotification = useContext(NotificationContext);
 
   const handleRun = async () => {
@@ -54,6 +57,12 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
         // Update data for the next operation
         data = outputData.stdout;
       }
+
+      // Detect data type of the final output
+      const detectedType = detectDataType('output.txt', data);
+      setDataType(detectedType); // Update data type context
+      showNotification(`Data type updated to ${detectedType}`, 'info');
+
       setOutputData(data);
       showNotification('Workflow executed successfully!', 'success');
     } catch (error) {

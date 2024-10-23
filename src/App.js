@@ -1,21 +1,21 @@
-import React, { useState } from 'react';
 import {
   AppBar,
-  Toolbar,
-  Typography,
   Box,
   Container,
   Grid,
-  useTheme,
+  Toolbar,
+  Typography,
   useMediaQuery,
+  useTheme,
 } from '@mui/material';
-import ErrorBoundary from './components/ErrorBoundary'; // Ensure this component exists
+import React, { useState } from 'react';
 import BioChefLogo from '../img/BioChefWhite.svg'; // Ensure this component exists
-import OperationsPanel from './components/OperationsPanel';
-import RecipePanel from './components/RecipePanel';
-import InputPanel from './components/InputPanel';
-import OutputPanel from './components/OutputPanel';
+import ErrorBoundary from './components/ErrorBoundary'; // Ensure this component exists
 import ExecutionControls from './components/ExecutionControls';
+import InputPanel from './components/InputPanel';
+import OperationsPanel from './components/OperationsPanel';
+import OutputPanel from './components/OutputPanel';
+import RecipePanel from './components/RecipePanel';
 
 const App = () => {
   const [workflow, setWorkflow] = useState([]);
@@ -35,6 +35,8 @@ const App = () => {
     setWorkflow([...workflow, newOperation]);
   };
 
+  const isWorkflowEmpty = workflow.length === 0;
+
   return (
     <ErrorBoundary>
       <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -53,7 +55,7 @@ const App = () => {
           <Grid container spacing={2} sx={{ flex: 1 }}>
             {/* Operations Panel */}
             <Grid item xs={12} md={3} sx={{ display: 'flex', flexDirection: 'column' }}>
-              <OperationsPanel onAddOperation={handleAddOperation} />
+              <OperationsPanel onAddOperation={handleAddOperation} isWorkflowEmpty={isWorkflowEmpty} />
             </Grid>
 
             {/* Recipe/Workflow Panel */}
