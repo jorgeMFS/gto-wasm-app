@@ -74,8 +74,15 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       const currentOutputFormats = currentTool.output.format.split(',').map(f => f.trim());
       const nextInputFormats = nextTool.input.format.split(',').map(f => f.trim());
 
+      console.log('i:', i);
+      console.log('i + 1:', i + 1);
+      console.log('currentOutputFormats:', currentOutputFormats);
+      console.log('nextInputFormats:', nextInputFormats);
+
       // Check if there is a common format between the output of the current tool and the input of the next tool
       const isValid = currentOutputFormats.some((format) => nextInputFormats.includes(format));
+
+      console.log("isValid:", isValid);
 
       if (!isValid) {
         return false;
@@ -128,6 +135,13 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       if (validateWorkflow(newWorkflow)) {
         setWorkflow(newWorkflow);
 
+        // Remove the tool from the outputTypesMap
+        setOutputTypesMap((prevMap) => {
+          const newMap = { ...prevMap };
+          delete newMap[id];
+          return newMap;
+        });
+
         // Update the data type based on the last valid tool in the workflow
         const lastToolInWorkflow = newWorkflow[newWorkflow.length - 1];
         const lastToolId = lastToolInWorkflow.id;
@@ -154,6 +168,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   // Clear the workflow and reset the data type to the original input type
   const handleClearWorkflow = () => {
     setWorkflow([]);
+    setOutputTypesMap({});
     setDataType(inputDataType);
     showNotification('Pipeline cleared and data type reset to input type.', 'info');
   };
@@ -240,6 +255,9 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
 
       setDataType(detectedType); // Update data type context
       showNotification(`Data type updated to ${detectedType}`, 'info');
+
+      // Print the outputTypesMap
+      console.log('outputTypesMap:', outputTypesMap);
 
       return outputData.stdout;
     } catch (error) {

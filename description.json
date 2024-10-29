@@ -1498,7 +1498,7 @@
       },
       "output": {
         "type": "stdout",
-        "format": "text"
+        "format": "DNA"
       },
       "flags": [
         "-h",
