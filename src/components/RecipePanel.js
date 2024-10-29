@@ -128,6 +128,13 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       if (validateWorkflow(newWorkflow)) {
         setWorkflow(newWorkflow);
 
+        // Remove the tool from the outputTypesMap
+        setOutputTypesMap((prevMap) => {
+          const newMap = { ...prevMap };
+          delete newMap[id];
+          return newMap;
+        });
+
         // Update the data type based on the last valid tool in the workflow
         const lastToolInWorkflow = newWorkflow[newWorkflow.length - 1];
         const lastToolId = lastToolInWorkflow.id;
@@ -154,6 +161,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   // Clear the workflow and reset the data type to the original input type
   const handleClearWorkflow = () => {
     setWorkflow([]);
+    setOutputTypesMap({});
     setDataType(inputDataType);
     showNotification('Pipeline cleared and data type reset to input type.', 'info');
   };
