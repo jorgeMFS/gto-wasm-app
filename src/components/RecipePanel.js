@@ -74,15 +74,8 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       const currentOutputFormats = currentTool.output.format.split(',').map(f => f.trim());
       const nextInputFormats = nextTool.input.format.split(',').map(f => f.trim());
 
-      console.log('i:', i);
-      console.log('i + 1:', i + 1);
-      console.log('currentOutputFormats:', currentOutputFormats);
-      console.log('nextInputFormats:', nextInputFormats);
-
       // Check if there is a common format between the output of the current tool and the input of the next tool
       const isValid = currentOutputFormats.some((format) => nextInputFormats.includes(format));
-
-      console.log("isValid:", isValid);
 
       if (!isValid) {
         return false;
@@ -255,9 +248,6 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
 
       setDataType(detectedType); // Update data type context
       showNotification(`Data type updated to ${detectedType}`, 'info');
-
-      // Print the outputTypesMap
-      console.log('outputTypesMap:', outputTypesMap);
 
       return outputData.stdout;
     } catch (error) {
