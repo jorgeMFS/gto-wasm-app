@@ -12,7 +12,11 @@
         "format": "FASTA"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/FastqToFasta.c"
@@ -29,7 +33,11 @@
         "format": "Multi-FASTA"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/FastqToMFasta.c"
@@ -46,8 +54,16 @@
         "format": "FASTQ"
       },
       "flags": [
-        "-h",
-        "-m"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-m",
+          "parameter": "max",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -69,7 +85,11 @@
         "format": "text"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/FastqExtractQS.c"
@@ -86,7 +106,11 @@
         "format": "text"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/FastqInfo.c"
@@ -103,8 +127,16 @@
         "format": "FASTQ"
       },
       "flags": [
-        "-h",
-        "-s"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-s",
+          "parameter": "size",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -126,8 +158,16 @@
         "format": "FASTQ"
       },
       "flags": [
-        "-h",
-        "-m"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-m",
+          "parameter": "min",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -149,8 +189,16 @@
         "format": "FASTQ"
       },
       "flags": [
-        "-h",
-        "-s"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-s",
+          "parameter": "size",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -172,7 +220,11 @@
         "format": "FASTQ"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/FastqRandExtraChars.c"
@@ -189,9 +241,32 @@
         "format": "FASTQ"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-n",
+          "parameter": "name",
+          "required": false
+        },
+        {
+          "flag": "-l",
+          "parameter": "lineSize",
+          "required": false
+        }
       ],
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "lineSize",
+          "type": "integer"
+        }
+      ],
       "source": "gto/src/FastqFromSeq.c"
     },
     {
@@ -206,19 +281,52 @@
         "format": "FASTQ"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-s",
+          "parameter": "seed",
+          "required": false
+        },
+        {
+          "flag": "-m",
+          "parameter": "mutation-rate",
+          "required": false
+        },
+        {
+          "flag": "-d",
+          "parameter": "deletion-rate",
+          "required": false
+        },
+        {
+          "flag": "-i",
+          "parameter": "insertion-rate",
+          "required": false
+        },
+        {
+          "flag": "-a",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [
         {
-          "name": "mutation_rate",
+          "name": "seed",
+          "type": "integer"
+        },
+        {
+          "name": "mutation-rate",
           "type": "float"
         },
         {
-          "name": "deletion_rate",
+          "name": "deletion-rate",
           "type": "float"
         },
         {
-          "name": "addition_rate",
+          "name": "insertion-rate",
           "type": "float"
         }
       ],
@@ -236,17 +344,29 @@
         "format": "text"
       },
       "flags": [
-        "-h",
-        "-f",
-        "-r"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-f",
+          "parameter": "forward",
+          "required": true
+        },
+        {
+          "flag": "-r",
+          "parameter": "reverse",
+          "required": true
+        }
       ],
       "parameters": [
         {
-          "name": "output_forward.fastq",
+          "name": "forward",
           "type": "string"
         },
         {
-          "name": "output_reverse.fastq",
+          "name": "reverse",
           "type": "string"
         }
       ],
@@ -264,8 +384,16 @@
         "format": "FASTQ"
       },
       "flags": [
-        "-h",
-        "-s"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-s",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/FastqPack.c"
@@ -282,8 +410,16 @@
         "format": "FASTQ"
       },
       "flags": [
-        "-h",
-        "-s"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-s",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/FastqUnpack.c"
@@ -300,8 +436,16 @@
         "format": "text"
       },
       "flags": [
-        "-h",
-        "-m"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-m",
+          "parameter": "max",
+          "required": false
+        }
       ],
       "parameters": [
         {
@@ -323,8 +467,16 @@
         "format": "text"
       },
       "flags": [
-        "-h",
-        "-m"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-m",
+          "parameter": "max",
+          "required": false
+        }
       ],
       "parameters": [
         {
@@ -346,8 +498,16 @@
         "format": "text"
       },
       "flags": [
-        "-h",
-        "-m"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-m",
+          "parameter": "max",
+          "required": false
+        }
       ],
       "parameters": [
         {
@@ -369,9 +529,21 @@
         "format": "FASTQ"
       },
       "flags": [
-        "-h",
-        "-i",
-        "-e"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-i",
+          "parameter": "initial",
+          "required": true
+        },
+        {
+          "flag": "-e",
+          "parameter": "end",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -397,10 +569,26 @@
         "format": "FASTQ"
       },
       "flags": [
-        "-h",
-        "-k",
-        "-w",
-        "-m"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-k",
+          "parameter": "windowsize",
+          "required": true
+        },
+        {
+          "flag": "-w",
+          "parameter": "minavg",
+          "required": true
+        },
+        {
+          "flag": "-m",
+          "parameter": "minqs",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -430,10 +618,26 @@
         "format": "FASTQ"
       },
       "flags": [
-        "-h",
-        "-k",
-        "-w",
-        "-m"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-k",
+          "parameter": "windowsize",
+          "required": true
+        },
+        {
+          "flag": "-w",
+          "parameter": "minavg",
+          "required": true
+        },
+        {
+          "flag": "-m",
+          "parameter": "minqs",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -611,7 +815,11 @@
         "format": "FASTQ"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/FastqComplement.c"
@@ -628,7 +836,11 @@
         "format": "FASTQ"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/FastqReverse.c"
@@ -834,7 +1046,11 @@
         "format": "DNA, RNA, AminoAcids"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/FastaToSeq.c"
@@ -851,9 +1067,21 @@
         "format": "FASTA"
       },
       "flags": [
-        "-h",
-        "-n",
-        "-l"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-n",
+          "parameter": "name",
+          "required": false
+        },
+        {
+          "flag": "-l",
+          "parameter": "lineSize",
+          "required": false
+        }
       ],
       "parameters": [
         {
@@ -879,9 +1107,21 @@
         "format": "DNA, RNA, AminoAcids"
       },
       "flags": [
-        "-h",
-        "-i",
-        "-e"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-i",
+          "parameter": "init",
+          "required": true
+        },
+        {
+          "flag": "-e",
+          "parameter": "end",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -907,9 +1147,21 @@
         "format": "Multi-FASTA"
       },
       "flags": [
-        "-h",
-        "-i",
-        "-e"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-i",
+          "parameter": "init",
+          "required": true
+        },
+        {
+          "flag": "-e",
+          "parameter": "end",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -935,7 +1187,11 @@
         "format": "text"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/FastaInfo.c"
@@ -952,12 +1208,36 @@
         "format": "FASTA"
       },
       "flags": [
-        "-h",
-        "-s",
-        "-e",
-        "-d",
-        "-i",
-        "-a"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-s",
+          "parameter": "seed",
+          "required": false
+        },
+        {
+          "flag": "-e",
+          "parameter": "edit-rate",
+          "required": false
+        },
+        {
+          "flag": "-d",
+          "parameter": "deletion-rate",
+          "required": false
+        },
+        {
+          "flag": "-i",
+          "parameter": "insertion-rate",
+          "required": false
+        },
+        {
+          "flag": "-a",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [
         {
@@ -991,7 +1271,11 @@
         "format": "FASTA"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/FastaRandExtraChars.c"
@@ -1008,8 +1292,16 @@
         "format": "Multi-FASTA"
       },
       "flags": [
-        "-h",
-        "-p"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-p",
+          "parameter": "pattern",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -1031,7 +1323,11 @@
         "format": "text"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/FastaFindNPos.c"
@@ -1048,8 +1344,16 @@
         "format": "text"
       },
       "flags": [
-        "-h",
-        "-l"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-l",
+          "parameter": "location",
+          "required": false
+        }
       ],
       "parameters": [
         {
@@ -1071,7 +1375,11 @@
         "format": "FASTA"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/FastaRenameHumanHeaders.c"
@@ -1088,8 +1396,16 @@
         "format": "text"
       },
       "flags": [
-        "-h",
-        "-p"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-p",
+          "parameter": "pattern",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -1111,7 +1427,11 @@
         "format": "FASTA"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/FastaComplement.c"
@@ -1128,7 +1448,11 @@
         "format": "FASTA"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/FastaReverse.c"
@@ -1269,10 +1593,26 @@
         "format": "text"
       },
       "flags": [
-        "-h",
-        "-e",
-        "-d",
-        "-H"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-e",
+          "parameter": "extra",
+          "required": true
+        },
+        {
+          "flag": "-d",
+          "parameter": "dna",
+          "required": true
+        },
+        {
+          "flag": "-H",
+          "parameter": "headers",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -1302,10 +1642,26 @@
         "format": "text"
       },
       "flags": [
-        "-h",
-        "-e",
-        "-d",
-        "-H"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-e",
+          "parameter": "extra",
+          "required": true
+        },
+        {
+          "flag": "-d",
+          "parameter": "dna",
+          "required": true
+        },
+        {
+          "flag": "-H",
+          "parameter": "headers",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -1335,7 +1691,11 @@
         "format": "GROUP"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/AminoAcidToGroup.c"
@@ -1352,7 +1712,11 @@
         "format": "DNA"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/AminoAcidToPseudoDNA.c"
@@ -1432,8 +1796,16 @@
         "format": "AminoAcids"
       },
       "flags": [
-        "-h",
-        "-f"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-f",
+          "parameter": "frame",
+          "required": false
+        }
       ],
       "parameters": [
         {
@@ -1455,8 +1827,16 @@
         "format": "AminoAcids"
       },
       "flags": [
-        "-h",
-        "-f"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-f",
+          "parameter": "frame",
+          "required": false
+        }
       ],
       "parameters": [
         {
@@ -1478,8 +1858,16 @@
         "format": "AminoAcids"
       },
       "flags": [
-        "-h",
-        "-f"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-f",
+          "parameter": "frame",
+          "required": false
+        }
       ],
       "parameters": [
         {
@@ -1501,10 +1889,26 @@
         "format": "DNA"
       },
       "flags": [
-        "-h",
-        "-s",
-        "-n",
-        "-f"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-s",
+          "parameter": "seed",
+          "required": false
+        },
+        {
+          "flag": "-n",
+          "parameter": "nSymbols",
+          "required": false
+        },
+        {
+          "flag": "-f",
+          "parameter": "frequency",
+          "required": false
+        }
       ],
       "parameters": [
         {
@@ -1534,7 +1938,11 @@
         "format": "DNA"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/GenomicRandSeqExtraChars.c"
@@ -1551,12 +1959,36 @@
         "format": "DNA"
       },
       "flags": [
-        "-h",
-        "-s",
-        "-m",
-        "-d",
-        "-i",
-        "-a"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-s",
+          "parameter": "seed",
+          "required": false
+        },
+        {
+          "flag": "-m",
+          "parameter": "mutation-rate",
+          "required": false
+        },
+        {
+          "flag": "-d",
+          "parameter": "deletion-rate",
+          "required": false
+        },
+        {
+          "flag": "-i",
+          "parameter": "insertion-rate",
+          "required": false
+        },
+        {
+          "flag": "-a",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [
         {
@@ -1590,9 +2022,21 @@
         "format": "DNA"
       },
       "flags": [
-        "-h",
-        "-i",
-        "-e"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-i",
+          "parameter": "init",
+          "required": true
+        },
+        {
+          "flag": "-e",
+          "parameter": "end",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -1618,7 +2062,11 @@
         "format": "text"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/GenomicPeriod.c"
@@ -1635,7 +2083,11 @@
         "format": "text"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/GenomicCountBases.c"
@@ -1720,7 +2172,11 @@
         "format": "DNA"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/GenomicComplement.c"
@@ -1737,7 +2193,11 @@
         "format": "DNA"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/Reverse.c"
@@ -1754,7 +2214,11 @@
         "format": "DNA, RNA, AminoAcids"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/CharToLine.c"
@@ -1771,7 +2235,11 @@
         "format": "SEQ"
       },
       "flags": [
-        "-h"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/NewLineForNewValue.c"
@@ -1788,8 +2256,16 @@
         "format": "NUM"
       },
       "flags": [
-        "-h",
-        "-u"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-u",
+          "parameter": "upperbound",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -1811,8 +2287,16 @@
         "format": "NUM"
       },
       "flags": [
-        "-h",
-        "-l"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-l",
+          "parameter": "lowerbound",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -1834,9 +2318,21 @@
         "format": "text"
       },
       "flags": [
-        "-h",
-        "-a",
-        "-s"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-a",
+          "parameter": "alphabet",
+          "required": true
+        },
+        {
+          "flag": "-s",
+          "parameter": "size",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -1862,8 +2358,16 @@
         "format": "BIN"
       },
       "flags": [
-        "-h",
-        "-t"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-t",
+          "parameter": "threshold",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -1885,9 +2389,21 @@
         "format": "NUM"
       },
       "flags": [
-        "-h",
-        "-r",
-        "-a"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-r",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-a",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/Sum.c"
@@ -1904,13 +2420,41 @@
         "format": "NUM"
       },
       "flags": [
-        "-h",
-        "-w",
-        "-d",
-        "-t",
-        "-c",
-        "-p",
-        "-r"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-w",
+          "parameter": "windowsize",
+          "required": false
+        },
+        {
+          "flag": "-d",
+          "parameter": "drop",
+          "required": false
+        },
+        {
+          "flag": "-t",
+          "parameter": "windowtype",
+          "required": false
+        },
+        {
+          "flag": "-c",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-p",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-r",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [
         {
@@ -1940,8 +2484,16 @@
         "format": "TXT"
       },
       "flags": [
-        "-h",
-        "-w"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-w",
+          "parameter": "word",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -1963,9 +2515,21 @@
         "format": "FASTA"
       },
       "flags": [
-        "-h",
-        "-b",
-        "-s"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-b",
+          "parameter": "numbases",
+          "required": true
+        },
+        {
+          "flag": "-s",
+          "parameter": "seed",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -1991,8 +2555,16 @@
         "format": "text"
       },
       "flags": [
-        "-h",
-        "-a"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-a",
+          "parameter": null,
+          "required": false
+        }
       ],
       "parameters": [],
       "source": "gto/src/Info.c"
@@ -2009,8 +2581,16 @@
         "format": "text"
       },
       "flags": [
-        "-h",
-        "-t"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-t",
+          "parameter": "threshold",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -2032,18 +2612,66 @@
         "format": "SVG"
       },
       "flags": [
-        "-h",
-        "-V",
-        "-v",
-        "-l",
-        "-w",
-        "-s",
-        "-m",
-        "-b",
-        "-c",
-        "-i",
-        "-r",
-        "-o"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-V",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-v",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-l",
+          "parameter": "link",
+          "required": false
+        },
+        {
+          "flag": "-w",
+          "parameter": "width",
+          "required": false
+        },
+        {
+          "flag": "-s",
+          "parameter": "space",
+          "required": false
+        },
+        {
+          "flag": "-m",
+          "parameter": "mult",
+          "required": false
+        },
+        {
+          "flag": "-b",
+          "parameter": "begin",
+          "required": false
+        },
+        {
+          "flag": "-c",
+          "parameter": "minimum",
+          "required": false
+        },
+        {
+          "flag": "-i",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-r",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-o",
+          "parameter": "FILE",
+          "required": false
+        }
       ],
       "parameters": [
         {
@@ -2089,9 +2717,21 @@
         "format": "NUM"
       },
       "flags": [
-        "-h",
-        "-f",
-        "-s"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-f",
+          "parameter": "first_file",
+          "required": true
+        },
+        {
+          "flag": "-s",
+          "parameter": "second_file",
+          "required": true
+        }
       ],
       "parameters": [
         {
@@ -2117,9 +2757,21 @@
         "format": "NUM"
       },
       "flags": [
-        "-h",
-        "-f",
-        "-s"
+        {
+          "flag": "-h",
+          "parameter": null,
+          "required": false
+        },
+        {
+          "flag": "-f",
+          "parameter": "first_file",
+          "required": true
+        },
+        {
+          "flag": "-s",
+          "parameter": "second_file",
+          "required": true
+        }
       ],
       "parameters": [
         {

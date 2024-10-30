@@ -38,9 +38,9 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
               args.push(`${params[param.name]}`);
             }
           });
-          toolConfig.flags.forEach((flag) => {
-            if (params[flag]) {
-              args.push(flag);
+          toolConfig.flags.forEach((flagObj) => {
+            if (params[flagObj.flag]) {
+              args.push(flagObj.flag);
             }
           });
         }

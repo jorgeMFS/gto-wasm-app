@@ -217,9 +217,9 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
           }
         });
         // Handle flags
-        toolConfig.flags.forEach((flag) => {
-          if (tool.params[flag]) {
-            args.push(flag);
+        toolConfig.flags.forEach((flagObj) => {
+          if (tool.params[flagObj.flag]) {
+            args.push(flagObj.flag);
           }
         });
       }
@@ -294,10 +294,12 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
         type: param.type,
         isFlag: false,
       })),
-      ...(toolConfig.flags || []).map((flag) => ({
-        name: flag,
+      ...(toolConfig.flags || []).map((flagObj) => ({
+        name: flagObj.flag,
         type: 'boolean',
         isFlag: true,
+        parameter: flagObj.parameter,
+        required: flagObj.required,
       })),
     ];
 
