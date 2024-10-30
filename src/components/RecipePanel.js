@@ -178,15 +178,22 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     setOpenLoadDialog(false);
   };
 
-  const handleParameterChange = (id, paramName, value) => {
+  const handleParameterChange = (id, name, value) => {
     setWorkflow(
       workflow.map((item) =>
         item.id === id
-          ? { ...item, params: { ...item.params, [paramName]: value } }
+          ? {
+            ...item,
+            params: {
+              ...item.params,
+              [name]: value, // Sets either flag toggle or parameter value
+            },
+          }
           : item
       )
     );
   };
+
 
   // State to store outputs of tools
   const [outputs, setOutputs] = useState({});
@@ -282,72 +289,63 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       setRunningToolIds((ids) => ids.filter((id) => id !== tool.id));
     }
   };
+
   const renderParameters = (tool) => {
-    const toolConfig = description.tools.find(
-      (t) => t.name === `gto_${tool.toolName}`
-    );
+    const toolConfig = description.tools.find((t) => t.name === `gto_${tool.toolName}`);
     if (!toolConfig) return null;
 
-    const parametersAndFlags = [
-      ...(toolConfig.parameters || []).map((param) => ({
-        name: param.name,
-        type: param.type,
-        isFlag: false,
-      })),
-      ...(toolConfig.flags || []).map((flagObj) => ({
-        name: flagObj.flag,
-        type: 'boolean',
-        isFlag: true,
-        parameter: flagObj.parameter,
-        required: flagObj.required,
-      })),
-    ];
-
-    if (parametersAndFlags.length === 0) return null;
+    const flagsWithParams = toolConfig.flags.map((flagObj) => ({
+      ...flagObj,
+      value: tool.params[flagObj.flag], // Current toggle state of the flag
+    }));
 
     return (
       <Box sx={{ marginTop: 1 }}>
-        {parametersAndFlags.map((item) => {
-          const value = tool.params[item.name];
+        {flagsWithParams.map((flagObj) => {
+          const flagValue = !!tool.params[flagObj.flag]; // Toggle state for flag
+          const parameterValue = tool.params[flagObj.parameter] || ''; // Associated parameter value (if any)
+
           return (
             <Box
-              key={item.name}
+              key={flagObj.flag}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
                 marginBottom: 1,
-                gap: 1,
+                gap: 2,
               }}
             >
-              {item.isFlag ? (
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={!!value}
-                      onChange={(e) =>
-                        handleParameterChange(tool.id, item.name, e.target.checked)
-                      }
-                    />
-                  }
-                  label={item.name}
-                />
-              ) : (
-                <>
-                  <Typography variant="body2" sx={{ minWidth: '100px' }}>
-                    {item.name}
-                  </Typography>
-                  <TextField
-                    value={value || ''}
-                    onChange={(e) =>
-                      handleParameterChange(tool.id, item.name, e.target.value)
-                    }
-                    size="small"
-                    type={
-                      item.type === 'integer' || item.type === 'float' ? 'number' : 'text'
-                    }
-                    sx={{ flexGrow: 1 }}
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={flagValue}
+                    onChange={(e) => handleParameterChange(tool.id, flagObj.flag, e.target.checked)}
                   />
-                </>
+                }
+                label={flagObj.flag}
+              />
+
+              {flagObj.parameter && flagValue && (
+                <TextField
+                  value={parameterValue}
+                  onChange={(e) => handleParameterChange(tool.id, flagObj.parameter, e.target.value)}
+                  size="small"
+                  label={flagObj.parameter}
+                  sx={{ flexGrow: 1 }}
+                  type={
+                    toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'integer'
+                      ? 'number'
+                      : toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'float'
+                        ? 'number'
+                        : 'text'
+                  }
+                  inputProps={
+                    toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'integer' ||
+                      toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'float'
+                      ? { step: 'any' }
+                      : {}
+                  }
+                />
               )}
             </Box>
           );
@@ -355,6 +353,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       </Box>
     );
   };
+
 
   return (
     <Paper
