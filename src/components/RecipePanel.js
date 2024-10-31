@@ -49,6 +49,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   const [invalidItemIds, setInvalidItemIds] = useState([]); // To store invalid item IDs
   const [outputTypesMap, setOutputTypesMap] = useState({}); // To store output types of tools
   const [validationErrors, setValidationErrors] = useState({}); // To store validation errors for parameters
+  const [helpMessages, setHelpMessages] = useState({}); // To store help messages for tools
 
 
   const sensors = useSensors(
@@ -62,6 +63,33 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     // Set the initial data type to input data type when the component mounts
     setDataType(inputDataType);
   }, [inputDataType, setDataType]);
+
+  // State to store help messages for tools
+  useEffect(() => {
+    workflow.forEach((tool) => {
+      if (!helpMessages[tool.toolName]) {
+        loadHelpMessage(tool.toolName);
+      }
+    });
+  }, [workflow]);
+
+  // Load help message for a tool
+  const loadHelpMessage = async (toolName) => {
+    try {
+      const runFunction = await loadWasmModule(toolName);
+      const outputData = await runFunction('', ['-h']); // Execute the tool with -h flag to get help message
+      if (outputData.stderr) {
+        console.error(`Error in ${toolName} help message: ${outputData.stderr}`);
+      } else {
+        setHelpMessages((prev) => ({
+          ...prev,
+          [toolName]: outputData.stdout || 'No help message available',
+        }));
+      }
+    } catch (error) {
+      console.error(`Failed to load help message for ${toolName}: ${error.message}`);
+    }
+  };
 
   // Validate the workflow to ensure compatibility between tools
   const validateWorkflow = (workflow) => {
@@ -92,14 +120,18 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     const errors = {};
 
     toolConfig.flags.forEach((flagObj) => {
+      const isFlagRequired = flagObj.required;
+      const flagValue = !!tool.params[flagObj.flag]; // Check if the flag is active
       const paramValue = tool.params[flagObj.parameter];
       const paramConfig = toolConfig.parameters.find((param) => param.name === flagObj.parameter);
 
       if (paramConfig) {
-        if (paramConfig.type === 'integer' && !/^-?\d+$/.test(paramValue)) {
-          errors[flagObj.parameter] = 'Invalid integer value';
-        } else if (paramConfig.type === 'float' && !/^-?\d+(\.\d+)?$/.test(paramValue)) {
-          errors[flagObj.parameter] = 'Invalid float value';
+        if (isFlagRequired || flagValue) { // Check if the flag is required or active
+          if (paramConfig.type === 'integer' && !/^-?\d+$/.test(paramValue)) {
+            errors[flagObj.parameter] = 'Invalid integer value';
+          } else if (paramConfig.type === 'float' && !/^-?\d+(\.\d+)?$/.test(paramValue)) {
+            errors[flagObj.parameter] = 'Invalid float value';
+          }
         }
       }
     });
@@ -111,6 +143,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
 
     return Object.keys(errors).length === 0;
   };
+
 
   const handleDragStart = (event) => {
     setActiveId(event.active.id);
@@ -244,16 +277,9 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       // Prepare arguments based on tool configuration and user-set parameters
       let args = [];
       if (tool.params && Object.keys(tool.params).length > 0) {
-        // // Handle parameters
-        // toolConfig.parameters.forEach((param) => {
-        //   if (tool.params[param.name] !== undefined && tool.params[param.name] !== '') {
-        //     args.push(`--${param.name}`);
-        //     args.push(`${tool.params[param.name]}`);
-        //   }
-        // });
         // Handle flags
         toolConfig.flags.forEach((flagObj) => {
-          if (tool.params[flagObj.flag]) {
+          if (tool.params[flagObj.parameter]) {
             args.push(flagObj.flag);
             // Check if the flag has an associated parameter
             if (flagObj.parameter && tool.params[flagObj.parameter] !== undefined && tool.params[flagObj.parameter] !== '') {
@@ -332,78 +358,121 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     const toolConfig = description.tools.find((t) => t.name === `gto_${tool.toolName}`);
     if (!toolConfig) return null;
 
-    const flagsWithParams = toolConfig.flags.map((flagObj) => ({
-      ...flagObj,
-      value: tool.params[flagObj.flag],
-    }));
-
     const toolErrors = validationErrors[tool.id] || {};
 
     return (
       <Box sx={{ marginTop: 1 }}>
-        {flagsWithParams.map((flagObj) => {
-          const flagValue = !!tool.params[flagObj.flag];
-          const parameterValue = tool.params[flagObj.parameter] || '';
-          const error = toolErrors[flagObj.parameter] || '';
+        {toolConfig.flags
+          .filter((flagObj) => flagObj.flag !== '-h') // Exclude help flag
+          .map((flagObj) => {
+            const isFlagRequired = flagObj.required;
+            const flagValue = !!tool.params[flagObj.flag];
+            const parameterValue = tool.params[flagObj.parameter] || '';
+            const error = toolErrors[flagObj.parameter] || '';
 
-          return (
-            <Box
-              key={flagObj.flag}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                marginBottom: 1,
-                gap: 2,
-              }}
-            >
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={flagValue}
-                    onChange={(e) => handleParameterChange(tool.id, flagObj.flag, e.target.checked)}
-                  />
-                }
-                label={flagObj.flag}
-              />
-
-              {flagObj.parameter && flagValue && (
-                <TextField
-                  value={parameterValue}
-                  onChange={(e) => handleParameterChange(tool.id, flagObj.parameter, e.target.value)}
-                  size="small"
-                  label={flagObj.parameter}
-                  error={!!error}
-                  helperText={error}
-                  sx={{
-                    flexGrow: 1,
-                    '& .MuiOutlinedInput-root': {
-                      borderColor: error ? 'red' : 'default',
-                    },
-                    '& .MuiOutlinedInput-notchedOutline': error
-                      ? {
-                        borderColor: 'red',
-                        borderWidth: '1px',
+            return (
+              <Box
+                key={flagObj.flag}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  marginBottom: 1,
+                  gap: 2,
+                }}
+              >
+                {/* Render flag differently based on whether it's required or optional */}
+                {isFlagRequired ? (
+                  <>
+                    <Typography variant="body2" sx={{ minWidth: '100px' }}>
+                      {flagObj.flag}
+                    </Typography>
+                    {flagObj.parameter && (
+                      <TextField
+                        value={parameterValue}
+                        onChange={(e) => handleParameterChange(tool.id, flagObj.parameter, e.target.value)}
+                        size="small"
+                        label={flagObj.parameter}
+                        error={!!error}
+                        helperText={error}
+                        sx={{
+                          flexGrow: 1,
+                          '& .MuiOutlinedInput-root': {
+                            borderColor: error ? 'red' : 'default',
+                          },
+                          '& .MuiOutlinedInput-notchedOutline': error
+                            ? {
+                              borderColor: 'red',
+                              borderWidth: '1px',
+                            }
+                            : {},
+                        }}
+                        type={
+                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'integer'
+                            ? 'number'
+                            : toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'float'
+                              ? 'number'
+                              : 'text'
+                        }
+                        inputProps={
+                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'integer' ||
+                            toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'float'
+                            ? { step: 'any' }
+                            : {}
+                        }
+                      />
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={flagValue}
+                          onChange={(e) => handleParameterChange(tool.id, flagObj.flag, e.target.checked)}
+                        />
                       }
-                      : {},
-                  }}
-                  type={
-                    toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'integer'
-                      ? 'number'
-                      : toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'float'
-                        ? 'number'
-                        : 'text'
-                  }
-                  inputProps={
-                    toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'integer' ||
-                      toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'float'
-                      ? { step: 'any' }
-                      : {}
-                  }
-                />
-              )}
-            </Box>
-          );
-        })}
+                      label={flagObj.flag}
+                    />
+                    {flagObj.parameter && flagValue && (
+                      <TextField
+                        value={parameterValue}
+                        onChange={(e) => handleParameterChange(tool.id, flagObj.parameter, e.target.value)}
+                        size="small"
+                        label={flagObj.parameter}
+                        error={!!error}
+                        helperText={error}
+                        sx={{
+                          flexGrow: 1,
+                          '& .MuiOutlinedInput-root': {
+                            borderColor: error ? 'red' : 'default',
+                          },
+                          '& .MuiOutlinedInput-notchedOutline': error
+                            ? {
+                              borderColor: 'red',
+                              borderWidth: '1px',
+                            }
+                            : {},
+                        }}
+                        type={
+                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'integer'
+                            ? 'number'
+                            : toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'float'
+                              ? 'number'
+                              : 'text'
+                        }
+                        inputProps={
+                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'integer' ||
+                            toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'float'
+                            ? { step: 'any' }
+                            : {}
+                        }
+                      />
+                    )}
+                  </>
+                )}
+              </Box>
+            );
+          })}
       </Box>
     );
   };
@@ -445,6 +514,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                 toolName={tool.toolName}
                 onDelete={() => handleDelete(tool.id)}
                 isInvalid={invalidItemIds.includes(tool.id)} // Is true if the tool is invalid
+                helpMessage={helpMessages[tool.toolName]}
               >
                 {renderParameters(tool)}
                 <Box sx={{ display: 'flex', alignItems: 'center', marginTop: 1 }}>

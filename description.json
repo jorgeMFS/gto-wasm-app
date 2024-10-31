@@ -577,17 +577,17 @@
         {
           "flag": "-k",
           "parameter": "windowsize",
-          "required": true
+          "required": false
         },
         {
           "flag": "-w",
           "parameter": "minavg",
-          "required": true
+          "required": false
         },
         {
           "flag": "-m",
           "parameter": "minqs",
-          "required": true
+          "required": false
         }
       ],
       "parameters": [
@@ -626,17 +626,17 @@
         {
           "flag": "-k",
           "parameter": "windowsize",
-          "required": true
+          "required": false
         },
         {
           "flag": "-w",
           "parameter": "minavg",
-          "required": true
+          "required": false
         },
         {
           "flag": "-m",
           "parameter": "minqs",
-          "required": true
+          "required": false
         }
       ],
       "parameters": [
@@ -1115,12 +1115,12 @@
         {
           "flag": "-i",
           "parameter": "init",
-          "required": true
+          "required": false
         },
         {
           "flag": "-e",
           "parameter": "end",
-          "required": true
+          "required": false
         }
       ],
       "parameters": [
@@ -1155,12 +1155,12 @@
         {
           "flag": "-i",
           "parameter": "init",
-          "required": true
+          "required": false
         },
         {
           "flag": "-e",
           "parameter": "end",
-          "required": true
+          "required": false
         }
       ],
       "parameters": [
@@ -2030,12 +2030,12 @@
         {
           "flag": "-i",
           "parameter": "init",
-          "required": true
+          "required": false
         },
         {
           "flag": "-e",
           "parameter": "end",
-          "required": true
+          "required": false
         }
       ],
       "parameters": [

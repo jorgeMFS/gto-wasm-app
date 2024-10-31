@@ -1,10 +1,10 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Delete, DragIndicator } from '@mui/icons-material';
+import { Delete, DragIndicator, HelpOutline } from '@mui/icons-material';
 import { Box, IconButton, Paper, Tooltip, Typography } from '@mui/material';
 import React from 'react';
 
-const SortableItem = ({ id, toolName, onDelete, children, isDragging, isInvalid }) => {
+const SortableItem = ({ id, toolName, onDelete, children, isDragging, isInvalid, helpMessage }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id,
   });
@@ -36,6 +36,22 @@ const SortableItem = ({ id, toolName, onDelete, children, isDragging, isInvalid 
         <Typography variant="body1" sx={{ flexGrow: 1 }}>
           {toolName}
         </Typography>
+        <Tooltip
+          title={<pre style={{ whiteSpace: 'pre-wrap' }}>{helpMessage || 'Loading help...'}</pre>}
+          arrow
+          componentsProps={{
+            tooltip: {
+              sx: {
+                maxWidth: 'none',
+              },
+            },
+          }}
+        >
+          <IconButton size="small" sx={{ marginLeft: 1 }}>
+            <HelpOutline fontSize="small" />
+          </IconButton>
+        </Tooltip>
+
         <Tooltip title="Delete Operation">
           <IconButton onClick={onDelete} size="small">
             <Delete fontSize="small" />
