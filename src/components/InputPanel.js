@@ -102,7 +102,6 @@ const InputPanel = ({ inputData, setInputData }) => {
       </Typography>
       <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         <TextField
-          multiline
           variant="outlined"
           fullWidth
           value={inputData}
@@ -117,6 +116,8 @@ const InputPanel = ({ inputData, setInputData }) => {
             whiteSpace: 'pre-wrap',
           }}
           InputProps={{
+            multiline: true,
+            inputComponent: 'textarea',
             readOnly: false,
             sx: {
               alignItems: 'flex-start',

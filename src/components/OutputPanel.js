@@ -1,6 +1,6 @@
-import React from 'react';
-import { Paper, Typography, TextField, Box, IconButton, Tooltip } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
+import { Box, IconButton, Paper, TextField, Tooltip, Typography } from '@mui/material';
+import React from 'react';
 
 const OutputPanel = ({ outputData }) => {
   const handleSaveOutput = () => {
@@ -21,11 +21,12 @@ const OutputPanel = ({ outputData }) => {
       <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         <TextField
           label="Output Data"
-          multiline
           variant="outlined"
           fullWidth
           value={outputData}
           InputProps={{
+            multiline: true,
+            inputComponent: 'textarea',
             readOnly: true,
             sx: {
               alignItems: 'flex-start',

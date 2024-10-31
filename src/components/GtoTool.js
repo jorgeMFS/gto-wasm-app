@@ -1,5 +1,5 @@
+import { Button, CircularProgress, TextField, Typography } from '@mui/material';
 import React, { useState } from 'react';
-import { Button, TextField, CircularProgress, Typography } from '@mui/material';
 import { loadWasmModule } from '../gtoWasm';
 
 const GtoTool = ({ name, inputType }) => {
@@ -81,12 +81,15 @@ const GtoTool = ({ name, inputType }) => {
       ) : (
         <TextField
           label="Input"
-          multiline
           rows={10}
           variant="outlined"
           fullWidth
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          InputProps={{
+            multiline: true,
+            inputComponent: 'textarea'
+          }}
         />
       )}
       {renderParamsInput()}
@@ -103,13 +106,14 @@ const GtoTool = ({ name, inputType }) => {
         <>
           <Typography variant="h6" style={{ marginTop: '10px' }}>Output:</Typography>
           <TextField
-            multiline
             rows={10}
             variant="outlined"
             fullWidth
             value={output}
             InputProps={{
               readOnly: true,
+              multiline: true,
+              inputComponent: 'textarea'
             }}
           />
         </>
