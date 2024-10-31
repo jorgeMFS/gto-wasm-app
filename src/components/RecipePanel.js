@@ -48,6 +48,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   const { setDataType, dataType, inputDataType } = useContext(DataTypeContext); // To update data type context
   const [invalidItemIds, setInvalidItemIds] = useState([]); // To store invalid item IDs
   const [outputTypesMap, setOutputTypesMap] = useState({}); // To store output types of tools
+  const [validationErrors, setValidationErrors] = useState({}); // To store validation errors for parameters
 
 
   const sensors = useSensors(
@@ -62,6 +63,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     setDataType(inputDataType);
   }, [inputDataType, setDataType]);
 
+  // Validate the workflow to ensure compatibility between tools
   const validateWorkflow = (workflow) => {
     for (let i = 0; i < workflow.length - 1; i++) {
       const currentTool = description.tools.find((t) => `gto_${workflow[i].toolName}` === t.name);
@@ -82,6 +84,32 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       }
     }
     return true;
+  };
+
+  // Validate parameters based on expected type
+  const validateParameters = (tool) => {
+    const toolConfig = description.tools.find((t) => t.name === `gto_${tool.toolName}`);
+    const errors = {};
+
+    toolConfig.flags.forEach((flagObj) => {
+      const paramValue = tool.params[flagObj.parameter];
+      const paramConfig = toolConfig.parameters.find((param) => param.name === flagObj.parameter);
+
+      if (paramConfig) {
+        if (paramConfig.type === 'integer' && !/^-?\d+$/.test(paramValue)) {
+          errors[flagObj.parameter] = 'Invalid integer value';
+        } else if (paramConfig.type === 'float' && !/^-?\d+(\.\d+)?$/.test(paramValue)) {
+          errors[flagObj.parameter] = 'Invalid float value';
+        }
+      }
+    });
+
+    setValidationErrors((prevErrors) => ({
+      ...prevErrors,
+      [tool.id]: errors,
+    }));
+
+    return Object.keys(errors).length === 0;
   };
 
   const handleDragStart = (event) => {
@@ -216,17 +244,21 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       // Prepare arguments based on tool configuration and user-set parameters
       let args = [];
       if (tool.params && Object.keys(tool.params).length > 0) {
-        // Handle parameters
-        toolConfig.parameters.forEach((param) => {
-          if (tool.params[param.name] !== undefined && tool.params[param.name] !== '') {
-            args.push(`--${param.name}`);
-            args.push(`${tool.params[param.name]}`);
-          }
-        });
+        // // Handle parameters
+        // toolConfig.parameters.forEach((param) => {
+        //   if (tool.params[param.name] !== undefined && tool.params[param.name] !== '') {
+        //     args.push(`--${param.name}`);
+        //     args.push(`${tool.params[param.name]}`);
+        //   }
+        // });
         // Handle flags
         toolConfig.flags.forEach((flagObj) => {
           if (tool.params[flagObj.flag]) {
             args.push(flagObj.flag);
+            // Check if the flag has an associated parameter
+            if (flagObj.parameter && tool.params[flagObj.parameter] !== undefined && tool.params[flagObj.parameter] !== '') {
+              args.push(`${tool.params[flagObj.parameter]}`);
+            }
           }
         });
       }
@@ -264,6 +296,12 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   };
 
   const handleRunTool = async (tool) => {
+    // Validate parameters before running
+    if (!validateParameters(tool)) {
+      showNotification('Invalid input detected. Please correct the inputs in red.', 'error');
+      return;
+    }
+
     setRunningToolIds((ids) => [...ids, tool.id]);
     try {
       let data = inputData;
@@ -296,14 +334,17 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
 
     const flagsWithParams = toolConfig.flags.map((flagObj) => ({
       ...flagObj,
-      value: tool.params[flagObj.flag], // Current toggle state of the flag
+      value: tool.params[flagObj.flag],
     }));
+
+    const toolErrors = validationErrors[tool.id] || {};
 
     return (
       <Box sx={{ marginTop: 1 }}>
         {flagsWithParams.map((flagObj) => {
-          const flagValue = !!tool.params[flagObj.flag]; // Toggle state for flag
-          const parameterValue = tool.params[flagObj.parameter] || ''; // Associated parameter value (if any)
+          const flagValue = !!tool.params[flagObj.flag];
+          const parameterValue = tool.params[flagObj.parameter] || '';
+          const error = toolErrors[flagObj.parameter] || '';
 
           return (
             <Box
@@ -331,7 +372,20 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                   onChange={(e) => handleParameterChange(tool.id, flagObj.parameter, e.target.value)}
                   size="small"
                   label={flagObj.parameter}
-                  sx={{ flexGrow: 1 }}
+                  error={!!error}
+                  helperText={error}
+                  sx={{
+                    flexGrow: 1,
+                    '& .MuiOutlinedInput-root': {
+                      borderColor: error ? 'red' : 'default',
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': error
+                      ? {
+                        borderColor: 'red',
+                        borderWidth: '1px',
+                      }
+                      : {},
+                  }}
                   type={
                     toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'integer'
                       ? 'number'

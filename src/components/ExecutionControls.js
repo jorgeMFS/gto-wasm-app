@@ -9,67 +9,108 @@ import { detectDataType } from '../utils/detectDataType';
 const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [autoExecute, setAutoExecute] = useState(false);
-  const { setDataType } = useContext(DataTypeContext); // To update data type context
+  const [validationErrors, setValidationErrors] = useState({}); // State for validation errors of parameters
+  const { setDataType } = useContext(DataTypeContext);
   const showNotification = useContext(NotificationContext);
+
+  // Validate parameters for a single tool
+  const validateParameters = (operation) => {
+    const toolConfig = description.tools.find((tool) => tool.name === `gto_${operation.toolName}`);
+    if (!toolConfig) return { isValid: true, errors: '' };
+
+    const errors = {};
+
+    toolConfig.flags.forEach((flagObj) => {
+      const paramValue = operation.params[flagObj.parameter];
+      const paramConfig = toolConfig.parameters.find((param) => param.name === flagObj.parameter);
+
+      if (paramConfig) {
+        if (paramConfig.type === 'integer' && !/^-?\d+$/.test(paramValue)) {
+          errors[flagObj.parameter] = `Invalid integer value for parameter "${flagObj.parameter}" in operation "${operation.toolName}"`;
+        } else if (paramConfig.type === 'float' && !/^-?\d+(\.\d+)?$/.test(paramValue)) {
+          errors[flagObj.parameter] = `Invalid float value for parameter "${flagObj.parameter}" in operation "${operation.toolName}"`;
+        }
+      }
+    });
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors((prevErrors) => ({
+        ...prevErrors,
+        [operation.toolName]: errors,
+      }));
+      const errorMessages = Object.values(errors).join('\n');
+      return { isValid: false, errors: errorMessages };
+    } else {
+      // Clear errors for this operation if validation passed
+      setValidationErrors((prevErrors) => {
+        const newErrors = { ...prevErrors };
+        delete newErrors[operation.toolName];
+        return newErrors;
+      });
+      return { isValid: true, errors: '' };
+    }
+  };
 
   const handleRun = async () => {
     setIsExecuting(true);
     try {
       let data = inputData;
-      for (const operation of workflow) {
-        const { toolName, params } = operation;
 
-        // Load the wrapper function dynamically
+      for (const operation of workflow) {
+        // Validate parameters before executing each tool
+        const { isValid, errors } = validateParameters(operation);
+        if (!isValid) {
+          showNotification(errors, 'error');
+          setIsExecuting(false);
+          return;
+        }
+
+        const { toolName, params } = operation;
         const runFunction = await loadWasmModule(toolName);
 
-        // Find tool configuration from description.json
         const toolConfig = description.tools.find((tool) => tool.name === `gto_${toolName}`);
         if (!toolConfig) {
           showNotification(`Configuration for tool ${toolName} not found.`, 'error');
           throw new Error(`Configuration for tool ${toolName} not found.`);
         }
 
-        // Prepare arguments based on tool configuration and user-set parameters
+        // Prepare arguments for execution
         let args = [];
-        if (params && Object.keys(params).length > 0) {
-          toolConfig.parameters.forEach((param) => {
-            if (params[param.name] !== undefined && params[param.name] !== '') {
-              args.push(`--${param.name}`);
-              args.push(`${params[param.name]}`);
-            }
-          });
-          toolConfig.flags.forEach((flagObj) => {
-            if (params[flagObj.flag]) {
-              args.push(flagObj.flag);
-            }
-          });
-        }
+        toolConfig.parameters.forEach((param) => {
+          if (params[param.name] !== undefined && params[param.name] !== '') {
+            args.push(`--${param.name}`);
+            args.push(`${params[param.name]}`);
+          }
+        });
+
+        toolConfig.flags.forEach((flagObj) => {
+          if (params[flagObj.flag]) {
+            args.push(flagObj.flag);
+          }
+        });
 
         // Execute the tool
         const outputData = await runFunction(data, args);
 
-        // Check for errors in the output
+        // Check for errors
         if (outputData.stderr) {
           showNotification(`Error in ${toolName}: ${outputData.stderr}`, 'error');
           throw new Error(outputData.stderr);
         }
 
-        // Update data for the next operation
         data = outputData.stdout;
       }
 
-      // Detect data type of the final output
       const detectedType = detectDataType('output.txt', data);
-      setDataType(detectedType); // Update data type context
-      showNotification(`Data type updated to ${detectedType}`, 'info');
-
+      setDataType(detectedType);
       setOutputData(data);
       showNotification('Workflow executed successfully!', 'success');
     } catch (error) {
       setOutputData(`Error: ${error.message}`);
       showNotification(`Workflow execution failed: ${error.message}`, 'error');
+    } finally {
+      setIsExecuting(false);
     }
-    setIsExecuting(false);
   };
 
   // Auto-Execute: Execute workflow whenever workflow or inputData changes
