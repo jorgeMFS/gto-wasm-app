@@ -9,6 +9,7 @@ GTO BioChef is a powerful web-based application for genomic sequence analysis an
 
 ## Table of Contents
 
+- [Table of Contents](#table-of-contents)
 - [Features](#features)
 - [Tools Available](#tools-available)
 - [Getting Started](#getting-started)
@@ -16,6 +17,7 @@ GTO BioChef is a powerful web-based application for genomic sequence analysis an
   - [Installation](#installation)
 - [Usage](#usage)
 - [Development](#development)
+  - [Key Files](#key-files)
 - [Contributing](#contributing)
 - [License](#license)
 - [Acknowledgments](#acknowledgments)
@@ -64,17 +66,27 @@ GTO BioChef includes a wide array of genomic tools, categorized for easy access:
    npm install
    ```
 
-3. Compile GTO tools to WebAssembly:
+3. Install Emscripten SDK:
+   Download and install the Emscripten SDK from the [official repository](https://github.com/emscripten-core/emsdk). (Preferably the 3.1.65 version)
+
+4. Setup Emscripten Environment Variable:
+   ```
+   nano ~/.bashrc
+   export EMSDK_PATH="/path/to/your/emsdk"
+   source ~/.bashrc
+   ```
+
+5. Compile GTO tools to WebAssembly:
    ```
    npm run build-wasm
    ```
 
-4. Start the development server:
+6. Start the development server:
    ```
    npm start
    ```
 
-5. Open your browser and navigate to `http://localhost:8082`.
+7. Open your browser and navigate to `http://localhost:8082`.
 
 For more detailed installation instructions, including troubleshooting tips, please see our [Installation Guide](docs/INSTALLATION.md).
 
