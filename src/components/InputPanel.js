@@ -18,6 +18,22 @@ const InputPanel = ({ inputData, setInputData }) => {
   // Debounce state
   const [debounceTimer, setDebounceTimer] = useState(null);
 
+  const processFileContent = (file, content, isPartial) => {
+    const lines = isPartial ? content.split('\n').slice(0, 100).join('\n') : content;
+    setInputData(lines);
+
+    const detectedType = detectDataType(file.name, lines);
+    setInputDataType(detectedType);
+    const valid = validateData(lines, detectedType);
+    setIsValid(valid);
+
+    if (!valid && detectedType !== 'UNKNOWN') {
+      showNotification(`Invalid ${detectedType} data format.`, 'error');
+    } else if (isPartial) {
+      showNotification("Processing the first 100 lines of the file.", 'success');
+    }
+  };
+
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -32,19 +48,16 @@ const InputPanel = ({ inputData, setInputData }) => {
         return;
       }
 
-      setFileName(file.name);
-      setIsAcceptable(true);
+      const fileSizeLimit = 100 * 1024 * 1024; // 100 MB in bytes
+      const isPartial = file.size > fileSizeLimit;
+      if (isPartial) {
+        showNotification("Uploaded file is too large. Only the first 100 lines will be processed.", 'warning');
+      }
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const content = e.target.result;
-        setInputData(content);
-        const detectedType = detectDataType(file.name, content);
-        setInputDataType(detectedType);
-        const valid = validateData(content, detectedType); // Pass detectedType
-        setIsValid(valid);
-        if (!valid && detectedType !== 'UNKNOWN') {
-          showNotification(`Invalid ${detectedType} data format.`, 'error');
-        }
+        processFileContent(file, content, isPartial);
       };
       reader.onerror = (e) => {
         console.error('Error reading file:', e);
@@ -107,6 +120,7 @@ const InputPanel = ({ inputData, setInputData }) => {
           value={inputData}
           onChange={handleTextChange}
           placeholder="e.g., >Sequence1\nACGT..."
+          rows={10}
           sx={{
             flexGrow: 1,
             marginBottom: 1,
