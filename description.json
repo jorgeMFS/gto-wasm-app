@@ -2228,11 +2228,11 @@
       "description": "Splits different rows with a new empty row.",
       "input": {
         "type": "stdin",
-        "format": "SEQ"
+        "format": "NUM"
       },
       "output": {
         "type": "stdout",
-        "format": "SEQ"
+        "format": "NUM"
       },
       "flags": [
         {
