@@ -63,7 +63,13 @@ const InputPanel = ({ inputData, setInputData }) => {
         console.error('Error reading file:', e);
         showNotification('Failed to read the file.', 'error');
       };
-      reader.readAsText(file);
+
+      // if file size is too large, read only the first 100 MB
+      if (isPartial) {
+        reader.readAsText(file.slice(0, fileSizeLimit));
+      } else {
+        reader.readAsText(file);
+      }
     }
   };
 
