@@ -6,8 +6,11 @@ set +e
 # Get the directory of the script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 
-# Set the path to the emsdk directory
-EMSDK_PATH="/home/jake/Desktop/Uni/Bolsa/emsdk"
+# Check if EMSDK_PATH is set as an environment variable
+if [[ -z "$EMSDK_PATH" ]]; then
+    echo "Error: EMSDK_PATH is not set. Please configure it before running the script."
+    exit 1
+fi
 
 # Ensure Emscripten is in the PATH
 source "$EMSDK_PATH/emsdk_env.sh"
