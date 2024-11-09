@@ -13,7 +13,7 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Clear, FolderOpen, GetApp, PlayArrow, Save } from '@mui/icons-material';
+import { Clear, FolderOpen, PlayArrow, Save } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -37,7 +37,6 @@ import { DataTypeContext } from '../contexts/DataTypeContext';
 import { NotificationContext } from '../contexts/NotificationContext';
 import { loadWasmModule } from '../gtoWasm';
 import { detectDataType } from '../utils/detectDataType';
-import { exportRecipe } from '../utils/exportRecipe';
 import SortableItem from './SortableItem';
 
 const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
@@ -50,9 +49,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   const [invalidItemIds, setInvalidItemIds] = useState([]); // To store invalid item IDs
   const [outputTypesMap, setOutputTypesMap] = useState({}); // To store output types of tools
   const [validationErrors, setValidationErrors] = useState({}); // To store validation errors for parameters
-  const [helpMessages, setHelpMessages] = useState({}); // To store help messages for toolconst [openExportDialog, setOpenExportDialog] = useState(false); // State for export dialog
-  const [exportFileName, setExportFileName] = useState('workflow_script.sh'); // Default export name
-  const [openExportDialog, setOpenExportDialog] = useState(false); // State for export dialog
+  const [helpMessages, setHelpMessages] = useState({}); // To store help messages for tools
 
 
   const sensors = useSensors(
@@ -241,11 +238,6 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     setWorkflow(saved.workflow);
     setOpenLoadDialog(false);
   };
-
-  const handleExportRecipe = () => {
-    exportRecipe(workflow, inputData, inputDataType, outputTypesMap, exportFileName, showNotification, setOpenExportDialog);
-  };
-
 
   const handleParameterChange = (id, name, value) => {
     setWorkflow(
@@ -583,14 +575,6 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
         >
           Load Recipe
         </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => setOpenExportDialog(true)}
-          startIcon={<GetApp />}
-        >
-          Export Recipe
-        </Button>
       </Box>
 
       {/* Save Recipe Dialog */}
@@ -650,30 +634,6 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
         <DialogActions>
           <Button onClick={() => setOpenLoadDialog(false)} color="primary">
             Close
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Export File Name Dialog */}
-      <Dialog open={openExportDialog} onClose={() => setOpenExportDialog(false)}>
-        <DialogTitle>Export Workflow</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="File Name"
-            type="text"
-            fullWidth
-            value={exportFileName}
-            onChange={(e) => setExportFileName(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenExportDialog(false)} color="secondary">
-            Cancel
-          </Button>
-          <Button onClick={handleExportRecipe} color="primary">
-            Export
           </Button>
         </DialogActions>
       </Dialog>
