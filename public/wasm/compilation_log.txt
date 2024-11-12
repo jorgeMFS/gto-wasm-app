@@ -414,20 +414,11 @@ Rendered wrapper (temporary) saved at: /home/jake/Desktop/Uni/Bolsa/gto-wasm-app
 Generated wrapper for amino_acid_from_seq at /home/jake/Desktop/Uni/Bolsa/gto-wasm-app/public/wasm/amino_acid_from_seq_wrapper.js
 Wrapper generated successfully at /home/jake/Desktop/Uni/Bolsa/gto-wasm-app/public/wasm/amino_acid_from_seq_wrapper.js
 ----------------------------------------
-Processing gto_amino_acid_to_seq (gto/src/AminoAcidToSeq.c)...
-Compiling gto_amino_acid_to_seq...
-Successfully compiled amino_acid_to_seq.
-Generating wrapper for amino_acid_to_seq with input_type='stdin' and output_type='stdout'...
-Rendered wrapper (temporary) saved at: /home/jake/Desktop/Uni/Bolsa/gto-wasm-app/public/wasm/amino_acid_to_seq_wrapper_temp.js
-Generated wrapper for amino_acid_to_seq at /home/jake/Desktop/Uni/Bolsa/gto-wasm-app/public/wasm/amino_acid_to_seq_wrapper.js
-Wrapper generated successfully at /home/jake/Desktop/Uni/Bolsa/gto-wasm-app/public/wasm/amino_acid_to_seq_wrapper.js
-----------------------------------------
 Processing gto_genomic_gen_random_dna (gto/src/GenomicGenRandomDNA.c)...
 Compiling gto_genomic_gen_random_dna...
 Successfully compiled genomic_gen_random_dna.
-Generating wrapper for genomic_gen_random_dna with input_type='stdin' and output_type='stdout'...
-Rendered wrapper (temporary) saved at: /home/jake/Desktop/Uni/Bolsa/gto-wasm-app/public/wasm/genomic_gen_random_dna_wrapper_temp.js
-Generated wrapper for genomic_gen_random_dna at /home/jake/Desktop/Uni/Bolsa/gto-wasm-app/public/wasm/genomic_gen_random_dna_wrapper.js
+Generating wrapper for genomic_gen_random_dna with input_type='' and output_type='stdout'...
+Error: Invalid input_type ''. Must be one of ['stdin', 'file'].
 Wrapper generated successfully at /home/jake/Desktop/Uni/Bolsa/gto-wasm-app/public/wasm/genomic_gen_random_dna_wrapper.js
 ----------------------------------------
 Processing gto_genomic_rand_seq_extra_chars (gto/src/GenomicRandSeqExtraChars.c)...
@@ -614,8 +605,8 @@ Cleaning up object files...
 
 ---------------------------------------------
 Compilation complete!
-Total programs: 78
-Successfully compiled: 67
+Total programs: 77
+Successfully compiled: 66
 Failed to compile: 11
 
 Failed programs:
