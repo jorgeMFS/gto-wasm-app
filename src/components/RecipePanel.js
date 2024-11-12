@@ -13,7 +13,7 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Clear, FolderOpen, GetApp, PlayArrow, Save } from '@mui/icons-material';
+import { Clear, ContentCopy, FolderOpen, GetApp, PlayArrow, Save } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -53,6 +53,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   const [helpMessages, setHelpMessages] = useState({}); // To store help messages for toolconst [openExportDialog, setOpenExportDialog] = useState(false); // State for export dialog
   const [exportFileName, setExportFileName] = useState('workflow_script.sh'); // Default export name
   const [openExportDialog, setOpenExportDialog] = useState(false); // State for export dialog
+  const [command, setCommand] = useState('');
 
 
   const sensors = useSensors(
@@ -75,6 +76,25 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       }
     });
   }, [workflow]);
+
+  // Export
+  useEffect(() => {
+    if (openExportDialog && workflow.length > 0) {
+      const generatedCommand = exportRecipe(
+        workflow,
+        inputData,
+        inputDataType,
+        outputTypesMap,
+        exportFileName,
+        showNotification,
+        setOpenExportDialog,
+        true // Request the command
+      );
+      setCommand(generatedCommand);
+    } else {
+      setCommand('');
+    }
+  }, [openExportDialog, workflow, inputData, inputDataType, outputTypesMap]);
 
   // Load help message for a tool
   const loadHelpMessage = async (toolName) => {
@@ -586,7 +606,13 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
         <Button
           variant="contained"
           color="primary"
-          onClick={() => setOpenExportDialog(true)}
+          onClick={() => {
+            if (workflow.length > 0) {
+              setOpenExportDialog(true);
+            } else {
+              showNotification('Workflow is empty. Cannot export.', 'error');
+            }
+          }}
           startIcon={<GetApp />}
         >
           Export Recipe
@@ -654,16 +680,56 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
         </DialogActions>
       </Dialog>
 
-      {/* Export File Name Dialog */}
+      {/* Export Recipe Dialog */}
       <Dialog open={openExportDialog} onClose={() => setOpenExportDialog(false)}>
         <DialogTitle>Export Workflow</DialogTitle>
         <DialogContent>
+          <Typography variant="body1" gutterBottom>
+            Please choose an option to export your workflow:
+          </Typography>
+
+          {/* Display command for copying */}
+          <Typography variant="subtitle1" gutterBottom>
+            Copy Command:
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}>
+            <TextField
+              fullWidth
+              value={command}
+              InputProps={{
+                readOnly: true,
+              }}
+              variant="outlined"
+              size="small"
+              placeholder="Generate a workflow to see the command here"
+            />
+            <Tooltip title="Copy to Clipboard">
+              <IconButton
+                onClick={() => {
+                  if (command) {
+                    navigator.clipboard.writeText(command).then(() => {
+                      showNotification('Command copied to clipboard!', 'success');
+                    });
+                  } else {
+                    showNotification('Workflow is empty. Cannot copy command.', 'error');
+                  }
+                }}
+                color="primary"
+              >
+                <ContentCopy />
+              </IconButton>
+            </Tooltip>
+          </Box>
+
+          {/* Download script */}
+          <Typography variant="subtitle1" gutterBottom>
+            Download Script:
+          </Typography>
           <TextField
-            autoFocus
+            fullWidth
             margin="dense"
             label="File Name"
             type="text"
-            fullWidth
             value={exportFileName}
             onChange={(e) => setExportFileName(e.target.value)}
           />
@@ -672,11 +738,29 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
           <Button onClick={() => setOpenExportDialog(false)} color="secondary">
             Cancel
           </Button>
-          <Button onClick={handleExportRecipe} color="primary">
-            Export
+          <Button
+            onClick={() => {
+              if (workflow.length > 0) {
+                exportRecipe(
+                  workflow,
+                  inputData,
+                  inputDataType,
+                  outputTypesMap,
+                  exportFileName,
+                  showNotification,
+                  setOpenExportDialog
+                );
+              } else {
+                showNotification('Workflow is empty. Cannot export script.', 'error');
+              }
+            }}
+            color="primary"
+          >
+            Download Script
           </Button>
         </DialogActions>
       </Dialog>
+
     </Paper>
   );
 };
