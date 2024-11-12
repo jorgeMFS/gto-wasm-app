@@ -14,12 +14,40 @@ const TypeToExtensionMap = {
     'text': 'txt',
 };
 
-export const exportRecipe = (workflow, inputData, inputDataType, outputTypesMap, exportFileName, showNotification, setOpenExportDialog) => {
+export const exportRecipe = (workflow, inputData, inputDataType, outputTypesMap, exportFileName, showNotification, setOpenExportDialog, returnCommand = false) => {
     if (workflow.length === 0) {
         showNotification('Cannot export an empty workflow.', 'error');
         return;
     }
 
+    // Generation of the command line
+    const inputFile = `input.${TypeToExtensionMap[inputDataType] || 'txt'}`;
+    const outputFile = `output.${TypeToExtensionMap[outputTypesMap[workflow[workflow.length - 1]?.id] || 'text'] || 'txt'}`;
+
+    const commands = workflow.map((tool, index) => {
+        const toolConfig = description.tools.find((t) => `gto_${tool.toolName}` === t.name);
+        if (!toolConfig) return '';
+
+        const flags = toolConfig.flags
+            .map((flag) => {
+                const flagValue = tool.params[flag.parameter];
+                return flagValue ? `${flag.flag} ${flagValue}` : flag.flag && tool.params[flag.flag] ? flag.flag : null;
+            })
+            .filter(Boolean)
+            .join(' ');
+
+        const toolCommand = `./gto_${tool.toolName} ${flags}`;
+        return index === 0 ? `${toolCommand} < ${inputFile}` : `${toolCommand}`;
+    });
+
+    const fullCommand = `${commands.join(' || ')} > ${outputFile}`;
+
+    // If returning the one-line command for "Copy Command" functionality
+    if (returnCommand) {
+        return fullCommand;
+    }
+
+    // Generation of the script
     const scriptLines = ['#!/bin/bash\n\n# Auto-generated Workflow Script'];
 
     // Step 1: Find or Clone GTO Repository
@@ -138,7 +166,8 @@ export const exportRecipe = (workflow, inputData, inputDataType, outputTypesMap,
         }
         scriptLines.push(`${toolCommand} ${flags} < "$previousOutput" > "${outputFile}"`);
         scriptLines.push(`echo -e "Output of ${tool.toolName}:"`);
-        scriptLines.push(`cat "${outputFile}\\n"`);
+        scriptLines.push(`cat "${outputFile}"`);
+        scriptLines.push(`echo -e ""`);
         scriptLines.push(`previousOutput="${outputFile}"`); // Update for the next tool
     });
 
