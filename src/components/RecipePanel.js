@@ -290,7 +290,11 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
           if (tool.params[flagObj.parameter]) {
             args.push(flagObj.flag);
             // Check if the flag has an associated parameter
-            if (flagObj.parameter && tool.params[flagObj.parameter] !== undefined && tool.params[flagObj.parameter] !== '') {
+            if (
+              flagObj.parameter &&
+              tool.params[flagObj.parameter] !== undefined &&
+              tool.params[flagObj.parameter] !== ''
+            ) {
               args.push(`${tool.params[flagObj.parameter]}`);
             }
           }
@@ -305,9 +309,25 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       // Execute the tool
       const outputData = await runFunction(input, args);
 
+      // Handle messages in stderr
+      let hasInfoMessage = false;
       if (outputData.stderr) {
-        showNotification(`Error in ${tool.toolName}: ${outputData.stderr}`, 'error');
-        throw new Error(outputData.stderr);
+        const stderrLines = outputData.stderr.split('\n');
+        let infoMessages = []; // Accumulate all informational messages
+
+        stderrLines.forEach((line) => {
+          if (line.trim().startsWith('ERROR:')) {
+            throw new Error(line.trim()); // Treat as an error
+          } else if (line.trim()) {
+            infoMessages.push(line.trim()); // Accumulate info messages
+            hasInfoMessage = true;
+          }
+        });
+
+        // Display all accumulated informational messages together
+        if (infoMessages.length > 0) {
+          showNotification(infoMessages.join('\n'), 'info');
+        }
       }
 
       // Detect data type of the output
@@ -320,7 +340,20 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       }));
 
       setDataType(detectedType); // Update data type context
-      showNotification(`Data type updated to ${detectedType}`, 'info');
+
+      if (outputData.stdout.trim() === '') {
+        // Notify the user if the output is empty
+        showNotification('Execution resulted in an empty output.', 'warning');
+      } else {
+        if (hasInfoMessage) {
+          setTimeout(() => {
+            showNotification(`Data type updated to ${detectedType}`, 'info');
+          }, 7000); // Delay to ensure it appears after info messages
+        } else {
+          showNotification(`Data type updated to ${detectedType}`, 'info');
+        }
+      }
+
 
       return outputData.stdout;
     } catch (error) {
