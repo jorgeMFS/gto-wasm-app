@@ -21,13 +21,20 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
     const errors = {};
 
     toolConfig.flags.forEach((flagObj) => {
+      const isFlagRequired = flagObj.required;
       const paramValue = operation.params[flagObj.parameter];
       const paramConfig = toolConfig.parameters.find((param) => param.name === flagObj.parameter);
 
+      // Verify if required flag is present
+      if (isFlagRequired && (!paramValue || paramValue === '')) {
+        errors[flagObj.parameter] = `Missing required parameter "${flagObj.parameter}" for operation "${operation.toolName}"`;
+      }
+
+      // Validate integer and float values
       if (paramConfig) {
-        if (paramConfig.type === 'integer' && !/^-?\d+$/.test(paramValue)) {
+        if (paramConfig.type === 'integer' && paramValue !== undefined && !/^-?\d+$/.test(paramValue)) {
           errors[flagObj.parameter] = `Invalid integer value for parameter "${flagObj.parameter}" in operation "${operation.toolName}"`;
-        } else if (paramConfig.type === 'float' && !/^-?\d+(\.\d+)?$/.test(paramValue)) {
+        } else if (paramConfig.type === 'float' && paramValue !== undefined && !/^-?\d+(\.\d+)?$/.test(paramValue)) {
           errors[flagObj.parameter] = `Invalid float value for parameter "${flagObj.parameter}" in operation "${operation.toolName}"`;
         }
       }
@@ -76,26 +83,42 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
 
         // Prepare arguments for execution
         let args = [];
-        toolConfig.parameters.forEach((param) => {
-          if (params[param.name] !== undefined && params[param.name] !== '') {
-            args.push(`--${param.name}`);
-            args.push(`${params[param.name]}`);
+        toolConfig.flags.forEach((flagObj) => {
+          if (params[flagObj.parameter]) {
+            args.push(flagObj.flag);
+            if (
+              flagObj.parameter &&
+              params[flagObj.parameter] !== undefined &&
+              params[flagObj.parameter] !== ''
+            ) {
+              args.push(`${params[flagObj.parameter]}`);
+            }
           }
         });
 
-        toolConfig.flags.forEach((flagObj) => {
-          if (params[flagObj.flag]) {
-            args.push(flagObj.flag);
-          }
-        });
 
         // Execute the tool
         const outputData = await runFunction(data, args);
 
-        // Check for errors
+        // Handle messages in stderr
+        let hasInfoMessage = false;
         if (outputData.stderr) {
-          showNotification(`Error in ${toolName}: ${outputData.stderr}`, 'error');
-          throw new Error(outputData.stderr);
+          const stderrLines = outputData.stderr.split('\n');
+          let infoMessages = []; // Accumulate all informational messages
+
+          stderrLines.forEach((line) => {
+            if (line.trim().startsWith('ERROR:')) {
+              throw new Error(line.trim()); // Treat as an error
+            } else if (line.trim()) {
+              infoMessages.push(line.trim()); // Accumulate info messages
+              hasInfoMessage = true;
+            }
+          });
+
+          // Display all accumulated informational messages together
+          if (infoMessages.length > 0) {
+            showNotification(infoMessages.join('\n'), 'info');
+          }
         }
 
         data = outputData.stdout;
