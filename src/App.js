@@ -39,7 +39,14 @@ const App = () => {
 
   return (
     <ErrorBoundary>
-      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh', // Occupies the full height of the viewport
+          overflowY: 'auto', // Enables vertical scrolling
+        }}
+      >
         {/* Header Section */}
         <AppBar position="static" color="primary" elevation={0}>
           <Toolbar>
@@ -51,15 +58,44 @@ const App = () => {
         </AppBar>
 
         {/* Main Content */}
-        <Container maxWidth="xl" sx={{ flex: 1, py: 2, display: 'flex', flexDirection: 'column' }}>
-          <Grid container spacing={2} sx={{ flex: 1 }}>
+        <Container
+          maxWidth="xl"
+          sx={{
+            flex: 1,
+            py: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden', // Prevents overflow beyond the container
+          }}
+        >
+          <Grid container spacing={2} sx={{ flex: 1, overflow: 'hidden' }}>
             {/* Operations Panel */}
-            <Grid item xs={12} md={3} sx={{ display: 'flex', flexDirection: 'column' }}>
+            <Grid
+              item
+              xs={12}
+              md={3}
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                overflowY: 'auto', // Independent scrolling
+                maxHeight: 'calc(100vh - 150px)', // Adjusts height relative to header/footer
+              }}
+            >
               <OperationsPanel onAddOperation={handleAddOperation} isWorkflowEmpty={isWorkflowEmpty} />
             </Grid>
 
             {/* Recipe/Workflow Panel */}
-            <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column' }}>
+            <Grid
+              item
+              xs={12}
+              md={6}
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                overflowY: 'auto', // Independent scrolling
+                maxHeight: 'calc(100vh - 150px)', // Adjusts height relative to header/footer
+              }}
+            >
               <RecipePanel
                 workflow={workflow}
                 setWorkflow={setWorkflow}
@@ -69,11 +105,33 @@ const App = () => {
             </Grid>
 
             {/* Input and Output Panels */}
-            <Grid item xs={12} md={3} sx={{ display: 'flex', flexDirection: 'column' }}>
-              <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', mb: 2 }}>
+            <Grid
+              item
+              xs={12}
+              md={3}
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden', // Prevents overflow beyond the container
+              }}
+            >
+              <Box
+                sx={{
+                  flexGrow: 1,
+                  mb: 2,
+                  overflowY: 'auto', // Independent scrolling
+                  maxHeight: 'calc(50% - 8px)', // Divides the height in half
+                }}
+              >
                 <InputPanel inputData={inputData} setInputData={setInputData} />
               </Box>
-              <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+              <Box
+                sx={{
+                  flexGrow: 1,
+                  overflowY: 'auto', // Independent scrolling
+                  maxHeight: 'calc(50% - 8px)',
+                }}
+              >
                 <OutputPanel outputData={outputData} setOutputData={setOutputData} />
               </Box>
             </Grid>
@@ -81,7 +139,13 @@ const App = () => {
         </Container>
 
         {/* Execution Controls */}
-        <Box sx={{ padding: 2, backgroundColor: theme.palette.background.paper }}>
+        <Box
+          sx={{
+            flexShrink: 0,
+            padding: 2,
+            backgroundColor: theme.palette.background.paper,
+          }}
+        >
           <ExecutionControls
             workflow={workflow}
             inputData={inputData}
