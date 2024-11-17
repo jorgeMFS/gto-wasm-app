@@ -73,7 +73,7 @@ const App = () => {
             <Grid
               item
               xs={12}
-              md={3}
+              md={3.2}
               sx={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -88,7 +88,7 @@ const App = () => {
             <Grid
               item
               xs={12}
-              md={6}
+              md={5.8}
               sx={{
                 display: 'flex',
                 flexDirection: 'column',

@@ -13,7 +13,7 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Clear, ContentCopy, FolderOpen, GetApp, PlayArrow, Save } from '@mui/icons-material';
+import { ContentCopy, FolderOpen, GetApp, PlayArrow, Save } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -115,7 +115,14 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   };
 
   // Validate the workflow to ensure compatibility between tools
-  const validateWorkflow = (workflow) => {
+  const validateWorkflow = (workflow, inputDataType) => {
+    const firstTool = description.tools.find((t) => `gto_${workflow[0].toolName}` === t.name);
+    const firstToolInputFormats = firstTool.input.format.split(',').map(f => f.trim());
+
+    if (firstToolInputFormats[0] !== "" && inputDataType !== "UNKNOWN" && !firstToolInputFormats.includes(inputDataType)) {
+      return false;
+    }
+
     for (let i = 0; i < workflow.length - 1; i++) {
       const currentTool = description.tools.find((t) => `gto_${workflow[i].toolName}` === t.name);
       const nextTool = description.tools.find((t) => `gto_${workflow[i + 1].toolName}` === t.name);
@@ -182,7 +189,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       const newWorkflow = arrayMove(workflow, oldIndex, newIndex);
 
       // Validate resulting workflow
-      if (validateWorkflow(newWorkflow)) {
+      if (validateWorkflow(newWorkflow, inputDataType)) {
         setWorkflow(newWorkflow);
       } else {
         showNotification('Invalid operation: resulting workflow has incompatible steps.', 'error');
@@ -209,7 +216,11 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       setOutputTypesMap({}); // Clear the output types map
       showNotification('All operations removed. Data type reset to input type.', 'info');
     } else {
-      if (validateWorkflow(newWorkflow)) {
+
+      const toolIndex = workflow.findIndex((t) => t.id === id);
+      const isFirstToolWithoutInput = toolIndex === 0 && description.tools.find((tool) => `gto_${workflow[toolIndex].toolName}` === tool.name)?.input?.type === '';
+
+      if (validateWorkflow(newWorkflow, inputDataType) && !isFirstToolWithoutInput) {
         setWorkflow(newWorkflow);
 
         // Remove the tool from the outputTypesMap
@@ -241,13 +252,25 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     }
   };
 
+  // Delete all operations from the selected tool onwards
+  const handleDeleteFromHere = (id) => {
+    const index = workflow.findIndex((item) => item.id === id);
 
-  // Clear the workflow and reset the data type to the original input type
-  const handleClearWorkflow = () => {
-    setWorkflow([]);
-    setOutputTypesMap({});
-    setDataType(inputDataType);
-    showNotification('Pipeline cleared and data type reset to input type.', 'info');
+    if (index !== -1) {
+      const newWorkflow = workflow.slice(0, index); // Remove todos os itens a partir do índice
+      setWorkflow(newWorkflow);
+
+      if (newWorkflow.length === 0) {
+        setDataType(inputDataType);
+        setOutputTypesMap({});
+        showNotification('All operations removed. Data type reset to input type.', 'info');
+      } else {
+        const lastTool = newWorkflow[newWorkflow.length - 1];
+        const lastOutputType = outputTypesMap[lastTool.id];
+        setDataType(lastOutputType);
+        showNotification(`Data type updated to ${lastOutputType}`, 'info');
+      }
+    }
   };
 
   const handleSaveRecipe = () => {
@@ -551,11 +574,6 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
         <Typography variant="body2" color="textSecondary" sx={{ marginLeft: 2, textAlign: 'center', flexGrow: 1 }}>
           Current Data Type: {dataType}
         </Typography>
-        <Tooltip title="Clear Workflow">
-          <IconButton onClick={handleClearWorkflow} color="secondary">
-            <Clear />
-          </IconButton>
-        </Tooltip>
       </Box>
       <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
         <DndContext
@@ -574,6 +592,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                 id={tool.id}
                 toolName={tool.toolName}
                 onDelete={() => handleDelete(tool.id)}
+                onDeleteFromHere={() => handleDeleteFromHere(tool.id)}
                 isInvalid={invalidItemIds.includes(tool.id)} // Is true if the tool is invalid
                 helpMessage={helpMessages[tool.toolName]}
               >
@@ -596,7 +615,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                 {outputs[tool.id] && (
                   <Box sx={{ marginTop: 1 }}>
                     <Typography variant="subtitle2">Output:</Typography>
-                    <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5' }}>
+                    <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
                       <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
                         {outputs[tool.id]}
                       </Typography>
