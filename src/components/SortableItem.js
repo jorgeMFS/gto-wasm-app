@@ -1,13 +1,25 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Delete, DragIndicator, HelpOutline } from '@mui/icons-material';
-import { Box, IconButton, Paper, Tooltip, Typography } from '@mui/material';
-import React from 'react';
+import {
+  Box, IconButton, Menu,
+  MenuItem, Paper, Tooltip, Typography
+} from '@mui/material';
+import React, { useState } from 'react';
 
-const SortableItem = ({ id, toolName, onDelete, children, isDragging, isInvalid, helpMessage }) => {
+const SortableItem = ({ id, toolName, onDelete, onDeleteFromHere, children, isDragging, isInvalid, helpMessage }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id,
   });
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
 
   return (
     <Paper
@@ -53,10 +65,35 @@ const SortableItem = ({ id, toolName, onDelete, children, isDragging, isInvalid,
         </Tooltip>
 
         <Tooltip title="Delete Operation">
-          <IconButton onClick={onDelete} size="small">
+          <IconButton onClick={handleMenuOpen} size="small">
             <Delete fontSize="small" />
           </IconButton>
         </Tooltip>
+
+        {/* Dropdown Menu */}
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+        >
+          <MenuItem
+            onClick={() => {
+              handleMenuClose();
+              onDelete(id); // Remove only this operation
+            }}
+          >
+            Remove this operation
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              handleMenuClose();
+              onDeleteFromHere(id); // Remove this operation and all operations below it
+            }}
+          >
+            Remove from here downwards
+          </MenuItem>
+        </Menu>
+
       </Box>
       {children}
     </Paper>
