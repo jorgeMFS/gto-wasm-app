@@ -13,7 +13,7 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Clear, ContentCopy, FolderOpen, GetApp, PlayArrow, Save } from '@mui/icons-material';
+import { ContentCopy, FolderOpen, GetApp, HelpOutline, PlayArrow, Save } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -100,13 +100,40 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   const loadHelpMessage = async (toolName) => {
     try {
       const runFunction = await loadWasmModule(toolName);
-      const outputData = await runFunction('', ['-h']); // Execute the tool with -h flag to get help message
+      const outputData = await runFunction('', ['-h']); // Execute the tool with -h flag
+
       if (outputData.stderr) {
         console.error(`Error in ${toolName} help message: ${outputData.stderr}`);
       } else {
+        const helpLines = outputData.stdout.split('\n'); // Divida o texto da ajuda em linhas
+        const flagsHelp = {};
+        let generalHelp = '';
+
+        // Process each line of the help message
+        helpLines.forEach((line) => {
+          line = line.trim();
+
+          // Separating flags and descriptions
+          if (/^-/.test(line)) {
+            const [flag, ...descriptionParts] = line.split(/\s+/); // Separating flag and description
+            const normalizedFlag = flag.replace(/[, ]/g, '').trim(); // Removing commas and spaces
+            flagsHelp[normalizedFlag] = descriptionParts.join(' '); // Store the description
+          } else if (
+            !line.includes('--help') &&
+            !line.toLowerCase().includes('optional') &&
+            !line.toLowerCase().includes('optional options')
+          ) {
+            generalHelp += `${line}\n`;
+          }
+        });
+
+        // Store the help messages
         setHelpMessages((prev) => ({
           ...prev,
-          [toolName]: outputData.stdout || 'No help message available',
+          [toolName]: {
+            general: generalHelp.trim(),
+            flags: flagsHelp, // Store the flags help
+          },
         }));
       }
     } catch (error) {
@@ -114,8 +141,16 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     }
   };
 
+
   // Validate the workflow to ensure compatibility between tools
-  const validateWorkflow = (workflow) => {
+  const validateWorkflow = (workflow, inputDataType) => {
+    const firstTool = description.tools.find((t) => `gto_${workflow[0].toolName}` === t.name);
+    const firstToolInputFormats = firstTool.input.format.split(',').map(f => f.trim());
+
+    if (firstToolInputFormats[0] !== "" && inputDataType !== "UNKNOWN" && !firstToolInputFormats.includes(inputDataType)) {
+      return false;
+    }
+
     for (let i = 0; i < workflow.length - 1; i++) {
       const currentTool = description.tools.find((t) => `gto_${workflow[i].toolName}` === t.name);
       const nextTool = description.tools.find((t) => `gto_${workflow[i + 1].toolName}` === t.name);
@@ -182,7 +217,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       const newWorkflow = arrayMove(workflow, oldIndex, newIndex);
 
       // Validate resulting workflow
-      if (validateWorkflow(newWorkflow)) {
+      if (validateWorkflow(newWorkflow, inputDataType)) {
         setWorkflow(newWorkflow);
       } else {
         showNotification('Invalid operation: resulting workflow has incompatible steps.', 'error');
@@ -209,7 +244,11 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       setOutputTypesMap({}); // Clear the output types map
       showNotification('All operations removed. Data type reset to input type.', 'info');
     } else {
-      if (validateWorkflow(newWorkflow)) {
+
+      const toolIndex = workflow.findIndex((t) => t.id === id);
+      const isFirstToolWithoutInput = toolIndex === 0 && description.tools.find((tool) => `gto_${workflow[toolIndex].toolName}` === tool.name)?.input?.type === '';
+
+      if (validateWorkflow(newWorkflow, inputDataType) && !isFirstToolWithoutInput) {
         setWorkflow(newWorkflow);
 
         // Remove the tool from the outputTypesMap
@@ -241,13 +280,25 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     }
   };
 
+  // Delete all operations from the selected tool onwards
+  const handleDeleteFromHere = (id) => {
+    const index = workflow.findIndex((item) => item.id === id);
 
-  // Clear the workflow and reset the data type to the original input type
-  const handleClearWorkflow = () => {
-    setWorkflow([]);
-    setOutputTypesMap({});
-    setDataType(inputDataType);
-    showNotification('Pipeline cleared and data type reset to input type.', 'info');
+    if (index !== -1) {
+      const newWorkflow = workflow.slice(0, index); // Remove todos os itens a partir do índice
+      setWorkflow(newWorkflow);
+
+      if (newWorkflow.length === 0) {
+        setDataType(inputDataType);
+        setOutputTypesMap({});
+        showNotification('All operations removed. Data type reset to input type.', 'info');
+      } else {
+        const lastTool = newWorkflow[newWorkflow.length - 1];
+        const lastOutputType = outputTypesMap[lastTool.id];
+        setDataType(lastOutputType);
+        showNotification(`Data type updated to ${lastOutputType}`, 'info');
+      }
+    }
   };
 
   const handleSaveRecipe = () => {
@@ -420,11 +471,13 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     if (!toolConfig) return null;
 
     const toolErrors = validationErrors[tool.id] || {};
+    const toolHelp = helpMessages[tool.toolName] || { general: 'Loading help...', flags: {} };
+    const flagHelpMessages = toolHelp.flags || {};
 
     return (
       <Box sx={{ marginTop: 1 }}>
         {toolConfig.flags
-          .filter((flagObj) => flagObj.flag !== '-h') // Exclude help flag
+          .filter((flagObj) => flagObj.flag !== '-h')
           .map((flagObj) => {
             const isFlagRequired = flagObj.required;
             const flagValue = !!tool.params[flagObj.flag];
@@ -441,16 +494,35 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                   gap: 2,
                 }}
               >
-                {/* Render flag differently based on whether it's required or optional */}
+                {/* Render flag and parameter input */}
                 {isFlagRequired ? (
                   <>
                     <Typography variant="body2" sx={{ minWidth: '100px' }}>
                       {flagObj.flag}
                     </Typography>
+                    {/* Add help icon to a required flag */}
+                    <Tooltip
+                      title={flagHelpMessages[flagObj.flag] || 'Loading help message...'}
+                      arrow
+                      componentsProps={{
+                        tooltip: {
+                          sx: {
+                            maxWidth: 300,
+                            whiteSpace: 'pre-wrap',
+                          },
+                        },
+                      }}
+                    >
+                      <IconButton size="small" sx={{ marginLeft: 1 }}>
+                        <HelpOutline fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                     {flagObj.parameter && (
                       <TextField
                         value={parameterValue}
-                        onChange={(e) => handleParameterChange(tool.id, flagObj.parameter, e.target.value)}
+                        onChange={(e) =>
+                          handleParameterChange(tool.id, flagObj.parameter, e.target.value)
+                        }
                         size="small"
                         label={flagObj.parameter}
                         error={!!error}
@@ -468,15 +540,19 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                             : {},
                         }}
                         type={
-                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'integer'
+                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type ===
+                            'integer'
                             ? 'number'
-                            : toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'float'
+                            : toolConfig.parameters.find((p) => p.name === flagObj.parameter)
+                              ?.type === 'float'
                               ? 'number'
                               : 'text'
                         }
                         inputProps={
-                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'integer' ||
-                            toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'float'
+                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type ===
+                            'integer' ||
+                            toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type ===
+                            'float'
                             ? { step: 'any' }
                             : {}
                         }
@@ -489,15 +565,39 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                       control={
                         <Switch
                           checked={flagValue}
-                          onChange={(e) => handleParameterChange(tool.id, flagObj.flag, e.target.checked)}
+                          onChange={(e) =>
+                            handleParameterChange(tool.id, flagObj.flag, e.target.checked)
+                          }
                         />
                       }
                       label={flagObj.flag}
+                      sx={{ alignItems: 'center' }}
                     />
+                    {/* Add help icon to a flag */}
+                    <Tooltip
+                      title={
+                        flagHelpMessages[flagObj.flag] || 'Loading help message...'
+                      }
+                      arrow
+                      componentsProps={{
+                        tooltip: {
+                          sx: {
+                            maxWidth: 300,
+                            whiteSpace: 'pre-wrap',
+                          },
+                        },
+                      }}
+                    >
+                      <IconButton size="small" sx={{ marginLeft: 1 }}>
+                        <HelpOutline fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                     {flagObj.parameter && flagValue && (
                       <TextField
                         value={parameterValue}
-                        onChange={(e) => handleParameterChange(tool.id, flagObj.parameter, e.target.value)}
+                        onChange={(e) =>
+                          handleParameterChange(tool.id, flagObj.parameter, e.target.value)
+                        }
                         size="small"
                         label={flagObj.parameter}
                         error={!!error}
@@ -513,17 +613,22 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                               borderWidth: '1px',
                             }
                             : {},
+                          alignSelf: 'center',
                         }}
                         type={
-                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'integer'
+                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type ===
+                            'integer'
                             ? 'number'
-                            : toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'float'
+                            : toolConfig.parameters.find((p) => p.name === flagObj.parameter)
+                              ?.type === 'float'
                               ? 'number'
                               : 'text'
                         }
                         inputProps={
-                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'integer' ||
-                            toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'float'
+                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type ===
+                            'integer' ||
+                            toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type ===
+                            'float'
                             ? { step: 'any' }
                             : {}
                         }
@@ -551,11 +656,6 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
         <Typography variant="body2" color="textSecondary" sx={{ marginLeft: 2, textAlign: 'center', flexGrow: 1 }}>
           Current Data Type: {dataType}
         </Typography>
-        <Tooltip title="Clear Workflow">
-          <IconButton onClick={handleClearWorkflow} color="secondary">
-            <Clear />
-          </IconButton>
-        </Tooltip>
       </Box>
       <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
         <DndContext
@@ -574,8 +674,9 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                 id={tool.id}
                 toolName={tool.toolName}
                 onDelete={() => handleDelete(tool.id)}
+                onDeleteFromHere={() => handleDeleteFromHere(tool.id)}
                 isInvalid={invalidItemIds.includes(tool.id)} // Is true if the tool is invalid
-                helpMessage={helpMessages[tool.toolName]}
+                helpMessage={helpMessages[tool.toolName]?.general}
               >
                 {renderParameters(tool)}
                 <Box sx={{ display: 'flex', alignItems: 'center', marginTop: 1 }}>
@@ -596,7 +697,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                 {outputs[tool.id] && (
                   <Box sx={{ marginTop: 1 }}>
                     <Typography variant="subtitle2">Output:</Typography>
-                    <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5' }}>
+                    <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
                       <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
                         {outputs[tool.id]}
                       </Typography>

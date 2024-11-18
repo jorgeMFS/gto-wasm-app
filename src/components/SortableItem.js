@@ -1,13 +1,53 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Delete, DragIndicator, HelpOutline } from '@mui/icons-material';
-import { Box, IconButton, Paper, Tooltip, Typography } from '@mui/material';
-import React from 'react';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  IconButton, Menu,
+  MenuItem, Paper, Tooltip, Typography,
+} from '@mui/material';
+import React, { useState } from 'react';
 
-const SortableItem = ({ id, toolName, onDelete, children, isDragging, isInvalid, helpMessage }) => {
+const SortableItem = ({ id, toolName, onDelete, onDeleteFromHere, children, isDragging, isInvalid, helpMessage }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id,
   });
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteAction, setDeleteAction] = useState(null);
+
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleConfirmOpen = (action) => {
+    setDeleteAction(action);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmClose = () => {
+    setConfirmOpen(false);
+    setDeleteAction(null);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteAction === 'single') {
+      onDelete(id); // Delete only this operation
+    } else if (deleteAction === 'fromHere') {
+      onDeleteFromHere(id); // Delete from here downwards
+    }
+    handleConfirmClose();
+  };
 
   return (
     <Paper
@@ -53,12 +93,54 @@ const SortableItem = ({ id, toolName, onDelete, children, isDragging, isInvalid,
         </Tooltip>
 
         <Tooltip title="Delete Operation">
-          <IconButton onClick={onDelete} size="small">
+          <IconButton onClick={handleMenuOpen} size="small">
             <Delete fontSize="small" />
           </IconButton>
         </Tooltip>
+
+        {/* Dropdown Menu */}
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+        >
+          <MenuItem
+            onClick={() => {
+              handleMenuClose();
+              handleConfirmOpen('single');
+            }}
+          >
+            Remove this operation
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              handleMenuClose();
+              handleConfirmOpen('fromHere');
+            }}
+          >
+            Remove from here downwards
+          </MenuItem>
+        </Menu>
       </Box>
       {children}
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmOpen} onClose={handleConfirmClose}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete {deleteAction === 'single' ? 'this operation' : 'this operation and all subsequent ones'}? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleConfirmClose} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmDelete} color="secondary" autoFocus>
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 };
