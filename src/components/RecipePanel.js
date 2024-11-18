@@ -13,7 +13,7 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ContentCopy, FolderOpen, GetApp, PlayArrow, Save } from '@mui/icons-material';
+import { ContentCopy, FolderOpen, GetApp, HelpOutline, PlayArrow, Save } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -100,19 +100,47 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   const loadHelpMessage = async (toolName) => {
     try {
       const runFunction = await loadWasmModule(toolName);
-      const outputData = await runFunction('', ['-h']); // Execute the tool with -h flag to get help message
+      const outputData = await runFunction('', ['-h']); // Execute the tool with -h flag
+
       if (outputData.stderr) {
         console.error(`Error in ${toolName} help message: ${outputData.stderr}`);
       } else {
+        const helpLines = outputData.stdout.split('\n'); // Divida o texto da ajuda em linhas
+        const flagsHelp = {};
+        let generalHelp = '';
+
+        // Process each line of the help message
+        helpLines.forEach((line) => {
+          line = line.trim();
+
+          // Separating flags and descriptions
+          if (/^-/.test(line)) {
+            const [flag, ...descriptionParts] = line.split(/\s+/); // Separating flag and description
+            const normalizedFlag = flag.replace(/[, ]/g, '').trim(); // Removing commas and spaces
+            flagsHelp[normalizedFlag] = descriptionParts.join(' '); // Store the description
+          } else if (
+            !line.includes('--help') &&
+            !line.toLowerCase().includes('optional') &&
+            !line.toLowerCase().includes('optional options')
+          ) {
+            generalHelp += `${line}\n`;
+          }
+        });
+
+        // Store the help messages
         setHelpMessages((prev) => ({
           ...prev,
-          [toolName]: outputData.stdout || 'No help message available',
+          [toolName]: {
+            general: generalHelp.trim(),
+            flags: flagsHelp, // Store the flags help
+          },
         }));
       }
     } catch (error) {
       console.error(`Failed to load help message for ${toolName}: ${error.message}`);
     }
   };
+
 
   // Validate the workflow to ensure compatibility between tools
   const validateWorkflow = (workflow, inputDataType) => {
@@ -443,11 +471,13 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     if (!toolConfig) return null;
 
     const toolErrors = validationErrors[tool.id] || {};
+    const toolHelp = helpMessages[tool.toolName] || { general: 'Loading help...', flags: {} };
+    const flagHelpMessages = toolHelp.flags || {};
 
     return (
       <Box sx={{ marginTop: 1 }}>
         {toolConfig.flags
-          .filter((flagObj) => flagObj.flag !== '-h') // Exclude help flag
+          .filter((flagObj) => flagObj.flag !== '-h')
           .map((flagObj) => {
             const isFlagRequired = flagObj.required;
             const flagValue = !!tool.params[flagObj.flag];
@@ -464,16 +494,35 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                   gap: 2,
                 }}
               >
-                {/* Render flag differently based on whether it's required or optional */}
+                {/* Render flag and parameter input */}
                 {isFlagRequired ? (
                   <>
                     <Typography variant="body2" sx={{ minWidth: '100px' }}>
                       {flagObj.flag}
                     </Typography>
+                    {/* Add help icon to a required flag */}
+                    <Tooltip
+                      title={flagHelpMessages[flagObj.flag] || 'Loading help message...'}
+                      arrow
+                      componentsProps={{
+                        tooltip: {
+                          sx: {
+                            maxWidth: 300,
+                            whiteSpace: 'pre-wrap',
+                          },
+                        },
+                      }}
+                    >
+                      <IconButton size="small" sx={{ marginLeft: 1 }}>
+                        <HelpOutline fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                     {flagObj.parameter && (
                       <TextField
                         value={parameterValue}
-                        onChange={(e) => handleParameterChange(tool.id, flagObj.parameter, e.target.value)}
+                        onChange={(e) =>
+                          handleParameterChange(tool.id, flagObj.parameter, e.target.value)
+                        }
                         size="small"
                         label={flagObj.parameter}
                         error={!!error}
@@ -491,15 +540,19 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                             : {},
                         }}
                         type={
-                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'integer'
+                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type ===
+                            'integer'
                             ? 'number'
-                            : toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'float'
+                            : toolConfig.parameters.find((p) => p.name === flagObj.parameter)
+                              ?.type === 'float'
                               ? 'number'
                               : 'text'
                         }
                         inputProps={
-                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'integer' ||
-                            toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'float'
+                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type ===
+                            'integer' ||
+                            toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type ===
+                            'float'
                             ? { step: 'any' }
                             : {}
                         }
@@ -512,15 +565,39 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                       control={
                         <Switch
                           checked={flagValue}
-                          onChange={(e) => handleParameterChange(tool.id, flagObj.flag, e.target.checked)}
+                          onChange={(e) =>
+                            handleParameterChange(tool.id, flagObj.flag, e.target.checked)
+                          }
                         />
                       }
                       label={flagObj.flag}
+                      sx={{ alignItems: 'center' }}
                     />
+                    {/* Add help icon to a flag */}
+                    <Tooltip
+                      title={
+                        flagHelpMessages[flagObj.flag] || 'Loading help message...'
+                      }
+                      arrow
+                      componentsProps={{
+                        tooltip: {
+                          sx: {
+                            maxWidth: 300,
+                            whiteSpace: 'pre-wrap',
+                          },
+                        },
+                      }}
+                    >
+                      <IconButton size="small" sx={{ marginLeft: 1 }}>
+                        <HelpOutline fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                     {flagObj.parameter && flagValue && (
                       <TextField
                         value={parameterValue}
-                        onChange={(e) => handleParameterChange(tool.id, flagObj.parameter, e.target.value)}
+                        onChange={(e) =>
+                          handleParameterChange(tool.id, flagObj.parameter, e.target.value)
+                        }
                         size="small"
                         label={flagObj.parameter}
                         error={!!error}
@@ -536,17 +613,22 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                               borderWidth: '1px',
                             }
                             : {},
+                          alignSelf: 'center',
                         }}
                         type={
-                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'integer'
+                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type ===
+                            'integer'
                             ? 'number'
-                            : toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'float'
+                            : toolConfig.parameters.find((p) => p.name === flagObj.parameter)
+                              ?.type === 'float'
                               ? 'number'
                               : 'text'
                         }
                         inputProps={
-                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'integer' ||
-                            toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type === 'float'
+                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type ===
+                            'integer' ||
+                            toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type ===
+                            'float'
                             ? { step: 'any' }
                             : {}
                         }
@@ -594,7 +676,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                 onDelete={() => handleDelete(tool.id)}
                 onDeleteFromHere={() => handleDeleteFromHere(tool.id)}
                 isInvalid={invalidItemIds.includes(tool.id)} // Is true if the tool is invalid
-                helpMessage={helpMessages[tool.toolName]}
+                helpMessage={helpMessages[tool.toolName]?.general}
               >
                 {renderParameters(tool)}
                 <Box sx={{ display: 'flex', alignItems: 'center', marginTop: 1 }}>
