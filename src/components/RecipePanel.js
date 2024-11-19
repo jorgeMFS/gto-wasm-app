@@ -64,9 +64,22 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   const showNotification = useContext(NotificationContext);
 
   useEffect(() => {
-    // Set the initial data type to input data type when the component mounts
-    setDataType(inputDataType);
-  }, [inputDataType, setDataType]);
+    if (workflow.length > 0) {
+      const lastTool = workflow[workflow.length - 1];
+      const lastOutputType = outputTypesMap[lastTool.id];
+
+      // Update the data type based on the last valid tool in the workflow
+      if (lastOutputType) {
+        if (lastOutputType !== dataType) {
+          showNotification(`Data type updated to ${lastOutputType}`, 'info');
+        }
+        setDataType(lastOutputType);
+      }
+    } else {
+      // If the workflow is empty, reset the data type to the input type
+      setDataType(inputDataType);
+    }
+  }, [workflow, outputTypesMap, inputDataType, setDataType]);
 
   // State to store help messages for tools
   useEffect(() => {
@@ -410,20 +423,19 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
         [tool.id]: detectedType,
       }));
 
-      setDataType(detectedType); // Update data type context
-
       if (outputData.stdout.trim() === '') {
         // Notify the user if the output is empty
         showNotification('Execution resulted in an empty output.', 'warning');
-      } else {
-        if (hasInfoMessage) {
-          setTimeout(() => {
-            showNotification(`Data type updated to ${detectedType}`, 'info');
-          }, 7000); // Delay to ensure it appears after info messages
-        } else {
-          showNotification(`Data type updated to ${detectedType}`, 'info');
-        }
       }
+      // else {
+      //   if (hasInfoMessage) {
+      //     setTimeout(() => {
+      //       showNotification(`Data type updated to ${detectedType}`, 'info');
+      //     }, 7000); // Delay to ensure it appears after info messages
+      //   } else {
+      //     showNotification(`Data type updated to ${detectedType}`, 'info');
+      //   }
+      // }
 
 
       return outputData.stdout;
