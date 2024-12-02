@@ -13,7 +13,7 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ContentCopy, FolderOpen, GetApp, HelpOutline, PlayArrow, Save } from '@mui/icons-material';
+import { ContentCopy, FileUpload, FolderOpen, GetApp, HelpOutline, PlayArrow, Save } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -32,6 +32,7 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useContext, useEffect, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import description from '../../description.json';
 import { DataTypeContext } from '../contexts/DataTypeContext';
 import { NotificationContext } from '../contexts/NotificationContext';
@@ -54,7 +55,9 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   const [exportFileName, setExportFileName] = useState('workflow_script.sh'); // Default export name
   const [openExportDialog, setOpenExportDialog] = useState(false); // State for export dialog
   const [command, setCommand] = useState('');
-
+  const [openImportDialog, setOpenImportDialog] = useState(false); // State for import dialog
+  const [importInput, setImportInput] = useState(''); // State for import input
+  const [importError, setImportError] = useState(''); // State for import error
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -154,6 +157,121 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     }
   };
 
+  const processImportCommand = (command) => {
+    try {
+      // Divide o comando em etapas
+      const steps = command.split(/\|\|?/).map((step) => step.trim());
+      if (steps.length === 0) throw new Error('Invalid command: No steps found.');
+
+      let inputFile = null;
+      let outputFile = null;
+
+      let newWorkflow = [];
+
+      steps.forEach((step) => {
+        // Divide o comando da etapa em ferramenta e argumentos
+        const [toolWithPath, ...args] = step.split(/\s+/);
+        const toolName = toolWithPath.replace('./gto_', ''); // Extrai o nome da ferramenta
+        const toolConfig = description.tools.find((t) => t.name === `gto_${toolName}`);
+        if (!toolConfig) throw new Error(`Tool "${toolName}" is not recognized.`);
+
+        // Inicializa os parâmetros com flags e valores como chaves e valores booleanos ou strings
+        const params = {};
+
+        for (let i = 0; i < args.length; i++) {
+          const arg = args[i];
+          if (arg.startsWith('./')) {
+            throw new Error('Invalid argument: Consecutive tool paths detected.');
+          } else if (arg === '<') {
+            // Manipulação de redirecionamento de entrada
+            if (inputFile) throw new Error('Multiple input redirections detected.');
+            i++; // Próximo argumento é o arquivo de entrada
+            if (!args[i]) throw new Error('Missing input file after "<".');
+            inputFile = args[i];
+          } else if (arg === '>') {
+            // Manipulação de redirecionamento de saída
+            if (outputFile) throw new Error('Multiple output redirections detected.');
+            i++; // Próximo argumento é o arquivo de saída
+            if (!args[i]) throw new Error('Missing output file after ">".');
+            outputFile = args[i];
+          } else {
+            // Verifica se o argumento é uma flag definida no description.json
+            const flagObj = toolConfig.flags.find((flag) => flag.flag === arg);
+
+            if (flagObj) {
+              if (flagObj.parameter) {
+                // Se a flag tiver um parâmetro associado
+                i++; // Próximo argumento é o valor do parâmetro
+                params[flagObj.flag] = true; // Ativa a flag
+                if (!args[i] || ['<', '>', '-'].includes(args[i][0])) {
+                  params[flagObj.parameter] = ''; // Define o valor do parâmetro como vazio
+                  i--; // Revert to the previous argument
+                } else {
+                  params[flagObj.parameter] = args[i]; // Define o valor do parâmetro
+                }
+              }
+            }
+          }
+        }
+
+        const uniqueId = `${toolName}-${uuidv4()}`;
+        const newOperation = {
+          id: uniqueId,
+          toolName,
+          params,
+        };
+
+        // Adiciona a nova operação ao workflow local
+        newWorkflow.push(newOperation);
+      });
+
+      if (!inputFile) throw new Error('Workflow must include an input file.');
+      if (!outputFile) throw new Error('Workflow must include an output file.');
+
+      // Limpa erros e fecha o diálogo
+      setImportError('');
+      setOpenImportDialog(false);
+
+      // Get the input data type of the first tool
+      const firstTool = description.tools.find((t) => `gto_${newWorkflow[0].toolName}` === t.name);
+      const firstToolInputTypes = firstTool.input.format.split(',').map(f => f.trim());
+      const firstToolInputType = firstToolInputTypes[0] || 'UNKNOWN';
+
+      if (validateWorkflow(newWorkflow, firstToolInputType)) {
+        let valid = true;
+        let validInput = true;
+
+        for (let i = 0; i < newWorkflow.length; i++) {
+          const tool = newWorkflow[i];
+          if (!validateParameters(tool)) {
+            valid = false;
+            break;
+          }
+        }
+
+        if (!firstToolInputTypes.includes(inputDataType)) {
+          validInput = false;
+        }
+
+        if (valid && validInput) {
+          showNotification('Workflow imported successfully!', 'success');
+        } else if (!valid && validInput) {
+          showNotification('Workflow imported with errors. Please correct the invalid parameters', 'warning');
+        } else if (valid && !validInput) {
+          showNotification('Workflow imported successfully! Be aware that the input data type may not be compatible with the first tool.', 'warning');
+        } else {
+          showNotification('Workflow imported with errors. Please correct the invalid parameters and the input data type.', 'warning');
+        }
+
+        setWorkflow(newWorkflow);
+      } else {
+        throw new Error('Invalid workflow: Incompatible steps.');
+      }
+    } catch (error) {
+      setImportError(error.message);
+      showNotification(`Failed to import workflow: ${error.message}`, 'error');
+    }
+  };
 
   // Validate the workflow to ensure compatibility between tools
   const validateWorkflow = (workflow, inputDataType) => {
@@ -325,11 +443,6 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     setWorkflow(saved.workflow);
     setOpenLoadDialog(false);
   };
-
-  const handleExportRecipe = () => {
-    exportRecipe(workflow, inputData, inputDataType, outputTypesMap, exportFileName, showNotification, setOpenExportDialog);
-  };
-
 
   const handleParameterChange = (id, name, value) => {
     setWorkflow(
@@ -763,6 +876,14 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
         >
           Export Recipe
         </Button>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => setOpenImportDialog(true)}
+          startIcon={<FileUpload />}
+        >
+          Import Recipe
+        </Button>
       </Box>
 
       {/* Save Recipe Dialog */}
@@ -903,6 +1024,36 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
             color="primary"
           >
             Download Script
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Import Recipe Dialog */}
+      <Dialog open={openImportDialog} onClose={() => setOpenImportDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Import Recipe</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Command"
+            type="text"
+            fullWidth
+            value={importInput}
+            onChange={(e) => setImportInput(e.target.value)}
+            helperText={importError || 'Enter a valid workflow command.'}
+            error={!!importError}
+            placeholder="e.g., ./gto_fasta_complement  < input.fa || ./gto_fasta_extract -i 0 -e 4 > output.txt"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenImportDialog(false)} color="secondary">
+            Cancel
+          </Button>
+          <Button
+            onClick={() => processImportCommand(importInput)}
+            color="primary"
+          >
+            Import
           </Button>
         </DialogActions>
       </Dialog>
