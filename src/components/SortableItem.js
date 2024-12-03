@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 
-const SortableItem = ({ id, toolName, onDelete, onDeleteFromHere, children, isDragging, isInvalid, helpMessage }) => {
+const SortableItem = ({ id, toolName, onDelete, onDeleteFromHere, children, isDragging, isInvalid, helpMessage, workflowLength }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id,
   });
@@ -41,9 +41,7 @@ const SortableItem = ({ id, toolName, onDelete, onDeleteFromHere, children, isDr
   };
 
   const handleConfirmDelete = () => {
-    if (deleteAction === 'single') {
-      onDelete(id); // Delete only this operation
-    } else if (deleteAction === 'fromHere') {
+    if (deleteAction === 'fromHere') {
       onDeleteFromHere(id); // Delete from here downwards
     }
     handleConfirmClose();
@@ -106,20 +104,21 @@ const SortableItem = ({ id, toolName, onDelete, onDeleteFromHere, children, isDr
         >
           <MenuItem
             onClick={() => {
-              handleMenuClose();
-              handleConfirmOpen('single');
+              onDelete(id);
             }}
           >
             Remove this operation
           </MenuItem>
-          <MenuItem
-            onClick={() => {
-              handleMenuClose();
-              handleConfirmOpen('fromHere');
-            }}
-          >
-            Remove from here downwards
-          </MenuItem>
+          {workflowLength > 1 && (
+            <MenuItem
+              onClick={() => {
+                handleMenuClose();
+                handleConfirmOpen();
+              }}
+            >
+              Remove from here downwards
+            </MenuItem>
+          )}
         </Menu>
       </Box>
       {children}
@@ -129,7 +128,7 @@ const SortableItem = ({ id, toolName, onDelete, onDeleteFromHere, children, isDr
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete {deleteAction === 'single' ? 'this operation' : 'this operation and all subsequent ones'}? This action cannot be undone.
+            Are you sure you want to delete this operation and all subsequent ones? This action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
