@@ -41,9 +41,7 @@ const SortableItem = ({ id, toolName, onDelete, onDeleteFromHere, children, isDr
   };
 
   const handleConfirmDelete = () => {
-    if (deleteAction === 'fromHere') {
-      onDeleteFromHere(id); // Delete from here downwards
-    }
+    onDeleteFromHere(id); // Delete from here downwards
     handleConfirmClose();
   };
 

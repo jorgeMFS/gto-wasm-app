@@ -13,11 +13,12 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ContentCopy, FileUpload, FolderOpen, GetApp, HelpOutline, PlayArrow, Save } from '@mui/icons-material';
+import { ContentCopy, ExpandLess, ExpandMore, FileUpload, FolderOpen, GetApp, PlayArrow, Save } from '@mui/icons-material';
 import {
   Box,
   Button,
   CircularProgress,
+  Collapse,
   Dialog,
   DialogActions,
   DialogContent,
@@ -58,6 +59,8 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   const [openImportDialog, setOpenImportDialog] = useState(false); // State for import dialog
   const [importInput, setImportInput] = useState(''); // State for import input
   const [importError, setImportError] = useState(''); // State for import error
+  const [expandedTools, setExpandedTools] = useState({}); // Track each tool's expanded state
+  const [expandedOutputs, setExpandedOutputs] = useState({}); // Track each tool's output expanded state
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -542,16 +545,6 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
         // Notify the user if the output is empty
         showNotification('Execution resulted in an empty output.', 'warning');
       }
-      // else {
-      //   if (hasInfoMessage) {
-      //     setTimeout(() => {
-      //       showNotification(`Data type updated to ${detectedType}`, 'info');
-      //     }, 7000); // Delay to ensure it appears after info messages
-      //   } else {
-      //     showNotification(`Data type updated to ${detectedType}`, 'info');
-      //   }
-      // }
-
 
       return outputData.stdout;
     } catch (error) {
@@ -593,6 +586,20 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     }
   };
 
+  const toggleExpand = (toolId) => {
+    setExpandedTools((prev) => ({
+      ...prev,
+      [toolId]: !prev[toolId],
+    }));
+  };
+
+  const toggleOutputExpand = (toolId) => {
+    setExpandedOutputs((prev) => ({
+      ...prev,
+      [toolId]: !prev[toolId],
+    }));
+  };
+
   const renderParameters = (tool) => {
     const toolConfig = description.tools.find((t) => t.name === `gto_${tool.toolName}`);
     if (!toolConfig) return null;
@@ -601,93 +608,155 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     const toolHelp = helpMessages[tool.toolName] || { general: 'Loading help...', flags: {} };
     const flagHelpMessages = toolHelp.flags || {};
 
-    return (
-      <Box sx={{ marginTop: 1 }}>
-        {toolConfig.flags
-          .filter((flagObj) => flagObj.flag !== '-h')
-          .map((flagObj) => {
-            const isFlagRequired = flagObj.required;
-            const flagValue = !!tool.params[flagObj.flag];
-            const parameterValue = tool.params[flagObj.parameter] || '';
-            const error = toolErrors[flagObj.parameter] || '';
+    // Filter flags based on required and optionals
+    const requiredFlags = toolConfig.flags.filter((flagObj) => flagObj.required && flagObj.flag !== '-h');
+    const optionalFlags = toolConfig.flags.filter((flagObj) => !flagObj.required && flagObj.flag !== '-h');
 
-            return (
-              <Box
-                key={flagObj.flag}
+    return (
+      <Box sx={{ marginTop: 2 }}>
+        {/* Required Flags */}
+        {requiredFlags.length > 0 && (
+          <Box>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                marginBottom: 1,
+                color: 'text.secondary',
+              }}
+            >
+              Required Flags
+            </Typography>
+            {requiredFlags.map((flagObj) => {
+              const flagValue = !!tool.params[flagObj.flag];
+              const parameterValue = tool.params[flagObj.parameter] || '';
+              const error = toolErrors[flagObj.parameter] || '';
+
+              return (
+                <Box
+                  key={flagObj.flag}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    marginBottom: 1,
+                    gap: 2,
+                  }}
+                >
+                  <FormControlLabel
+                    control={<span />}
+                    label={
+                      <Tooltip
+                        title={flagHelpMessages[flagObj.flag] || 'Loading help message...'}
+                        arrow
+                        componentsProps={{
+                          tooltip: {
+                            sx: {
+                              maxWidth: 300,
+                              whiteSpace: 'pre-wrap',
+                            },
+                          },
+                        }}
+                      >
+                        <span>
+                          {flagObj.flag} <span style={{ color: 'red' }}>*</span>
+                        </span>
+                      </Tooltip>
+                    }
+                    sx={{ alignItems: 'center', margin: 0 }}
+                  />
+                  {flagObj.parameter && (
+                    <TextField
+                      value={parameterValue}
+                      onChange={(e) =>
+                        handleParameterChange(tool.id, flagObj.parameter, e.target.value)
+                      }
+                      size="small"
+                      label={flagObj.parameter}
+                      error={!!error}
+                      helperText={error}
+                      sx={{
+                        flexGrow: 1,
+                        '& .MuiOutlinedInput-root': {
+                          borderColor: error ? 'red' : 'default',
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': error
+                          ? {
+                            borderColor: 'red',
+                            borderWidth: '1px',
+                          }
+                          : {},
+                      }}
+                      type={
+                        toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type ===
+                          'integer'
+                          ? 'number'
+                          : toolConfig.parameters.find((p) => p.name === flagObj.parameter)
+                            ?.type === 'float'
+                            ? 'number'
+                            : 'text'
+                      }
+                      inputProps={
+                        toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type ===
+                          'integer' ||
+                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type ===
+                          'float'
+                          ? { step: 'any' }
+                          : {}
+                      }
+                    />
+                  )}
+                </Box>
+              );
+            })}
+          </Box>
+        )}
+
+        {/* Optional Flags */}
+        {optionalFlags.length > 0 && (
+          <Box sx={{ marginTop: 2 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                cursor: 'pointer',
+                transition: 'background-color 0.3s ease',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                },
+                padding: '4px 8px',
+                borderRadius: '4px',
+              }}
+              onClick={() => toggleExpand(tool.id)}
+            >
+              <Typography
+                variant="subtitle2"
                 sx={{
-                  display: 'flex',
-                  alignItems: 'center',
                   marginBottom: 1,
-                  gap: 2,
+                  color: 'text.secondary',
+                  flexGrow: 1,
                 }}
               >
-                {/* Render flag and parameter input */}
-                {isFlagRequired ? (
-                  <>
-                    <Typography variant="body2" sx={{ minWidth: '100px' }}>
-                      {flagObj.flag}
-                    </Typography>
-                    {/* Add help icon to a required flag */}
-                    <Tooltip
-                      title={flagHelpMessages[flagObj.flag] || 'Loading help message...'}
-                      arrow
-                      componentsProps={{
-                        tooltip: {
-                          sx: {
-                            maxWidth: 300,
-                            whiteSpace: 'pre-wrap',
-                          },
-                        },
-                      }}
-                    >
-                      <IconButton size="small" sx={{ marginLeft: 1 }}>
-                        <HelpOutline fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    {flagObj.parameter && (
-                      <TextField
-                        value={parameterValue}
-                        onChange={(e) =>
-                          handleParameterChange(tool.id, flagObj.parameter, e.target.value)
-                        }
-                        size="small"
-                        label={flagObj.parameter}
-                        error={!!error}
-                        helperText={error}
-                        sx={{
-                          flexGrow: 1,
-                          '& .MuiOutlinedInput-root': {
-                            borderColor: error ? 'red' : 'default',
-                          },
-                          '& .MuiOutlinedInput-notchedOutline': error
-                            ? {
-                              borderColor: 'red',
-                              borderWidth: '1px',
-                            }
-                            : {},
-                        }}
-                        type={
-                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type ===
-                            'integer'
-                            ? 'number'
-                            : toolConfig.parameters.find((p) => p.name === flagObj.parameter)
-                              ?.type === 'float'
-                              ? 'number'
-                              : 'text'
-                        }
-                        inputProps={
-                          toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type ===
-                            'integer' ||
-                            toolConfig.parameters.find((p) => p.name === flagObj.parameter)?.type ===
-                            'float'
-                            ? { step: 'any' }
-                            : {}
-                        }
-                      />
-                    )}
-                  </>
-                ) : (
-                  <>
+                Optional Flags
+              </Typography>
+              {expandedTools[tool.id] ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
+            </Box>
+
+            {/* Collapse */}
+            <Collapse in={expandedTools[tool.id]} timeout="auto" unmountOnExit>
+              {optionalFlags.map((flagObj) => {
+                const flagValue = !!tool.params[flagObj.flag];
+                const parameterValue = tool.params[flagObj.parameter] || '';
+                const error = toolErrors[flagObj.parameter] || '';
+
+                return (
+                  <Box
+                    key={flagObj.flag}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      marginBottom: 1,
+                      gap: 2,
+                    }}
+                  >
                     <FormControlLabel
                       control={
                         <Switch
@@ -697,28 +766,24 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                           }
                         />
                       }
-                      label={flagObj.flag}
-                      sx={{ alignItems: 'center' }}
-                    />
-                    {/* Add help icon to a flag */}
-                    <Tooltip
-                      title={
-                        flagHelpMessages[flagObj.flag] || 'Loading help message...'
+                      label={
+                        <Tooltip
+                          title={flagHelpMessages[flagObj.flag] || 'Loading help message...'}
+                          arrow
+                          componentsProps={{
+                            tooltip: {
+                              sx: {
+                                maxWidth: 300,
+                                whiteSpace: 'pre-wrap',
+                              },
+                            },
+                          }}
+                        >
+                          <span>{flagObj.flag}</span>
+                        </Tooltip>
                       }
-                      arrow
-                      componentsProps={{
-                        tooltip: {
-                          sx: {
-                            maxWidth: 300,
-                            whiteSpace: 'pre-wrap',
-                          },
-                        },
-                      }}
-                    >
-                      <IconButton size="small" sx={{ marginLeft: 1 }}>
-                        <HelpOutline fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                      sx={{ alignItems: 'center', margin: 0 }}
+                    />
                     {flagObj.parameter && flagValue && (
                       <TextField
                         value={parameterValue}
@@ -761,11 +826,12 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                         }
                       />
                     )}
-                  </>
-                )}
-              </Box>
-            );
-          })}
+                  </Box>
+                );
+              })}
+            </Collapse>
+          </Box>
+        )}
       </Box>
     );
   };
@@ -824,12 +890,29 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                 </Box>
                 {outputs[tool.id] && (
                   <Box sx={{ marginTop: 1 }}>
-                    <Typography variant="subtitle2">Output:</Typography>
-                    <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
-                      <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                        {outputs[tool.id]}
-                      </Typography>
-                    </Paper>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="subtitle2">Output:</Typography>
+                      <Button
+                        size="small"
+                        onClick={() => toggleOutputExpand(tool.id)}
+                      >
+                        {expandedOutputs[tool.id] ? 'Collapse' : 'Expand'}
+                      </Button>
+                    </Box>
+                    <Collapse in={expandedOutputs[tool.id]} timeout="auto" unmountOnExit>
+                      <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
+                          {outputs[tool.id]}
+                        </Typography>
+                      </Paper>
+                    </Collapse>
+                    {!expandedOutputs[tool.id] && (
+                      <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
+                          {outputs[tool.id].length > 50 ? `${outputs[tool.id].slice(0, 100)}...` : outputs[tool.id]}
+                        </Typography>
+                      </Paper>
+                    )}
                   </Box>
                 )}
               </SortableItem>
