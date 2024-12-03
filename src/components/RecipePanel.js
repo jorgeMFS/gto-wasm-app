@@ -804,6 +804,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                 onDeleteFromHere={() => handleDeleteFromHere(tool.id)}
                 isInvalid={invalidItemIds.includes(tool.id)} // Is true if the tool is invalid
                 helpMessage={helpMessages[tool.toolName]?.general}
+                workflowLength={workflow.length}
               >
                 {renderParameters(tool)}
                 <Box sx={{ display: 'flex', alignItems: 'center', marginTop: 1 }}>
