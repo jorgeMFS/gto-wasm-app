@@ -13,7 +13,7 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ContentCopy, ExpandLess, ExpandMore, FileUpload, FolderOpen, GetApp, PlayArrow, Save } from '@mui/icons-material';
+import { AddCircle, ContentCopy, ExpandLess, ExpandMore, FileUpload, FolderOpen, GetApp, PlayArrow, Save } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -61,6 +61,9 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   const [importError, setImportError] = useState(''); // State for import error
   const [expandedTools, setExpandedTools] = useState({}); // Track each tool's expanded state
   const [expandedOutputs, setExpandedOutputs] = useState({}); // Track each tool's output expanded state
+  const [openToolsModal, setOpenToolsModal] = useState(false); // State for tools modal
+  const [filteredTools, setFilteredTools] = useState([]); // State for filtered tools
+  const [selectedIndex, setSelectedIndex] = useState(null); // State for selected tool index
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -421,7 +424,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     const index = workflow.findIndex((item) => item.id === id);
 
     if (index !== -1) {
-      const newWorkflow = workflow.slice(0, index); // Remove todos os itens a partir do índice
+      const newWorkflow = workflow.slice(0, index); // Keep only the operations before the selected one
       setWorkflow(newWorkflow);
 
       if (newWorkflow.length === 0) {
@@ -465,6 +468,44 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     );
   };
 
+  const handleListOperations = (index) => {
+    const previous = workflow[index]
+    const previousOutputType = outputTypesMap[previous.id]
+
+    const next = workflow[index + 1]
+    const nextTool = description.tools.find((t) => t.name === `gto_${next.toolName}`)
+    const nextInputTypes = nextTool.input.format.split(',').map(f => f.trim())
+
+    const filteredOperations = description.tools.filter((tool) => {
+      const toolInputTypes = tool.input.format.split(',').map(f => f.trim());
+      const toolOutputTypes = tool.output.format.split(',').map(f => f.trim());
+
+      return toolInputTypes.includes(previousOutputType) && toolOutputTypes.some((type) => nextInputTypes.includes(type));
+    });
+
+    setFilteredTools(filteredOperations);
+    setSelectedIndex(index);
+    setOpenToolsModal(true);
+  };
+
+  const handleCloseToolModal = () => {
+    setOpenToolsModal(false);
+    setFilteredTools([]);
+    setSelectedIndex(null);
+  };
+
+  const handleAddTool = (tool) => {
+    const toolName = tool.name.replace('gto_', '');
+    const newOperation = {
+      id: `${toolName}-${Date.now()}`,
+      toolName: toolName,
+      params: {},
+    };
+    const newWorkflow = [...workflow];
+    newWorkflow.splice(selectedIndex + 1, 0, newOperation);
+    setWorkflow(newWorkflow);
+    handleCloseToolModal();
+  };
 
   // State to store outputs of tools
   const [outputs, setOutputs] = useState({});
@@ -861,61 +902,90 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
             items={workflow.map((item) => item.id)}
             strategy={verticalListSortingStrategy}
           >
-            {workflow.map((tool) => (
-              <SortableItem
-                key={tool.id}
-                id={tool.id}
-                toolName={tool.toolName}
-                onDelete={() => handleDelete(tool.id)}
-                onDeleteFromHere={() => handleDeleteFromHere(tool.id)}
-                isInvalid={invalidItemIds.includes(tool.id)} // Is true if the tool is invalid
-                helpMessage={helpMessages[tool.toolName]?.general}
-                workflowLength={workflow.length}
-              >
-                {renderParameters(tool)}
-                <Box sx={{ display: 'flex', alignItems: 'center', marginTop: 1 }}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    size="small"
-                    onClick={() => handleRunTool(tool)}
-                    startIcon={<PlayArrow />}
-                    disabled={runningToolIds.includes(tool.id)}
-                  >
-                    Run
-                  </Button>
-                  {runningToolIds.includes(tool.id) && (
-                    <CircularProgress size={24} sx={{ marginLeft: 1 }} />
-                  )}
-                </Box>
-                {outputs[tool.id] && (
-                  <Box sx={{ marginTop: 1 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="subtitle2">Output:</Typography>
-                      <Button
-                        size="small"
-                        onClick={() => toggleOutputExpand(tool.id)}
-                      >
-                        {expandedOutputs[tool.id] ? 'Collapse' : 'Expand'}
-                      </Button>
-                    </Box>
-                    <Collapse in={expandedOutputs[tool.id]} timeout="auto" unmountOnExit>
-                      <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
-                          {outputs[tool.id]}
-                        </Typography>
-                      </Paper>
-                    </Collapse>
-                    {!expandedOutputs[tool.id] && (
-                      <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
-                          {outputs[tool.id].length > 50 ? `${outputs[tool.id].slice(0, 100)}...` : outputs[tool.id]}
-                        </Typography>
-                      </Paper>
+            {workflow.map((tool, index) => (
+              <React.Fragment key={tool.id}>
+                <SortableItem
+                  id={tool.id}
+                  toolName={tool.toolName}
+                  onDelete={() => handleDelete(tool.id)}
+                  onDeleteFromHere={() => handleDeleteFromHere(tool.id)}
+                  isInvalid={invalidItemIds.includes(tool.id)} // Is true if the tool is invalid
+                  helpMessage={helpMessages[tool.toolName]?.general}
+                  workflowLength={workflow.length}
+                >
+                  {renderParameters(tool)}
+                  <Box sx={{ display: 'flex', alignItems: 'center', marginTop: 1 }}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="small"
+                      onClick={() => handleRunTool(tool)}
+                      startIcon={<PlayArrow />}
+                      disabled={runningToolIds.includes(tool.id)}
+                    >
+                      Run
+                    </Button>
+                    {runningToolIds.includes(tool.id) && (
+                      <CircularProgress size={24} sx={{ marginLeft: 1 }} />
                     )}
                   </Box>
+                  {outputs[tool.id] && (
+                    <Box sx={{ marginTop: 1 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="subtitle2">Output:</Typography>
+                        <Button
+                          size="small"
+                          onClick={() => toggleOutputExpand(tool.id)}
+                        >
+                          {expandedOutputs[tool.id] ? 'Collapse' : 'Expand'}
+                        </Button>
+                      </Box>
+                      <Collapse in={expandedOutputs[tool.id]} timeout="auto" unmountOnExit>
+                        <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', fontSize: '0.800rem' }}>
+                            {outputs[tool.id]}
+                          </Typography>
+                        </Paper>
+                      </Collapse>
+                      {!expandedOutputs[tool.id] && (
+                        <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', fontSize: '0.800rem' }}>
+                            {outputs[tool.id].length > 50 ? `${outputs[tool.id].slice(0, 90)}...` : outputs[tool.id]}
+                          </Typography>
+                        </Paper>
+                      )}
+                    </Box>
+                  )}
+                </SortableItem>
+                {index < workflow.length - 1 && (
+                  <Box
+                    sx={{   // Add Operation Button Style
+                      height: '10px',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      opacity: 0,
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        height: '40px',
+                        opacity: 1,
+                      },
+                    }}
+                    onMouseEnter={() => { }}
+                    onMouseLeave={() => { }}
+                  >
+                    <Tooltip title="Add Operation">
+                      <Button
+                        color="primary"
+                        onClick={() => handleListOperations(index)}
+                        sx={{ minWidth: '32px', minHeight: '32px', opacity: 0.8 }}
+                      >
+                        <AddCircle sx={{ fontSize: '24px' }} />
+                      </Button>
+                    </Tooltip>
+                  </Box>
                 )}
-              </SortableItem>
+              </React.Fragment>
             ))}
           </SortableContext>
           <DragOverlay>
@@ -971,6 +1041,43 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
           Import Recipe
         </Button>
       </Box>
+
+      {/* Modal to select compatible tools */}
+      <Dialog open={openToolsModal} onClose={handleCloseToolModal} maxWidth="md" fullWidth>
+        <DialogTitle>Select a Tool</DialogTitle>
+        <DialogContent>
+          {filteredTools.length === 0 ? (
+            <Typography>No compatible tools found.</Typography>
+          ) : (
+            filteredTools.map((tool) => (
+              <Paper
+                key={tool.name}
+                sx={{
+                  padding: 1,
+                  marginBottom: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <Typography sx={{ flexGrow: 1 }}>{tool.name}</Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                  onClick={() => handleAddTool(tool)}
+                >
+                  Add
+                </Button>
+              </Paper>
+            ))
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseToolModal} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Save Recipe Dialog */}
       <Dialog open={openSaveDialog} onClose={() => setOpenSaveDialog(false)}>
@@ -1144,7 +1251,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
         </DialogActions>
       </Dialog>
 
-    </Paper>
+    </Paper >
   );
 };
 
