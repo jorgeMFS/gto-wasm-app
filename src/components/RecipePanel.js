@@ -60,6 +60,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   const [importInput, setImportInput] = useState(''); // State for import input
   const [importError, setImportError] = useState(''); // State for import error
   const [expandedTools, setExpandedTools] = useState({}); // Track each tool's expanded state
+  const [expandedOutputs, setExpandedOutputs] = useState({}); // Track each tool's output expanded state
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -544,16 +545,6 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
         // Notify the user if the output is empty
         showNotification('Execution resulted in an empty output.', 'warning');
       }
-      // else {
-      //   if (hasInfoMessage) {
-      //     setTimeout(() => {
-      //       showNotification(`Data type updated to ${detectedType}`, 'info');
-      //     }, 7000); // Delay to ensure it appears after info messages
-      //   } else {
-      //     showNotification(`Data type updated to ${detectedType}`, 'info');
-      //   }
-      // }
-
 
       return outputData.stdout;
     } catch (error) {
@@ -597,6 +588,13 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
 
   const toggleExpand = (toolId) => {
     setExpandedTools((prev) => ({
+      ...prev,
+      [toolId]: !prev[toolId],
+    }));
+  };
+
+  const toggleOutputExpand = (toolId) => {
+    setExpandedOutputs((prev) => ({
       ...prev,
       [toolId]: !prev[toolId],
     }));
@@ -892,12 +890,29 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                 </Box>
                 {outputs[tool.id] && (
                   <Box sx={{ marginTop: 1 }}>
-                    <Typography variant="subtitle2">Output:</Typography>
-                    <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
-                      <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                        {outputs[tool.id]}
-                      </Typography>
-                    </Paper>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="subtitle2">Output:</Typography>
+                      <Button
+                        size="small"
+                        onClick={() => toggleOutputExpand(tool.id)}
+                      >
+                        {expandedOutputs[tool.id] ? 'Collapse' : 'Expand'}
+                      </Button>
+                    </Box>
+                    <Collapse in={expandedOutputs[tool.id]} timeout="auto" unmountOnExit>
+                      <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                          {outputs[tool.id]}
+                        </Typography>
+                      </Paper>
+                    </Collapse>
+                    {!expandedOutputs[tool.id] && (
+                      <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                          {outputs[tool.id].length > 50 ? `${outputs[tool.id].slice(0, 100)}...` : outputs[tool.id]}
+                        </Typography>
+                      </Paper>
+                    )}
                   </Box>
                 )}
               </SortableItem>
