@@ -112,7 +112,8 @@ const App = () => {
               sx={{
                 display: 'flex',
                 flexDirection: 'column',
-                overflow: 'hidden', // Prevents overflow beyond the container
+                overflowY: 'auto', // Independent scrolling
+                maxHeight: 'calc(100vh - 150px)', // Adjusts height relative to header/footer
               }}
             >
               <Box
@@ -120,7 +121,6 @@ const App = () => {
                   flexGrow: 1,
                   mb: 2,
                   overflowY: 'auto', // Independent scrolling
-                  maxHeight: 'calc(50% - 8px)', // Divides the height in half
                 }}
               >
                 <InputPanel inputData={inputData} setInputData={setInputData} />
@@ -129,7 +129,6 @@ const App = () => {
                 sx={{
                   flexGrow: 1,
                   overflowY: 'auto', // Independent scrolling
-                  maxHeight: 'calc(50% - 8px)',
                 }}
               >
                 <OutputPanel outputData={outputData} setOutputData={setOutputData} />
