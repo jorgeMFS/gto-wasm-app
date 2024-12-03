@@ -718,12 +718,12 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                 display: 'flex',
                 alignItems: 'center',
                 cursor: 'pointer',
-                transition: 'background-color 0.3s ease', // Transição suave para o hover
+                transition: 'background-color 0.3s ease',
                 '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.05)', // Cor mais escura ao passar o mouse
+                  backgroundColor: 'rgba(0, 0, 0, 0.05)',
                 },
-                padding: '4px 8px', // Adiciona um pouco de espaçamento interno para o hover
-                borderRadius: '4px', // Deixa as bordas levemente arredondadas
+                padding: '4px 8px',
+                borderRadius: '4px',
               }}
               onClick={() => toggleExpand(tool.id)}
             >
@@ -901,14 +901,14 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                     </Box>
                     <Collapse in={expandedOutputs[tool.id]} timeout="auto" unmountOnExit>
                       <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
                           {outputs[tool.id]}
                         </Typography>
                       </Paper>
                     </Collapse>
                     {!expandedOutputs[tool.id] && (
                       <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
                           {outputs[tool.id].length > 50 ? `${outputs[tool.id].slice(0, 100)}...` : outputs[tool.id]}
                         </Typography>
                       </Paper>
