@@ -114,11 +114,18 @@ const InputPanel = ({ inputData, setInputData }) => {
     };
   }, [debounceTimer]);
 
+  const numberOfLines = inputData.split('\n').length;
+
   return (
     <Paper elevation={3} sx={{ padding: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Typography variant="h6" gutterBottom>
-        Input
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h6" gutterBottom>
+          Input
+        </Typography>
+        <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
+          {inputDataType}
+        </Typography>
+      </Box>
       <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         <TextField
           variant="outlined"
@@ -126,7 +133,7 @@ const InputPanel = ({ inputData, setInputData }) => {
           value={inputData}
           onChange={handleTextChange}
           placeholder="e.g., >Sequence1\nACGT..."
-          rows={10}
+          rows={11}
           sx={{
             flexGrow: 1,
             marginBottom: 1,
@@ -149,7 +156,10 @@ const InputPanel = ({ inputData, setInputData }) => {
           error={!isValid && inputDataType !== 'UNKNOWN'}
           helperText={!isValid && inputDataType !== 'UNKNOWN' ? `The entered data does not conform to the expected ${inputDataType} format.` : ''}
         />
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
+            {inputData.length} characters, {numberOfLines} lines
+          </Typography>
           <Tooltip title="Upload File">
             <IconButton
               color="primary"
@@ -174,17 +184,14 @@ const InputPanel = ({ inputData, setInputData }) => {
               />
             </IconButton>
           </Tooltip>
-          {fileName && (
-            <Typography sx={{ marginLeft: 1, fontSize: '0.875rem', wordBreak: 'break-word' }}>
-              {fileName}
-            </Typography>
-          )}
         </Box>
+        {fileName && (
+          <Typography sx={{ marginLeft: 1, fontSize: '0.875rem', wordBreak: 'break-word' }}>
+            {fileName}
+          </Typography>
+        )}
       </Box>
       <Box sx={{ marginTop: 1 }}>
-        <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
-          Input Data Type: {inputDataType}
-        </Typography>
         {!isValid && inputDataType !== 'UNKNOWN' && (
           <Typography variant="body2" color="error" sx={{ fontSize: '0.875rem' }}>
             The entered data does not conform to the expected {inputDataType} format.

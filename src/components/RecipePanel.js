@@ -159,7 +159,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
 
   const processImportCommand = (command) => {
     try {
-      // Divide o comando em etapas
+      // Split the command into steps
       const steps = command.split(/\|\|?/).map((step) => step.trim());
       if (steps.length === 0) throw new Error('Invalid command: No steps found.');
 
@@ -169,13 +169,13 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       let newWorkflow = [];
 
       steps.forEach((step) => {
-        // Divide o comando da etapa em ferramenta e argumentos
+        // Divides the step into tool and arguments
         const [toolWithPath, ...args] = step.split(/\s+/);
-        const toolName = toolWithPath.replace('./gto_', ''); // Extrai o nome da ferramenta
+        const toolName = toolWithPath.replace('./gto_', ''); // Extract the tool name
         const toolConfig = description.tools.find((t) => t.name === `gto_${toolName}`);
         if (!toolConfig) throw new Error(`Tool "${toolName}" is not recognized.`);
 
-        // Inicializa os parâmetros com flags e valores como chaves e valores booleanos ou strings
+        // Initialize the parameters object
         const params = {};
 
         for (let i = 0; i < args.length; i++) {
@@ -183,31 +183,30 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
           if (arg.startsWith('./')) {
             throw new Error('Invalid argument: Consecutive tool paths detected.');
           } else if (arg === '<') {
-            // Manipulação de redirecionamento de entrada
+            // Manipulation of input redirection
             if (inputFile) throw new Error('Multiple input redirections detected.');
-            i++; // Próximo argumento é o arquivo de entrada
+            i++; // Next argument is the input file
             if (!args[i]) throw new Error('Missing input file after "<".');
             inputFile = args[i];
           } else if (arg === '>') {
-            // Manipulação de redirecionamento de saída
+            // Manipulation of output redirection
             if (outputFile) throw new Error('Multiple output redirections detected.');
-            i++; // Próximo argumento é o arquivo de saída
+            i++; // Next argument is the output file
             if (!args[i]) throw new Error('Missing output file after ">".');
             outputFile = args[i];
           } else {
-            // Verifica se o argumento é uma flag definida no description.json
+            // Verify if the argument is a flag
             const flagObj = toolConfig.flags.find((flag) => flag.flag === arg);
 
             if (flagObj) {
               if (flagObj.parameter) {
-                // Se a flag tiver um parâmetro associado
-                i++; // Próximo argumento é o valor do parâmetro
-                params[flagObj.flag] = true; // Ativa a flag
+                i++; // Next argument is the parameter value
+                params[flagObj.flag] = true; // Define the flag as active
                 if (!args[i] || ['<', '>', '-'].includes(args[i][0])) {
-                  params[flagObj.parameter] = ''; // Define o valor do parâmetro como vazio
+                  params[flagObj.parameter] = '';
                   i--; // Revert to the previous argument
                 } else {
-                  params[flagObj.parameter] = args[i]; // Define o valor do parâmetro
+                  params[flagObj.parameter] = args[i]; // Define the parameter value
                 }
               }
             }
@@ -221,14 +220,14 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
           params,
         };
 
-        // Adiciona a nova operação ao workflow local
+        // Add the new operation to the workflow
         newWorkflow.push(newOperation);
       });
 
       if (!inputFile) throw new Error('Workflow must include an input file.');
       if (!outputFile) throw new Error('Workflow must include an output file.');
 
-      // Limpa erros e fecha o diálogo
+      // Clear the error and close the dialog
       setImportError('');
       setOpenImportDialog(false);
 
@@ -237,10 +236,12 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       const firstToolInputTypes = firstTool.input.format.split(',').map(f => f.trim());
       const firstToolInputType = firstToolInputTypes[0] || 'UNKNOWN';
 
+      // Checks if the sequence of tools is valid
       if (validateWorkflow(newWorkflow, firstToolInputType)) {
         let valid = true;
         let validInput = true;
 
+        // Validate each tool parameters
         for (let i = 0; i < newWorkflow.length; i++) {
           const tool = newWorkflow[i];
           if (!validateParameters(tool)) {
@@ -249,6 +250,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
           }
         }
 
+        // Check if the input data type is compatible with the first tool
         if (!firstToolInputTypes.includes(inputDataType)) {
           validInput = false;
         }

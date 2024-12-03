@@ -24,7 +24,7 @@ const OutputPanel = ({ outputData }) => {
           variant="outlined"
           fullWidth
           value={outputData}
-          rows={10}
+          rows={11}
           InputProps={{
             multiline: true,
             inputComponent: 'textarea',
