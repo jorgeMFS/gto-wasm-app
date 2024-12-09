@@ -3,13 +3,14 @@ import React, { useContext, useEffect, useState } from 'react';
 import description from '../../description.json';
 import { DataTypeContext } from '../contexts/DataTypeContext';
 import { NotificationContext } from '../contexts/NotificationContext';
+import { ValidationErrorsContext } from '../contexts/ValidationErrorsContext';
 import { loadWasmModule } from '../gtoWasm';
 import { detectDataType } from '../utils/detectDataType';
 
 const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [autoExecute, setAutoExecute] = useState(false);
-  const [validationErrors, setValidationErrors] = useState({}); // State for validation errors of parameters
+  const { setValidationErrors } = useContext(ValidationErrorsContext); // Access validation errors
   const { setDataType } = useContext(DataTypeContext);
   const showNotification = useContext(NotificationContext);
 
@@ -25,25 +26,25 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
       const paramValue = operation.params[flagObj.parameter];
       const paramConfig = toolConfig.parameters.find((param) => param.name === flagObj.parameter);
 
-      // Verify if required flag is present
-      if (isFlagRequired && (!paramValue || paramValue === '')) {
-        errors[flagObj.parameter] = `Missing required parameter "${flagObj.parameter}" for operation "${operation.toolName}"`;
-      }
-
-      // Validate integer and float values
       if (paramConfig) {
-        if (paramConfig.type === 'integer' && paramValue !== undefined && !/^-?\d+$/.test(paramValue)) {
-          errors[flagObj.parameter] = `Invalid integer value for parameter "${flagObj.parameter}" in operation "${operation.toolName}"`;
-        } else if (paramConfig.type === 'float' && paramValue !== undefined && !/^-?\d+(\.\d+)?$/.test(paramValue)) {
-          errors[flagObj.parameter] = `Invalid float value for parameter "${flagObj.parameter}" in operation "${operation.toolName}"`;
+        if (isFlagRequired || flagValue) { // Check if the flag is required or active
+          if (paramConfig.type === 'integer' && !/^-?\d+$/.test(paramValue)) {
+            errors[flagObj.parameter] = 'Invalid integer value';
+          } else if (paramConfig.type === 'float' && !/^-?\d+(\.\d+)?$/.test(paramValue)) {
+            errors[flagObj.parameter] = 'Invalid float value';
+          } else if (paramValue === undefined || paramValue === '') {
+            errors[flagObj.parameter] = 'Parameter value cannot be empty';
+          }
         }
+      } else if (isFlagRequired && (paramValue === undefined || paramValue === '')) {
+        errors[flagObj.flag] = 'Required flag cannot be empty';
       }
     });
 
     if (Object.keys(errors).length > 0) {
       setValidationErrors((prevErrors) => ({
         ...prevErrors,
-        [operation.toolName]: errors,
+        [operation.id]: errors,
       }));
       const errorMessages = Object.values(errors).join('\n');
       return { isValid: false, errors: errorMessages };
@@ -51,7 +52,7 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
       // Clear errors for this operation if validation passed
       setValidationErrors((prevErrors) => {
         const newErrors = { ...prevErrors };
-        delete newErrors[operation.toolName];
+        delete newErrors[operation.id];
         return newErrors;
       });
       return { isValid: true, errors: '' };
@@ -67,7 +68,7 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
         // Validate parameters before executing each tool
         const { isValid, errors } = validateParameters(operation);
         if (!isValid) {
-          showNotification(errors, 'error');
+          showNotification('Invalid input detected for tool "' + operation.toolName + '". Please correct the inputs in red.', 'error');
           setIsExecuting(false);
           return;
         }

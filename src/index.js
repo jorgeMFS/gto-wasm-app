@@ -1,10 +1,11 @@
+import CssBaseline from '@mui/material/CssBaseline';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { NotificationProvider } from './contexts/NotificationContext';
 import { DataTypeProvider } from './contexts/DataTypeContext';
+import { NotificationProvider } from './contexts/NotificationContext';
+import { ValidationErrorsProvider } from './contexts/ValidationErrorsContext';
 
 const theme = createTheme({
   palette: {
@@ -30,8 +31,10 @@ root.render(
     <ThemeProvider theme={theme}>
       <NotificationProvider>
         <DataTypeProvider>
-          <CssBaseline />
-          <App />
+          <ValidationErrorsProvider>
+            <CssBaseline />
+            <App />
+          </ValidationErrorsProvider>
         </DataTypeProvider>
       </NotificationProvider>
     </ThemeProvider>

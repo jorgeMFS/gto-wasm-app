@@ -13,7 +13,7 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { AddCircle, ContentCopy, ExpandLess, ExpandMore, FileUpload, FolderOpen, GetApp, PlayArrow, Save } from '@mui/icons-material';
+import { AddCircle, ContentCopy, ExpandLess, ExpandMore, FileUpload, FolderOpen, GetApp, Save, Visibility, VisibilityOff } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -37,6 +37,7 @@ import { v4 as uuidv4 } from 'uuid';
 import description from '../../description.json';
 import { DataTypeContext } from '../contexts/DataTypeContext';
 import { NotificationContext } from '../contexts/NotificationContext';
+import { ValidationErrorsContext } from '../contexts/ValidationErrorsContext';
 import { loadWasmModule } from '../gtoWasm';
 import { detectDataType } from '../utils/detectDataType';
 import { exportRecipe } from '../utils/exportRecipe';
@@ -51,7 +52,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   const { setDataType, dataType, inputDataType } = useContext(DataTypeContext); // To update data type context
   const [invalidItemIds, setInvalidItemIds] = useState([]); // To store invalid item IDs
   const [outputTypesMap, setOutputTypesMap] = useState({}); // To store output types of tools
-  const [validationErrors, setValidationErrors] = useState({}); // To store validation errors for parameters
+  const { validationErrors, setValidationErrors } = useContext(ValidationErrorsContext); // Access validation errors of parameters
   const [helpMessages, setHelpMessages] = useState({}); // To store help messages for toolconst [openExportDialog, setOpenExportDialog] = useState(false); // State for export dialog
   const [exportFileName, setExportFileName] = useState('workflow_script.sh'); // Default export name
   const [openExportDialog, setOpenExportDialog] = useState(false); // State for export dialog
@@ -64,6 +65,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   const [openToolsModal, setOpenToolsModal] = useState(false); // State for tools modal
   const [filteredTools, setFilteredTools] = useState([]); // State for filtered tools
   const [selectedIndex, setSelectedIndex] = useState(null); // State for selected tool index
+  const [visibleOutputs, setVisibleOutputs] = useState({}); // Track visible outputs
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -72,23 +74,62 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
 
   const showNotification = useContext(NotificationContext);
 
+  // If workflow changes, update the data type and output types map
   useEffect(() => {
-    if (workflow.length > 0) {
-      const lastTool = workflow[workflow.length - 1];
-      const lastOutputType = outputTypesMap[lastTool.id];
+    const updateDataType = async () => {
+      if (workflow.length > 0) {
+        const lastTool = workflow[workflow.length - 1];
 
-      // Update the data type based on the last valid tool in the workflow
-      if (lastOutputType) {
-        if (lastOutputType !== dataType) {
-          showNotification(`Data type updated to ${lastOutputType}`, 'info');
+        try {
+          let data = inputData;
+
+          const lastToolConfig = description.tools.find((t) => t.name === `gto_${lastTool.toolName}`);
+          const outputFormats = lastToolConfig.output.format.split(',').map(f => f.trim());
+
+          if (outputFormats.length === 1) {
+            // If the last tool has only one output format, extract the data type directly from config
+            let lastToolOutput = outputFormats[0];
+
+            // There's no treatment for text output, so for now it will be considered as UNKNOWN
+            if (lastToolOutput === 'text') {
+              lastToolOutput = 'UNKNOWN';
+            }
+
+            if (dataType !== lastToolOutput) {
+              setDataType(lastToolOutput);
+              showNotification(`Data type updated to ${lastToolOutput}`, 'info');
+            }
+            setOutputTypesMap((prevMap) => ({
+              ...prevMap,
+              [lastTool.id]: lastToolOutput,
+            }));
+          } else {
+            for (const tool of workflow) {
+              const output = await executeTool(tool, data);
+              data = output;
+              if (tool.id === lastTool.id) {
+                const detectedType = detectDataType('output.txt', output);
+                if (dataType !== detectedType) {
+                  setDataType(detectedType);
+                  showNotification(`Data type updated to ${detectedType}`, 'info');
+                }
+                break;
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Failed to update data type for tool ${lastTool.toolName}:`, error);
         }
-        setDataType(lastOutputType);
+
+      } else {
+        if (dataType !== inputDataType) {
+          setDataType(inputDataType);
+        }
       }
-    } else {
-      // If the workflow is empty, reset the data type to the input type
-      setDataType(inputDataType);
-    }
-  }, [workflow, outputTypesMap, inputDataType, setDataType]);
+    };
+
+    updateDataType();
+  }, [workflow, inputData, inputDataType, dataType]);
 
   // State to store help messages for tools
   useEffect(() => {
@@ -328,8 +369,12 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
             errors[flagObj.parameter] = 'Invalid integer value';
           } else if (paramConfig.type === 'float' && !/^-?\d+(\.\d+)?$/.test(paramValue)) {
             errors[flagObj.parameter] = 'Invalid float value';
+          } else if (paramValue === undefined || paramValue === '') {
+            errors[flagObj.parameter] = 'Parameter value cannot be empty';
           }
         }
+      } else if (isFlagRequired && (paramValue === undefined || paramValue === '')) {
+        errors[flagObj.flag] = 'Required flag cannot be empty';
       }
     });
 
@@ -594,7 +639,16 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     }
   };
 
-  const handleRunTool = async (tool) => {
+  const handleViewTool = async (tool) => {
+    if (visibleOutputs[tool.id]) {
+      // Hide output if already visible
+      setVisibleOutputs((prev) => ({
+        ...prev,
+        [tool.id]: false,
+      }));
+      return;
+    }
+
     // Validate parameters before running
     if (!validateParameters(tool)) {
       showNotification('Invalid input detected. Please correct the inputs in red.', 'error');
@@ -615,13 +669,13 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
         setOutputs((prevOutputs) => ({ ...prevOutputs, [currentTool.id]: data }));
       }
 
-      // If the tool is the last in the workflow, update the overall output
-      if (toolIndex === workflow.length - 1) {
-        setOutputData(data);
-      }
+      // Mark output as visible
+      setVisibleOutputs((prev) => ({
+        ...prev,
+        [tool.id]: true,
+      }));
     } catch (error) {
-      setOutputData(`Error: ${error.message}`);
-      showNotification(`Workflow execution failed: ${error.message}`, 'error');
+      showNotification(`Failed to view tool output: ${error.message}`, 'error');
     } finally {
       setRunningToolIds((ids) => ids.filter((id) => id !== tool.id));
     }
@@ -706,6 +760,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                   />
                   {flagObj.parameter && (
                     <TextField
+                      key={flagObj.parameter}
                       value={parameterValue}
                       onChange={(e) =>
                         handleParameterChange(tool.id, flagObj.parameter, e.target.value)
@@ -919,17 +974,17 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                       variant="contained"
                       color="primary"
                       size="small"
-                      onClick={() => handleRunTool(tool)}
-                      startIcon={<PlayArrow />}
+                      onClick={() => handleViewTool(tool)}
+                      startIcon={visibleOutputs[tool.id] ? <VisibilityOff /> : <Visibility />}
                       disabled={runningToolIds.includes(tool.id)}
                     >
-                      Run
+                      {visibleOutputs[tool.id] ? 'Hide' : 'View'}
                     </Button>
                     {runningToolIds.includes(tool.id) && (
                       <CircularProgress size={24} sx={{ marginLeft: 1 }} />
                     )}
                   </Box>
-                  {outputs[tool.id] && (
+                  {outputs[tool.id] && visibleOutputs[tool.id] && (
                     <Box sx={{ marginTop: 1 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="subtitle2">Output:</Typography>
@@ -957,9 +1012,10 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                     </Box>
                   )}
                 </SortableItem>
+                {/* Add Operation Button */}
                 {index < workflow.length - 1 && (
                   <Box
-                    sx={{   // Add Operation Button Style
+                    sx={{
                       height: '10px',
                       display: 'flex',
                       justifyContent: 'center',
