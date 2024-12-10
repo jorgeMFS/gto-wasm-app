@@ -68,7 +68,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
   const [visibleOutputs, setVisibleOutputs] = useState({}); // Track visible outputs
   const [importMode, setImportMode] = useState('command'); // To track the selected import mode
   const [importFile, setImportFile] = useState(null); // To store the uploaded file for import
-  const [partialExportIndex, setpartialExportIndex] = useState(null); // To store the index for partial export
+  const [partialExportIndex, setPartialExportIndex] = useState(null); // To store the index for partial export
 
 
   const sensors = useSensors(
@@ -409,7 +409,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
   };
 
   const handlePartialExport = (stepIndex) => {
-    setpartialExportIndex(stepIndex);
+    setPartialExportIndex(stepIndex);
     setOpenExportDialog(true);
   };
 
@@ -1014,7 +1014,10 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
       </Dialog>
 
       {/* Export Recipe Dialog */}
-      <Dialog open={openExportDialog} onClose={() => setOpenExportDialog(false)} maxWidth="md" fullWidth>
+      <Dialog open={openExportDialog} onClose={() => {
+        setOpenExportDialog(false)
+        setPartialExportIndex(null)
+      }} maxWidth="md" fullWidth>
         <DialogTitle>Export Workflow</DialogTitle>
         <DialogContent>
           <Typography variant="body1" gutterBottom>
@@ -1100,7 +1103,10 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenExportDialog(false)} color="secondary">
+          <Button onClick={() => {
+            setOpenExportDialog(false);
+            setPartialExportIndex(null);
+          }} color="secondary">
             Cancel
           </Button>
           <Button
@@ -1116,6 +1122,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
                 false,
                 partialExportIndex
               );
+              setPartialExportIndex(null);
             }}
             color="primary"
           >
@@ -1132,6 +1139,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
                 setOpenExportDialog,
                 partialExportIndex
               );
+              setPartialExportIndex(null);
             }}
             color="primary"
           >
