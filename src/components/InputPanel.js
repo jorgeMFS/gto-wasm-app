@@ -117,86 +117,74 @@ const InputPanel = ({ inputData, setInputData }) => {
   const numberOfLines = inputData.split('\n').length;
 
   return (
-    <Paper elevation={3} sx={{ padding: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6" gutterBottom>
-          Input
-        </Typography>
-        <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
+    <Paper elevation={3} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 2 }}>
+        <Typography variant="h6">Input</Typography>
+        <Typography variant="body2" color="textSecondary">
           {inputDataType}
         </Typography>
       </Box>
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+      {/* TextField with dynamic height */}
+      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 2 }}>
         <TextField
           variant="outlined"
-          fullWidth
           value={inputData}
           onChange={handleTextChange}
           placeholder="e.g., >Sequence1\nACGT..."
-          rows={11}
-          sx={{
-            flexGrow: 1,
-            marginBottom: 1,
-            fontSize: '0.875rem',
-            overflowY: 'auto',
-            wordBreak: 'break-word',
-            whiteSpace: 'pre-wrap',
-          }}
           InputProps={{
             multiline: true,
             inputComponent: 'textarea',
-            readOnly: false,
-            sx: {
-              alignItems: 'flex-start',
-              fontSize: '0.875rem',
-              whiteSpace: 'pre-wrap',
-              overflowWrap: 'break-word',
-            },
+          }}
+          rows={10}
+          sx={{
+            flexGrow: 1,
+            flexShrink: 1,
+            overflow: 'auto',
+            minHeight: '100px',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            fontSize: '0.875rem',
           }}
           error={!isValid && inputDataType !== 'UNKNOWN'}
           helperText={!isValid && inputDataType !== 'UNKNOWN' ? `The entered data does not conform to the expected ${inputDataType} format.` : ''}
         />
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
-            {inputData.length} characters, {numberOfLines} lines
-          </Typography>
-          <Tooltip title="Upload File">
-            <IconButton
-              color="primary"
-              component="label"
-              sx={{
-                padding: '6px',
-                backgroundColor: isAcceptable ? 'primary.main' : 'grey.500',
-                '&:hover': {
-                  backgroundColor: isAcceptable ? 'primary.dark' : 'grey.500',
-                },
-                cursor: isAcceptable ? 'pointer' : 'not-allowed',
-                color: 'white',
-              }}
-              disabled={!isAcceptable}
-            >
-              <UploadIcon fontSize="small" />
-              <input
-                type="file"
-                hidden
-                accept={acceptableExtensions.join(',')}
-                onChange={handleFileUpload}
-              />
-            </IconButton>
-          </Tooltip>
-        </Box>
-        {fileName && (
-          <Typography sx={{ marginLeft: 1, fontSize: '0.875rem', wordBreak: 'break-word' }}>
-            {fileName}
-          </Typography>
-        )}
       </Box>
-      <Box sx={{ marginTop: 1 }}>
-        {!isValid && inputDataType !== 'UNKNOWN' && (
-          <Typography variant="body2" color="error" sx={{ fontSize: '0.875rem' }}>
-            The entered data does not conform to the expected {inputDataType} format.
-          </Typography>
-        )}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: 1,
+          flexShrink: 0,
+        }}
+      >
+        <Typography variant="body2" color="textSecondary">
+          {inputData.length} characters, {numberOfLines} lines
+        </Typography>
+        <Tooltip title="Upload File">
+          <IconButton
+            color="primary"
+            component="label"
+            sx={{
+              padding: '6px',
+              backgroundColor: isAcceptable ? 'primary.main' : 'grey.500',
+              '&:hover': {
+                backgroundColor: isAcceptable ? 'primary.dark' : 'grey.500',
+              },
+              cursor: isAcceptable ? 'pointer' : 'not-allowed',
+              color: 'white',
+            }}
+            disabled={!isAcceptable}
+          >
+            <UploadIcon fontSize="small" />
+            <input
+              type="file"
+              hidden
+              accept={acceptableExtensions.join(',')}
+              onChange={handleFileUpload}
+            />
+          </IconButton>
+        </Tooltip>
       </Box>
     </Paper>
   );

@@ -14,44 +14,49 @@ const OutputPanel = ({ outputData }) => {
   };
 
   return (
-    <Paper elevation={3} sx={{ padding: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Typography variant="h6" gutterBottom>
-        Output
-      </Typography>
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+    <Paper elevation={3} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 2 }}>
+        <Typography variant="h6">Output</Typography>
+      </Box>
+      {/* TextField with dynamic height */}
+      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 2 }}>
         <TextField
-          label="Output Data"
           variant="outlined"
-          fullWidth
           value={outputData}
-          rows={11}
+          placeholder="Output Data"
           InputProps={{
             multiline: true,
             inputComponent: 'textarea',
             readOnly: true,
-            sx: {
-              alignItems: 'flex-start',
-              fontSize: '0.875rem',
-              whiteSpace: 'pre-wrap',
-              overflowWrap: 'break-word',
-            },
           }}
+          rows={10}
           sx={{
             flexGrow: 1,
-            fontSize: '0.875rem',
-            overflowY: 'auto',
-            wordBreak: 'break-word',
+            flexShrink: 1,
+            overflow: 'auto',
+            minHeight: '100px',
             whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            fontSize: '0.875rem',
           }}
-          placeholder="Processed output will appear here..."
         />
-        <Box sx={{ marginTop: 1, textAlign: 'right' }}>
-          <Tooltip title="Save Output">
-            <IconButton color="primary" onClick={handleSaveOutput}>
-              <SaveIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
+      </Box>
+      {/* Save button always visible */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          padding: 1,
+          flexShrink: 0,
+          backgroundColor: 'white',
+        }}
+      >
+        <Tooltip title="Save Output">
+          <IconButton color="primary" onClick={handleSaveOutput}>
+            <SaveIcon />
+          </IconButton>
+        </Tooltip>
       </Box>
     </Paper>
   );

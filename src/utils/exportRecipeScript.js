@@ -1,4 +1,3 @@
-// utils/exportRecipe.js
 import description from '../../description.json';
 
 const TypeToExtensionMap = {
@@ -14,17 +13,21 @@ const TypeToExtensionMap = {
     'text': 'txt',
 };
 
-export const exportRecipe = (workflow, inputData, inputDataType, outputTypesMap, exportFileName, showNotification, setOpenExportDialog, returnCommand = false) => {
+export const exportRecipeScript = (workflow, inputData, inputDataType, outputTypesMap, exportFileName, showNotification, setOpenExportDialog, returnCommand = false, partialExportIndex = null) => {
     if (workflow.length === 0) {
         showNotification('Cannot export an empty workflow.', 'error');
         return;
     }
 
+    const exportWorkflow = partialExportIndex !== null
+        ? workflow.slice(0, partialExportIndex + 1)
+        : workflow;
+
     // Generation of the command line
     const inputFile = `input.${TypeToExtensionMap[inputDataType] || 'txt'}`;
-    const outputFile = `output.${TypeToExtensionMap[outputTypesMap[workflow[workflow.length - 1]?.id] || 'text'] || 'txt'}`;
+    const outputFile = `output.${TypeToExtensionMap[outputTypesMap[exportWorkflow[exportWorkflow.length - 1]?.id] || 'text'] || 'txt'}`;
 
-    const commands = workflow.map((tool, index) => {
+    const commands = exportWorkflow.map((tool, index) => {
         const toolConfig = description.tools.find((t) => `gto_${tool.toolName}` === t.name);
         if (!toolConfig) return '';
 
@@ -66,7 +69,7 @@ export const exportRecipe = (workflow, inputData, inputDataType, outputTypesMap,
     // Step 2: Display Workflow Summary
     scriptLines.push('echo -e "\\nWorkflow to be executed:"');
 
-    const workflowSummary = workflow
+    const workflowSummary = exportWorkflow
         .map((tool, index) => {
             const toolConfig = description.tools.find((t) => `gto_${tool.toolName}` === t.name);
             if (!toolConfig) return '';
@@ -137,7 +140,7 @@ export const exportRecipe = (workflow, inputData, inputDataType, outputTypesMap,
     // Step 4: Workflow Execution
     scriptLines.push('echo -e "\\nExecuting the workflow..."');
     scriptLines.push('previousOutput="$inputFile"'); // Initial input
-    workflow.forEach((tool, index) => {
+    exportWorkflow.forEach((tool, index) => {
         const toolConfig = description.tools.find((t) => `gto_${tool.toolName}` === t.name);
 
         if (!toolConfig) {
@@ -174,8 +177,8 @@ export const exportRecipe = (workflow, inputData, inputDataType, outputTypesMap,
     scriptLines.push('echo -e "\\nWorkflow execution completed.\\n"');
 
     // Step 5: Cleanup
-    workflow.forEach((_, index) => {
-        const outputType = outputTypesMap[workflow[index].id] || 'text';
+    exportWorkflow.forEach((_, index) => {
+        const outputType = outputTypesMap[exportWorkflow[index].id] || 'text';
         const outputExtension = TypeToExtensionMap[outputType] || 'txt';
         scriptLines.push(`rm "output_tool_${index + 1}.${outputExtension}"`);
     });
@@ -185,7 +188,7 @@ export const exportRecipe = (workflow, inputData, inputDataType, outputTypesMap,
     const blob = new Blob([scriptLines.join('\n')], { type: 'text/plain' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = exportFileName || 'workflow_script.sh';
+    link.download = `${exportFileName}.sh` || 'workflow_script.sh';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

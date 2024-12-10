@@ -13,7 +13,7 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { AddCircle, ContentCopy, ExpandLess, ExpandMore, FileUpload, FolderOpen, GetApp, Save, Visibility, VisibilityOff } from '@mui/icons-material';
+import { AddCircle, ContentCopy, ExpandLess, ExpandMore, FileUpload, GetApp, HelpOutline, Visibility, VisibilityOff } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -28,33 +28,33 @@ import {
   IconButton,
   Paper,
   Switch,
+  Tab,
+  Tabs,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
 import React, { useContext, useEffect, useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import description from '../../description.json';
 import { DataTypeContext } from '../contexts/DataTypeContext';
 import { NotificationContext } from '../contexts/NotificationContext';
 import { ValidationErrorsContext } from '../contexts/ValidationErrorsContext';
 import { loadWasmModule } from '../gtoWasm';
 import { detectDataType } from '../utils/detectDataType';
-import { exportRecipe } from '../utils/exportRecipe';
+import { exportRecipeConfigFile } from '../utils/exportRecipeConfigFile';
+import { exportRecipeScript } from '../utils/exportRecipeScript';
+import { importRecipeCommand } from '../utils/importRecipeCommand';
+import { importRecipeConfigFile } from '../utils/importRecipeConfigFile';
 import SortableItem from './SortableItem';
 
-const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
-  const [openSaveDialog, setOpenSaveDialog] = useState(false);
-  const [savedRecipes, setSavedRecipes] = useState([]);
-  const [recipeName, setRecipeName] = useState('');
-  const [openLoadDialog, setOpenLoadDialog] = useState(false);
+const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutputData }) => {
   const [activeId, setActiveId] = useState(null);
-  const { setDataType, dataType, inputDataType } = useContext(DataTypeContext); // To update data type context
+  const { setDataType, dataType, inputDataType, setInputDataType } = useContext(DataTypeContext); // To update data type context
   const [invalidItemIds, setInvalidItemIds] = useState([]); // To store invalid item IDs
   const [outputTypesMap, setOutputTypesMap] = useState({}); // To store output types of tools
   const { validationErrors, setValidationErrors } = useContext(ValidationErrorsContext); // Access validation errors of parameters
-  const [helpMessages, setHelpMessages] = useState({}); // To store help messages for toolconst [openExportDialog, setOpenExportDialog] = useState(false); // State for export dialog
-  const [exportFileName, setExportFileName] = useState('workflow_script.sh'); // Default export name
+  const [helpMessages, setHelpMessages] = useState({}); // To store help messages for tools
+  const [exportFileName, setExportFileName] = useState('my_workflow'); // Default export name
   const [openExportDialog, setOpenExportDialog] = useState(false); // State for export dialog
   const [command, setCommand] = useState('');
   const [openImportDialog, setOpenImportDialog] = useState(false); // State for import dialog
@@ -66,6 +66,10 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   const [filteredTools, setFilteredTools] = useState([]); // State for filtered tools
   const [selectedIndex, setSelectedIndex] = useState(null); // State for selected tool index
   const [visibleOutputs, setVisibleOutputs] = useState({}); // Track visible outputs
+  const [importMode, setImportMode] = useState('command'); // To track the selected import mode
+  const [importFile, setImportFile] = useState(null); // To store the uploaded file for import
+  const [partialExportIndex, setPartialExportIndex] = useState(null); // To store the index for partial export
+
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -78,49 +82,49 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   useEffect(() => {
     const updateDataType = async () => {
       if (workflow.length > 0) {
-        const lastTool = workflow[workflow.length - 1];
+        let data = inputData;
+        const newOutputTypesMap = {};
 
-        try {
-          let data = inputData;
+        for (const tool of workflow) {
+          try {
+            const toolConfig = description.tools.find((t) => t.name === `gto_${tool.toolName}`);
+            const outputFormats = toolConfig.output.format.split(',').map(f => f.trim());
 
-          const lastToolConfig = description.tools.find((t) => t.name === `gto_${lastTool.toolName}`);
-          const outputFormats = lastToolConfig.output.format.split(',').map(f => f.trim());
+            if (outputFormats.length === 1) {
+              let toolOutput = outputFormats[0];
 
-          if (outputFormats.length === 1) {
-            // If the last tool has only one output format, extract the data type directly from config
-            let lastToolOutput = outputFormats[0];
+              if (toolOutput === 'text') {
+                toolOutput = 'UNKNOWN';
+              }
 
-            // There's no treatment for text output, so for now it will be considered as UNKNOWN
-            if (lastToolOutput === 'text') {
-              lastToolOutput = 'UNKNOWN';
-            }
+              newOutputTypesMap[tool.id] = toolOutput;
 
-            if (dataType !== lastToolOutput) {
-              setDataType(lastToolOutput);
-              showNotification(`Data type updated to ${lastToolOutput}`, 'info');
-            }
-            setOutputTypesMap((prevMap) => ({
-              ...prevMap,
-              [lastTool.id]: lastToolOutput,
-            }));
-          } else {
-            for (const tool of workflow) {
-              const output = await executeTool(tool, data);
-              data = output;
-              if (tool.id === lastTool.id) {
-                const detectedType = detectDataType('output.txt', output);
-                if (dataType !== detectedType) {
-                  setDataType(detectedType);
-                  showNotification(`Data type updated to ${detectedType}`, 'info');
-                }
-                break;
+              if (tool.id === workflow[workflow.length - 1].id && dataType !== toolOutput) {
+                setDataType(toolOutput);
+                showNotification(`Data type updated to ${toolOutput}`, 'info');
+              }
+            } else {
+              // Execute all tools up to the current one to ensure dependencies are met
+              for (let i = 0; i <= workflow.findIndex((t) => t.id === tool.id); i++) {
+                const currentTool = workflow[i];
+                const output = await executeTool(currentTool, data);
+                data = output;
+              }
+              const detectedType = detectDataType('output.txt', data);
+
+              newOutputTypesMap[tool.id] = detectedType;
+
+              if (tool.id === workflow[workflow.length - 1].id && dataType !== detectedType) {
+                setDataType(detectedType);
+                showNotification(`Data type updated to ${detectedType}`, 'info');
               }
             }
+          } catch (error) {
+            console.error(`Failed to update data type for tool ${tool.toolName}:`, error);
           }
-        } catch (error) {
-          console.error(`Failed to update data type for tool ${lastTool.toolName}:`, error);
         }
 
+        setOutputTypesMap(newOutputTypesMap);
       } else {
         if (dataType !== inputDataType) {
           setDataType(inputDataType);
@@ -143,7 +147,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
   // Export
   useEffect(() => {
     if (openExportDialog && workflow.length > 0) {
-      const generatedCommand = exportRecipe(
+      const generatedCommand = exportRecipeScript(
         workflow,
         inputData,
         inputDataType,
@@ -151,7 +155,8 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
         exportFileName,
         showNotification,
         setOpenExportDialog,
-        true // Request the command
+        true, // Request the command
+        partialExportIndex
       );
       setCommand(generatedCommand);
     } else {
@@ -201,124 +206,6 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       }
     } catch (error) {
       console.error(`Failed to load help message for ${toolName}: ${error.message}`);
-    }
-  };
-
-  const processImportCommand = (command) => {
-    try {
-      // Split the command into steps
-      const steps = command.split(/\|\|?/).map((step) => step.trim());
-      if (steps.length === 0) throw new Error('Invalid command: No steps found.');
-
-      let inputFile = null;
-      let outputFile = null;
-
-      let newWorkflow = [];
-
-      steps.forEach((step) => {
-        // Divides the step into tool and arguments
-        const [toolWithPath, ...args] = step.split(/\s+/);
-        const toolName = toolWithPath.replace('./gto_', ''); // Extract the tool name
-        const toolConfig = description.tools.find((t) => t.name === `gto_${toolName}`);
-        if (!toolConfig) throw new Error(`Tool "${toolName}" is not recognized.`);
-
-        // Initialize the parameters object
-        const params = {};
-
-        for (let i = 0; i < args.length; i++) {
-          const arg = args[i];
-          if (arg.startsWith('./')) {
-            throw new Error('Invalid argument: Consecutive tool paths detected.');
-          } else if (arg === '<') {
-            // Manipulation of input redirection
-            if (inputFile) throw new Error('Multiple input redirections detected.');
-            i++; // Next argument is the input file
-            if (!args[i]) throw new Error('Missing input file after "<".');
-            inputFile = args[i];
-          } else if (arg === '>') {
-            // Manipulation of output redirection
-            if (outputFile) throw new Error('Multiple output redirections detected.');
-            i++; // Next argument is the output file
-            if (!args[i]) throw new Error('Missing output file after ">".');
-            outputFile = args[i];
-          } else {
-            // Verify if the argument is a flag
-            const flagObj = toolConfig.flags.find((flag) => flag.flag === arg);
-
-            if (flagObj) {
-              if (flagObj.parameter) {
-                i++; // Next argument is the parameter value
-                params[flagObj.flag] = true; // Define the flag as active
-                if (!args[i] || ['<', '>', '-'].includes(args[i][0])) {
-                  params[flagObj.parameter] = '';
-                  i--; // Revert to the previous argument
-                } else {
-                  params[flagObj.parameter] = args[i]; // Define the parameter value
-                }
-              }
-            }
-          }
-        }
-
-        const uniqueId = `${toolName}-${uuidv4()}`;
-        const newOperation = {
-          id: uniqueId,
-          toolName,
-          params,
-        };
-
-        // Add the new operation to the workflow
-        newWorkflow.push(newOperation);
-      });
-
-      if (!inputFile) throw new Error('Workflow must include an input file.');
-      if (!outputFile) throw new Error('Workflow must include an output file.');
-
-      // Clear the error and close the dialog
-      setImportError('');
-      setOpenImportDialog(false);
-
-      // Get the input data type of the first tool
-      const firstTool = description.tools.find((t) => `gto_${newWorkflow[0].toolName}` === t.name);
-      const firstToolInputTypes = firstTool.input.format.split(',').map(f => f.trim());
-      const firstToolInputType = firstToolInputTypes[0] || 'UNKNOWN';
-
-      // Checks if the sequence of tools is valid
-      if (validateWorkflow(newWorkflow, firstToolInputType)) {
-        let valid = true;
-        let validInput = true;
-
-        // Validate each tool parameters
-        for (let i = 0; i < newWorkflow.length; i++) {
-          const tool = newWorkflow[i];
-          if (!validateParameters(tool)) {
-            valid = false;
-            break;
-          }
-        }
-
-        // Check if the input data type is compatible with the first tool
-        if (!firstToolInputTypes.includes(inputDataType)) {
-          validInput = false;
-        }
-
-        if (valid && validInput) {
-          showNotification('Workflow imported successfully!', 'success');
-        } else if (!valid && validInput) {
-          showNotification('Workflow imported with errors. Please correct the invalid parameters', 'warning');
-        } else if (valid && !validInput) {
-          showNotification('Workflow imported successfully! Be aware that the input data type may not be compatible with the first tool.', 'warning');
-        } else {
-          showNotification('Workflow imported with errors. Please correct the invalid parameters and the input data type.', 'warning');
-        }
-
-        setWorkflow(newWorkflow);
-      } else {
-        throw new Error('Invalid workflow: Incompatible steps.');
-      }
-    } catch (error) {
-      setImportError(error.message);
-      showNotification(`Failed to import workflow: ${error.message}`, 'error');
     }
   };
 
@@ -485,18 +372,6 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     }
   };
 
-  const handleSaveRecipe = () => {
-    if (recipeName.trim() === '') return;
-    setSavedRecipes([...savedRecipes, { name: recipeName, workflow }]);
-    setRecipeName('');
-    setOpenSaveDialog(false);
-  };
-
-  const handleLoadRecipe = (saved) => {
-    setWorkflow(saved.workflow);
-    setOpenLoadDialog(false);
-  };
-
   const handleParameterChange = (id, name, value) => {
     setWorkflow(
       workflow.map((item) =>
@@ -531,6 +406,11 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
     setFilteredTools(filteredOperations);
     setSelectedIndex(index);
     setOpenToolsModal(true);
+  };
+
+  const handlePartialExport = (stepIndex) => {
+    setPartialExportIndex(stepIndex);
+    setOpenExportDialog(true);
   };
 
   const handleCloseToolModal = () => {
@@ -634,7 +514,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
 
       return outputData.stdout;
     } catch (error) {
-      showNotification(`Execution failed: ${error.message}`, 'error');
+      // showNotification(`Execution failed: ${error.message}`, 'error');
       throw error;
     }
   };
@@ -938,11 +818,15 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       elevation={3}
       sx={{ padding: 2, height: '100%', display: 'flex', flexDirection: 'column' }}
     >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
         <Typography variant="h6" gutterBottom>
           Workflow
         </Typography>
-        <Typography variant="body2" color="textSecondary" sx={{ marginLeft: 2, textAlign: 'center', flexGrow: 1 }}>
+        <Typography
+          variant="body2"
+          color="textSecondary"
+          sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', textAlign: 'center' }}
+        >
           Current Data Type: {dataType}
         </Typography>
       </Box>
@@ -1039,6 +923,15 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
                         <AddCircle sx={{ fontSize: '24px' }} />
                       </Button>
                     </Tooltip>
+                    <Tooltip title="Export Until Here">
+                      <Button
+                        color="primary"
+                        onClick={() => handlePartialExport(index)}
+                        sx={{ minWidth: '32px', minHeight: '32px', opacity: 0.8 }}
+                      >
+                        <GetApp sx={{ fontSize: '24px' }} />
+                      </Button>
+                    </Tooltip>
                   </Box>
                 )}
               </React.Fragment>
@@ -1057,28 +950,13 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
         </DndContext>
       </Box>
       <Divider sx={{ marginY: 2 }} />
-      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => setOpenSaveDialog(true)}
-          startIcon={<Save />}
-        >
-          Save Recipe
-        </Button>
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={() => setOpenLoadDialog(true)}
-          startIcon={<FolderOpen />}
-        >
-          Load Recipe
-        </Button>
+      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
         <Button
           variant="contained"
           color="primary"
           onClick={() => {
             if (workflow.length > 0) {
+              console.log('Exporting workflow:', workflow);
               setOpenExportDialog(true);
             } else {
               showNotification('Workflow is empty. Cannot export.', 'error');
@@ -1135,69 +1013,11 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
         </DialogActions>
       </Dialog>
 
-      {/* Save Recipe Dialog */}
-      <Dialog open={openSaveDialog} onClose={() => setOpenSaveDialog(false)}>
-        <DialogTitle>Save Recipe</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Recipe Name"
-            type="text"
-            fullWidth
-            value={recipeName}
-            onChange={(e) => setRecipeName(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenSaveDialog(false)} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={handleSaveRecipe} color="primary">
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Load Recipe Dialog */}
-      <Dialog open={openLoadDialog} onClose={() => setOpenLoadDialog(false)}>
-        <DialogTitle>Load Recipe</DialogTitle>
-        <DialogContent>
-          {savedRecipes.length === 0 ? (
-            <Typography>No saved recipes.</Typography>
-          ) : (
-            savedRecipes.map((saved, index) => (
-              <Paper
-                key={index}
-                sx={{
-                  padding: 1,
-                  marginBottom: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <Typography sx={{ flexGrow: 1 }}>{saved.name}</Typography>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  size="small"
-                  onClick={() => handleLoadRecipe(saved)}
-                >
-                  Load
-                </Button>
-              </Paper>
-            ))
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenLoadDialog(false)} color="primary">
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
-
       {/* Export Recipe Dialog */}
-      <Dialog open={openExportDialog} onClose={() => setOpenExportDialog(false)}>
+      <Dialog open={openExportDialog} onClose={() => {
+        setOpenExportDialog(false)
+        setPartialExportIndex(null)
+      }} maxWidth="md" fullWidth>
         <DialogTitle>Export Workflow</DialogTitle>
         <DialogContent>
           <Typography variant="body1" gutterBottom>
@@ -1214,6 +1034,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
               value={command}
               InputProps={{
                 readOnly: true,
+                sx: { fontSize: '0.875rem' },
               }}
               variant="outlined"
               size="small"
@@ -1237,10 +1058,34 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
             </Tooltip>
           </Box>
 
-          {/* Download script */}
-          <Typography variant="subtitle1" gutterBottom>
-            Download Script:
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', marginTop: 2 }}>
+            {/* File name input */}
+            <Typography variant="subtitle1" gutterBottom>
+              File Name for Export:
+            </Typography>
+            <Box sx={{ ml: 'auto' }}>
+              {/* Help Tooltip */}
+              <Tooltip
+                title={
+                  <Box>
+                    <Typography variant="body2" gutterBottom>
+                      <strong>Download Script:</strong> Exports the workflow as a shell script
+                      that can be executed in a terminal to reproduce the workflow.
+                    </Typography>
+                    <Typography variant="body2">
+                      <strong>Download Config:</strong> Exports the workflow as a JSON
+                      configuration file, useful for sharing or re-importing into the platform.
+                    </Typography>
+                  </Box>
+                }
+                arrow
+              >
+                <IconButton>
+                  <HelpOutline />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          </Box>
           <TextField
             fullWidth
             margin="dense"
@@ -1248,31 +1093,57 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
             type="text"
             value={exportFileName}
             onChange={(e) => setExportFileName(e.target.value)}
+            sx={{ marginBottom: 2, fontSize: '0.875rem' }}
+            InputProps={{
+              sx: { fontSize: '0.875rem' },
+            }}
+            InputLabelProps={{
+              sx: { fontSize: '0.875rem' },
+            }}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenExportDialog(false)} color="secondary">
+          <Button onClick={() => {
+            setOpenExportDialog(false);
+            setPartialExportIndex(null);
+          }} color="secondary">
             Cancel
           </Button>
           <Button
             onClick={() => {
-              if (workflow.length > 0) {
-                exportRecipe(
-                  workflow,
-                  inputData,
-                  inputDataType,
-                  outputTypesMap,
-                  exportFileName,
-                  showNotification,
-                  setOpenExportDialog
-                );
-              } else {
-                showNotification('Workflow is empty. Cannot export script.', 'error');
-              }
+              exportRecipeScript(
+                workflow,
+                inputData,
+                inputDataType,
+                outputTypesMap,
+                exportFileName,
+                showNotification,
+                setOpenExportDialog,
+                false,
+                partialExportIndex
+              );
+              setPartialExportIndex(null);
             }}
             color="primary"
           >
             Download Script
+          </Button>
+          <Button
+            onClick={() => {
+              exportRecipeConfigFile(
+                workflow,
+                inputData,
+                inputDataType,
+                exportFileName,
+                showNotification,
+                setOpenExportDialog,
+                partialExportIndex
+              );
+              setPartialExportIndex(null);
+            }}
+            color="primary"
+          >
+            Download Config
           </Button>
         </DialogActions>
       </Dialog>
@@ -1281,26 +1152,113 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setOutputData }) => {
       <Dialog open={openImportDialog} onClose={() => setOpenImportDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle>Import Recipe</DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Command"
-            type="text"
-            fullWidth
-            value={importInput}
-            onChange={(e) => setImportInput(e.target.value)}
-            helperText={importError || 'Enter a valid workflow command.'}
-            error={!!importError}
-            placeholder="e.g., ./gto_fasta_complement  < input.fa || ./gto_fasta_extract -i 0 -e 4 > output.txt"
-          />
+          <Typography variant="body1" gutterBottom>
+            Please choose an option to import your workflow:
+          </Typography>
+
+          {/* Tab Navigation for Import Options */}
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', marginBottom: 2 }}>
+            <Tabs
+              value={importMode}
+              onChange={(e, newValue) => setImportMode(newValue)}
+              aria-label="Import options"
+              indicatorColor="primary"
+              textColor="primary"
+            >
+              <Tab label="Command" value="command" />
+              <Tab label="Config File" value="file" />
+            </Tabs>
+          </Box>
+
+          {/* Import Command */}
+          {importMode === 'command' && (
+            <Box>
+              <TextField
+                autoFocus
+                margin="dense"
+                label="Command"
+                type="text"
+                fullWidth
+                value={importInput}
+                onChange={(e) => setImportInput(e.target.value)}
+                helperText={importError || 'Enter a valid workflow command.'}
+                error={!!importError}
+                placeholder="e.g., ./gto_fasta_complement < input.fa || ./gto_fasta_extract -i 0 -e 4 > output.txt"
+                InputProps={{
+                  sx: { fontSize: '0.875rem' },
+                }}
+                InputLabelProps={{
+                  sx: { fontSize: '0.875rem' },
+                }}
+                FormHelperTextProps={{
+                  sx: { fontSize: '0.75rem' },
+                }}
+              />
+            </Box>
+          )}
+
+          {/* Import from File */}
+          {importMode === 'file' && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Typography variant="body2" gutterBottom sx={{ fontSize: '0.875rem' }}>
+                Upload a JSON configuration file to import your workflow.
+              </Typography>
+              <Button
+                variant="contained"
+                component="label"
+                startIcon={<FileUpload />}
+                sx={{ alignSelf: 'flex-start' }}
+              >
+                Upload File
+                <input
+                  type="file"
+                  hidden
+                  accept="application/json"
+                  onChange={(e) => setImportFile(e.target.files[0])}
+                />
+              </Button>
+              {importFile && (
+                <Typography variant="body2" sx={{ marginTop: 1, fontSize: '0.875rem' }}>
+                  Selected file: {importFile.name}
+                </Typography>
+              )}
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenImportDialog(false)} color="secondary">
             Cancel
           </Button>
           <Button
-            onClick={() => processImportCommand(importInput)}
+            onClick={() => {
+              if (importMode === 'command') {
+                // Handle import via command
+                importRecipeCommand(
+                  importInput,
+                  setWorkflow,
+                  setImportError,
+                  setOpenImportDialog,
+                  inputDataType,
+                  showNotification,
+                  validateParameters,
+                  validateWorkflow
+                );
+              } else if (importMode === 'file' && importFile) {
+                // Handle import via file
+                importRecipeConfigFile(
+                  importFile,
+                  setWorkflow,
+                  setInputData,
+                  setInputDataType,
+                  showNotification,
+                  setOpenImportDialog
+                );
+              } else {
+                showNotification('Please provide a valid input for import.', 'error');
+              }
+            }}
             color="primary"
+            disabled={importMode === 'file' && !importFile && importMode === 'command' && !importInput}
           >
             Import
           </Button>
