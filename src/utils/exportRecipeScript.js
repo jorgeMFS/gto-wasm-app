@@ -1,4 +1,3 @@
-// utils/exportRecipe.js
 import description from '../../description.json';
 
 const TypeToExtensionMap = {
@@ -14,7 +13,7 @@ const TypeToExtensionMap = {
     'text': 'txt',
 };
 
-export const exportRecipe = (workflow, inputData, inputDataType, outputTypesMap, exportFileName, showNotification, setOpenExportDialog, returnCommand = false) => {
+export const exportRecipeScript = (workflow, inputData, inputDataType, outputTypesMap, exportFileName, showNotification, setOpenExportDialog, returnCommand = false) => {
     if (workflow.length === 0) {
         showNotification('Cannot export an empty workflow.', 'error');
         return;
@@ -185,7 +184,7 @@ export const exportRecipe = (workflow, inputData, inputDataType, outputTypesMap,
     const blob = new Blob([scriptLines.join('\n')], { type: 'text/plain' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = exportFileName || 'workflow_script.sh';
+    link.download = `${exportFileName}.sh` || 'workflow_script.sh';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
