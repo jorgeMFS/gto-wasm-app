@@ -1,8 +1,12 @@
-export const exportRecipeConfigFile = (workflow, inputData, inputDataType, exportFileName, showNotification, setOpenExportDialog) => {
+export const exportRecipeConfigFile = (workflow, inputData, inputDataType, exportFileName, showNotification, setOpenExportDialog, partialExportIndex = null) => {
     if (workflow.length === 0) {
         showNotification('Cannot export an empty workflow.', 'error');
         return;
     }
+
+    const exportWorkflow = partialExportIndex !== null
+        ? workflow.slice(0, partialExportIndex + 1)
+        : workflow;
 
     // Generation of the configuration file
     const recipe = {
@@ -13,7 +17,7 @@ export const exportRecipeConfigFile = (workflow, inputData, inputDataType, expor
                 format: inputDataType,
                 data: inputData,
             },
-            tools: workflow.map((tool) => ({ ...tool })),
+            tools: exportWorkflow.map((tool) => ({ ...tool })),
         },
     };
 

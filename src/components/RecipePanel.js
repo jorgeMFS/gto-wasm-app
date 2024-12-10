@@ -68,6 +68,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
   const [visibleOutputs, setVisibleOutputs] = useState({}); // Track visible outputs
   const [importMode, setImportMode] = useState('command'); // To track the selected import mode
   const [importFile, setImportFile] = useState(null); // To store the uploaded file for import
+  const [partialExportIndex, setpartialExportIndex] = useState(null); // To store the index for partial export
 
 
   const sensors = useSensors(
@@ -154,7 +155,8 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
         exportFileName,
         showNotification,
         setOpenExportDialog,
-        true // Request the command
+        true, // Request the command
+        partialExportIndex
       );
       setCommand(generatedCommand);
     } else {
@@ -404,6 +406,11 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
     setFilteredTools(filteredOperations);
     setSelectedIndex(index);
     setOpenToolsModal(true);
+  };
+
+  const handlePartialExport = (stepIndex) => {
+    setpartialExportIndex(stepIndex);
+    setOpenExportDialog(true);
   };
 
   const handleCloseToolModal = () => {
@@ -916,6 +923,15 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
                         <AddCircle sx={{ fontSize: '24px' }} />
                       </Button>
                     </Tooltip>
+                    <Tooltip title="Export Until Here">
+                      <Button
+                        color="primary"
+                        onClick={() => handlePartialExport(index)}
+                        sx={{ minWidth: '32px', minHeight: '32px', opacity: 0.8 }}
+                      >
+                        <GetApp sx={{ fontSize: '24px' }} />
+                      </Button>
+                    </Tooltip>
                   </Box>
                 )}
               </React.Fragment>
@@ -1096,7 +1112,9 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
                 outputTypesMap,
                 exportFileName,
                 showNotification,
-                setOpenExportDialog
+                setOpenExportDialog,
+                false,
+                partialExportIndex
               );
             }}
             color="primary"
@@ -1111,7 +1129,8 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
                 inputDataType,
                 exportFileName,
                 showNotification,
-                setOpenExportDialog
+                setOpenExportDialog,
+                partialExportIndex
               );
             }}
             color="primary"
