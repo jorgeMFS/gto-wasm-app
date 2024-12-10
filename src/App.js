@@ -100,6 +100,7 @@ const App = () => {
                 workflow={workflow}
                 setWorkflow={setWorkflow}
                 inputData={inputData}
+                setInputData={setInputData}
                 setOutputData={setOutputData}
               />
             </Grid>

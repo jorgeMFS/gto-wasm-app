@@ -23,6 +23,7 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
 
     toolConfig.flags.forEach((flagObj) => {
       const isFlagRequired = flagObj.required;
+      const flagValue = !!operation.params[flagObj.flag]; // Check if the flag is active
       const paramValue = operation.params[flagObj.parameter];
       const paramConfig = toolConfig.parameters.find((param) => param.name === flagObj.parameter);
 
