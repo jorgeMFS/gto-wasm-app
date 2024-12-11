@@ -62,8 +62,6 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
   const [importError, setImportError] = useState(''); // State for import error
   const [expandedTools, setExpandedTools] = useState({}); // Track each tool's expanded state
   const [expandedOutputs, setExpandedOutputs] = useState({}); // Track each tool's output expanded state
-  // const [openToolsModal, setOpenToolsModal] = useState(false); // State for tools modal
-  // const [selectedIndex, setSelectedIndex] = useState(null); // State for selected tool index
   const [visibleOutputs, setVisibleOutputs] = useState({}); // Track visible outputs
   const [importMode, setImportMode] = useState('command'); // To track the selected import mode
   const [importFile, setImportFile] = useState(null); // To store the uploaded file for import
@@ -412,25 +410,6 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
     setPartialExportIndex(stepIndex);
     setOpenExportDialog(true);
   };
-
-  // const handleCloseToolModal = () => {
-  //   setOpenToolsModal(false);
-  //   setFilteredTools([]);
-  //   setSelectedIndex(null);
-  // };
-
-  // const handleAddTool = (tool) => {
-  //   const toolName = tool.name.replace('gto_', '');
-  //   const newOperation = {
-  //     id: `${toolName}-${Date.now()}`,
-  //     toolName: toolName,
-  //     params: {},
-  //   };
-  //   const newWorkflow = [...workflow];
-  //   newWorkflow.splice(selectedIndex + 1, 0, newOperation);
-  //   setWorkflow(newWorkflow);
-  //   handleCloseToolModal();
-  // };
 
   // State to store outputs of tools
   const [outputs, setOutputs] = useState({});
@@ -975,43 +954,6 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
           Import Recipe
         </Button>
       </Box>
-
-      {/* Modal to select compatible tools */}
-      {/* <Dialog open={openToolsModal} onClose={handleCloseToolModal} maxWidth="md" fullWidth>
-        <DialogTitle>Select a Tool</DialogTitle>
-        <DialogContent>
-          {filteredTools.length === 0 ? (
-            <Typography>No compatible tools found.</Typography>
-          ) : (
-            filteredTools.map((tool) => (
-              <Paper
-                key={tool.name}
-                sx={{
-                  padding: 1,
-                  marginBottom: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <Typography sx={{ flexGrow: 1 }}>{tool.name}</Typography>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  size="small"
-                  onClick={() => handleAddTool(tool)}
-                >
-                  Add
-                </Button>
-              </Paper>
-            ))
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseToolModal} color="primary">
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog> */}
 
       {/* Export Recipe Dialog */}
       <Dialog open={openExportDialog} onClose={() => {
