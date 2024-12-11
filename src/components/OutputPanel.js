@@ -29,7 +29,7 @@ const OutputPanel = ({ outputData }) => {
             inputComponent: 'textarea',
             readOnly: true,
           }}
-          rows={10}
+          rows={9}
           sx={{
             flexGrow: 1,
             flexShrink: 1,
