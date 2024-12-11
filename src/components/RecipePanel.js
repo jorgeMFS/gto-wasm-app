@@ -47,7 +47,7 @@ import { importRecipeCommand } from '../utils/importRecipeCommand';
 import { importRecipeConfigFile } from '../utils/importRecipeConfigFile';
 import SortableItem from './SortableItem';
 
-const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutputData }) => {
+const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutputData, isLoading, setIsLoading, insertAtIndex, setInsertAtIndex, setFilteredTools }) => {
   const [activeId, setActiveId] = useState(null);
   const { setDataType, dataType, inputDataType, setInputDataType } = useContext(DataTypeContext); // To update data type context
   const [invalidItemIds, setInvalidItemIds] = useState([]); // To store invalid item IDs
@@ -62,14 +62,12 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
   const [importError, setImportError] = useState(''); // State for import error
   const [expandedTools, setExpandedTools] = useState({}); // Track each tool's expanded state
   const [expandedOutputs, setExpandedOutputs] = useState({}); // Track each tool's output expanded state
-  const [openToolsModal, setOpenToolsModal] = useState(false); // State for tools modal
-  const [filteredTools, setFilteredTools] = useState([]); // State for filtered tools
-  const [selectedIndex, setSelectedIndex] = useState(null); // State for selected tool index
+  // const [openToolsModal, setOpenToolsModal] = useState(false); // State for tools modal
+  // const [selectedIndex, setSelectedIndex] = useState(null); // State for selected tool index
   const [visibleOutputs, setVisibleOutputs] = useState({}); // Track visible outputs
   const [importMode, setImportMode] = useState('command'); // To track the selected import mode
   const [importFile, setImportFile] = useState(null); // To store the uploaded file for import
   const [partialExportIndex, setPartialExportIndex] = useState(null); // To store the index for partial export
-
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -82,10 +80,10 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
   useEffect(() => {
     const updateDataType = async () => {
       if (workflow.length > 0) {
-        let data = inputData;
         const newOutputTypesMap = {};
 
         for (const tool of workflow) {
+          let data = inputData; // Reset data to inputData for each tool
           try {
             const toolConfig = description.tools.find((t) => t.name === `gto_${tool.toolName}`);
             const outputFormats = toolConfig.output.format.split(',').map(f => f.trim());
@@ -114,6 +112,8 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
 
               newOutputTypesMap[tool.id] = detectedType;
 
+              console.log("Output types map: ", newOutputTypesMap);
+
               if (tool.id === workflow[workflow.length - 1].id && dataType !== detectedType) {
                 setDataType(detectedType);
                 showNotification(`Data type updated to ${detectedType}`, 'info');
@@ -130,6 +130,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
           setDataType(inputDataType);
         }
       }
+      setIsLoading(false);
     };
 
     updateDataType();
@@ -404,8 +405,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
     });
 
     setFilteredTools(filteredOperations);
-    setSelectedIndex(index);
-    setOpenToolsModal(true);
+    setInsertAtIndex(index);
   };
 
   const handlePartialExport = (stepIndex) => {
@@ -413,24 +413,24 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
     setOpenExportDialog(true);
   };
 
-  const handleCloseToolModal = () => {
-    setOpenToolsModal(false);
-    setFilteredTools([]);
-    setSelectedIndex(null);
-  };
+  // const handleCloseToolModal = () => {
+  //   setOpenToolsModal(false);
+  //   setFilteredTools([]);
+  //   setSelectedIndex(null);
+  // };
 
-  const handleAddTool = (tool) => {
-    const toolName = tool.name.replace('gto_', '');
-    const newOperation = {
-      id: `${toolName}-${Date.now()}`,
-      toolName: toolName,
-      params: {},
-    };
-    const newWorkflow = [...workflow];
-    newWorkflow.splice(selectedIndex + 1, 0, newOperation);
-    setWorkflow(newWorkflow);
-    handleCloseToolModal();
-  };
+  // const handleAddTool = (tool) => {
+  //   const toolName = tool.name.replace('gto_', '');
+  //   const newOperation = {
+  //     id: `${toolName}-${Date.now()}`,
+  //     toolName: toolName,
+  //     params: {},
+  //   };
+  //   const newWorkflow = [...workflow];
+  //   newWorkflow.splice(selectedIndex + 1, 0, newOperation);
+  //   setWorkflow(newWorkflow);
+  //   handleCloseToolModal();
+  // };
 
   // State to store outputs of tools
   const [outputs, setOutputs] = useState({});
@@ -977,7 +977,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
       </Box>
 
       {/* Modal to select compatible tools */}
-      <Dialog open={openToolsModal} onClose={handleCloseToolModal} maxWidth="md" fullWidth>
+      {/* <Dialog open={openToolsModal} onClose={handleCloseToolModal} maxWidth="md" fullWidth>
         <DialogTitle>Select a Tool</DialogTitle>
         <DialogContent>
           {filteredTools.length === 0 ? (
@@ -1011,7 +1011,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
             Close
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog> */}
 
       {/* Export Recipe Dialog */}
       <Dialog open={openExportDialog} onClose={() => {

@@ -1,6 +1,10 @@
+import { AddCircle } from '@mui/icons-material';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import {
+  Box,
+  Button,
+  CircularProgress,
   Collapse,
   Divider,
   List,
@@ -11,9 +15,12 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import { keyframes } from '@mui/system';
 import debounce from 'lodash.debounce';
-import React, { useContext, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { DataTypeContext } from '../contexts/DataTypeContext';
+import { NotificationContext } from '../contexts/NotificationContext';
 import { getCompatibleTools } from '../utils/compatibility';
 
 // Define categories and map operations to them
@@ -103,10 +110,11 @@ const operationCategories = {
 
 console.log('Operation categories:', operationCategories);
 
-const OperationsPanel = ({ onAddOperation, isWorkflowEmpty }) => {
+const OperationsPanel = ({ onAddOperation, isWorkflowEmpty, isLoading, setIsLoading, insertAtIndex, setInsertAtIndex, filteredTools, setFilteredTools }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCategories, setExpandedCategories] = useState({});
   const { dataType } = useContext(DataTypeContext);
+  const showNotification = useContext(NotificationContext);
 
   // Debounced search handler
   const handleSearch = useMemo(
@@ -148,8 +156,103 @@ const OperationsPanel = ({ onAddOperation, isWorkflowEmpty }) => {
     return new Set(compatible.map((tool) => tool.name.replace(/^gto_/, '')));
   }, [dataType]);
 
+  // Expand categories with available tools
+  useEffect(() => {
+    if (insertAtIndex === null) {
+      const newExpandedCategories = {};
+      Object.entries(operationCategories).forEach(([category, operations]) => {
+        const filteredOps = filterOperations(operations).filter((op) => compatibleTools.has(op.name));
+        if (filteredOps.length > 0) {
+          newExpandedCategories[category] = true;
+        }
+      });
+      setExpandedCategories(newExpandedCategories);
+    }
+  }, [searchTerm, compatibleTools, insertAtIndex]);
+
+  useEffect(() => {
+    if (insertAtIndex !== null && filteredTools.length > 0) {
+      const newExpandedCategories = {};
+      Object.entries(operationCategories).forEach(([category, operations]) => {
+        const filteredOps = operations.filter((op) =>
+          filteredTools.some((tool) => tool.name === `gto_${op.name}`)
+        );
+        if (filteredOps.length > 0) {
+          newExpandedCategories[category] = true;
+        }
+      });
+      setExpandedCategories(newExpandedCategories);
+    }
+  }, [insertAtIndex, filteredTools]);
+
+  const pulseAnimation = keyframes`
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(0, 123, 255, 0.1);
+  }
+  50% {
+    transform: scale(1.01);
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(0, 123, 255, 0.1);
+  }
+`;
+
   return (
-    <Paper elevation={3} sx={{ padding: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Paper elevation={3} sx={{ padding: 2, height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      {insertAtIndex !== null && (
+        <Box
+          sx={{
+            padding: 2,
+            marginBottom: 2,
+            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+            border: '1px solid rgba(0, 123, 255, 0.3)',
+            borderRadius: 2,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            animation: `${pulseAnimation} 1.5s infinite ease-in-out`,
+          }}
+        >
+          <Typography variant="body2" color="textSecondary">
+            Adding a new tool to the workflow. Click on a tool to insert it at the selected position or{' '}
+            <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
+              <Button
+                onClick={() => {
+                  setInsertAtIndex(null);
+                  setFilteredTools([]);
+                }}
+                color="primary"
+                sx={{ textTransform: 'none', padding: 0, minWidth: 'auto' }}
+              >
+                cancel
+              </Button>
+            </Box>.
+          </Typography>
+        </Box>
+      )}
+
+      {isLoading && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            zIndex: 1,
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      )}
+
       <Typography variant="h6" align="center" gutterBottom>
         Operations
       </Typography>
@@ -163,7 +266,11 @@ const OperationsPanel = ({ onAddOperation, isWorkflowEmpty }) => {
       />
       <List sx={{ overflowY: 'auto', flexGrow: 1 }}>
         {Object.entries(operationCategories).map(([category, operations]) => {
-          const filteredOps = filterOperations(operations);
+          const filteredOps = insertAtIndex !== null
+            ? operations.filter((op) =>
+              filteredTools.some((tool) => tool.name === `gto_${op.name}`)
+            )
+            : filterOperations(operations).filter((op) => compatibleTools.has(op.name));
           if (filteredOps.length === 0 && searchTerm !== '') return null;
 
           return (
@@ -174,36 +281,33 @@ const OperationsPanel = ({ onAddOperation, isWorkflowEmpty }) => {
               </ListItemButton>
               <Collapse in={expandedCategories[category] || searchTerm !== ''} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
-                  {filteredOps.map((operation) => {
-                    const isCompatible = compatibleTools.has(operation.name);
-                    return (
-                      <Tooltip key={operation.name} title={operation.description} placement="right">
-                        <ListItemButton
-                          sx={{
-                            pl: 4,
-                            backgroundColor: isCompatible ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
-                            '&:hover': {
-                              backgroundColor: isCompatible ? 'rgba(76, 175, 80, 0.2)' : 'rgba(244, 67, 54, 0.2)',
-                            },
-                            cursor: isCompatible ? 'pointer' : 'not-allowed',
-                          }}
-                          onClick={() => {
-                            if (isCompatible) {
-                              onAddOperation(operation.name);
-                            }
-                          }}
-                          disabled={!isCompatible}
-                        >
-                          <ListItemText
-                            primary={operation.name}
-                            primaryTypographyProps={{
-                              color: isCompatible ? 'green' : 'red',
-                            }}
-                          />
-                        </ListItemButton>
-                      </Tooltip>
-                    );
-                  })}
+                  {filteredOps.map((operation) => (
+                    <Tooltip key={operation.name} title={operation.description} placement="right">
+                      <ListItemButton
+                        sx={{
+                          pl: 4,
+                          bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2), // Use primary color with 10% opacity
+                          '&:hover': {
+                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.4), // Slightly darker on hover
+                          },
+                        }}
+                        onClick={() => {
+                          setIsLoading(true);
+                          if (insertAtIndex !== null) {
+                            onAddOperation(operation.name, insertAtIndex);
+                            setInsertAtIndex(null);
+                            setFilteredTools([]);
+                            showNotification('Tool added successfully!', 'success');
+                          } else {
+                            onAddOperation(operation.name);
+                          }
+                        }}
+                      >
+                        <ListItemText primary={operation.name} />
+                        <AddCircle sx={{ color: 'primary.main', ml: 'auto' }} />
+                      </ListItemButton>
+                    </Tooltip>
+                  ))}
                 </List>
               </Collapse>
               <Divider />

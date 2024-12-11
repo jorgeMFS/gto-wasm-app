@@ -21,18 +21,28 @@ const App = () => {
   const [workflow, setWorkflow] = useState([]);
   const [inputData, setInputData] = useState('');
   const [outputData, setOutputData] = useState('');
+  const [isLoading, setIsLoading] = useState(false); // State to control data type update loading
+  const [insertAtIndex, setInsertAtIndex] = useState(null); // State to control the available tools to insert
+  const [filteredTools, setFilteredTools] = useState([]); // State for filtered tools
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const handleAddOperation = (toolName, params = {}) => {
+  const handleAddOperation = (toolName, insertAtIndex = null, params = {}) => {
     const uniqueId = `${toolName}-${Date.now()}`;
     const newOperation = {
       id: uniqueId,
       toolName,
       params,
     };
-    setWorkflow([...workflow, newOperation]);
+
+    if (insertAtIndex !== null) {
+      const newWorkflow = [...workflow];
+      newWorkflow.splice(insertAtIndex + 1, 0, newOperation);
+      setWorkflow(newWorkflow);
+    } else {
+      setWorkflow([...workflow, newOperation]);
+    }
   };
 
   const isWorkflowEmpty = workflow.length === 0;
@@ -81,7 +91,16 @@ const App = () => {
                 maxHeight: 'calc(100vh - 150px)', // Adjusts height relative to header/footer
               }}
             >
-              <OperationsPanel onAddOperation={handleAddOperation} isWorkflowEmpty={isWorkflowEmpty} />
+              <OperationsPanel
+                onAddOperation={handleAddOperation}
+                isWorkflowEmpty={isWorkflowEmpty}
+                isLoading={isLoading}
+                setIsLoading={setIsLoading}
+                insertAtIndex={insertAtIndex}
+                setInsertAtIndex={setInsertAtIndex}
+                filteredTools={filteredTools}
+                setFilteredTools={setFilteredTools}
+              />
             </Grid>
 
             {/* Recipe/Workflow Panel */}
@@ -102,6 +121,11 @@ const App = () => {
                 inputData={inputData}
                 setInputData={setInputData}
                 setOutputData={setOutputData}
+                isLoading={isLoading}
+                setIsLoading={setIsLoading}
+                insertAtIndex={insertAtIndex}
+                setInsertAtIndex={setInsertAtIndex}
+                setFilteredTools={setFilteredTools}
               />
             </Grid>
 
