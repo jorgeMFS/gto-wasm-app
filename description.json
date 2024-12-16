@@ -1039,7 +1039,7 @@
       "description": "Converts a FASTA or Multi-FASTA file format to a seq.",
       "input": {
         "type": "stdin",
-        "format": "FASTA"
+        "format": "FASTA, Multi-FASTA"
       },
       "output": {
         "type": "stdout",
@@ -1140,11 +1140,11 @@
       "description": "Extracts sequences from each read in a Multi-FASTA file (splited by \\n), which the range is defined by the user in the parameters.",
       "input": {
         "type": "stdin",
-        "format": "Multi-FASTA"
+        "format": "FASTA, Multi-FASTA"
       },
       "output": {
         "type": "stdout",
-        "format": "Multi-FASTA"
+        "format": "FASTA, Multi-FASTA"
       },
       "flags": [
         {
@@ -1201,11 +1201,11 @@
       "description": "Creates a synthetic mutation of a FASTA file given specific rates of editions, deletions and additions.",
       "input": {
         "type": "stdin",
-        "format": "FASTA"
+        "format": "FASTA, Multi-FASTA"
       },
       "output": {
         "type": "stdout",
-        "format": "FASTA"
+        "format": "FASTA, Multi-FASTA"
       },
       "flags": [
         {
@@ -1264,11 +1264,11 @@
       "description": "Substitutes in the DNA sequence the outside ACGT chars by random ACGT symbols. It works both in FASTA and Multi-FASTA file formats.",
       "input": {
         "type": "stdin",
-        "format": "FASTA"
+        "format": "FASTA, Multi-FASTA"
       },
       "output": {
         "type": "stdout",
-        "format": "FASTA"
+        "format": "FASTA, Multi-FASTA"
       },
       "flags": [
         {
@@ -1420,11 +1420,11 @@
       "description": "Replaces the ACGT bases with their complements in FASTA or Multi-FASTA file format.",
       "input": {
         "type": "stdin",
-        "format": "FASTA"
+        "format": "FASTA, Multi-FASTA"
       },
       "output": {
         "type": "stdout",
-        "format": "FASTA"
+        "format": "FASTA, Multi-FASTA"
       },
       "flags": [
         {
@@ -1441,11 +1441,11 @@
       "description": "Reverses the order of a FASTA or Multi-FASTA file format.",
       "input": {
         "type": "stdin",
-        "format": "FASTA"
+        "format": "FASTA, Multi-FASTA"
       },
       "output": {
         "type": "stdout",
-        "format": "FASTA"
+        "format": "FASTA, Multi-FASTA"
       },
       "flags": [
         {
@@ -1789,7 +1789,7 @@
       "description": "Converts DNA sequences in FASTA or Multi-FASTA file format to an amino acid sequence.",
       "input": {
         "type": "stdin",
-        "format": "FASTA"
+        "format": "FASTA, Multi-FASTA"
       },
       "output": {
         "type": "stdout",
@@ -2477,11 +2477,11 @@
       "description": "Search for a word in a file. It is case sensitive.",
       "input": {
         "type": "stdin",
-        "format": "TXT"
+        "format": "text"
       },
       "output": {
         "type": "stdout",
-        "format": "TXT"
+        "format": "text"
       },
       "flags": [
         {
