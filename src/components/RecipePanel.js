@@ -883,34 +883,47 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
                       display: 'flex',
                       justifyContent: 'center',
                       alignItems: 'center',
-                      opacity: 0,
+                      overflow: 'hidden',
                       transition: 'all 0.3s ease',
                       '&:hover': {
                         height: '40px',
-                        opacity: 1,
+                        '& .action-buttons': {
+                          opacity: 1,
+                          pointerEvents: 'all',
+                        },
                       },
                     }}
-                    onMouseEnter={() => { }}
-                    onMouseLeave={() => { }}
                   >
-                    <Tooltip title="Add Operation">
-                      <Button
-                        color="primary"
-                        onClick={() => handleListOperations(index)}
-                        sx={{ minWidth: '32px', minHeight: '32px', opacity: 0.8 }}
-                      >
-                        <AddCircle sx={{ fontSize: '24px' }} />
-                      </Button>
-                    </Tooltip>
-                    <Tooltip title="Export Until Here">
-                      <Button
-                        color="primary"
-                        onClick={() => handlePartialExport(index)}
-                        sx={{ minWidth: '32px', minHeight: '32px', opacity: 0.8 }}
-                      >
-                        <GetApp sx={{ fontSize: '24px' }} />
-                      </Button>
-                    </Tooltip>
+                    <Box
+                      className="action-buttons"
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        opacity: 0,
+                        pointerEvents: 'none',
+                        transition: 'opacity 0.3s ease',
+                      }}
+                    >
+                      <Tooltip title="Add Operation">
+                        <Button
+                          color="primary"
+                          onClick={() => handleListOperations(index)}
+                          sx={{ minWidth: '32px', minHeight: '32px', opacity: 0.8 }}
+                        >
+                          <AddCircle sx={{ fontSize: '24px' }} />
+                        </Button>
+                      </Tooltip>
+                      <Tooltip title="Export Until Here">
+                        <Button
+                          color="primary"
+                          onClick={() => handlePartialExport(index)}
+                          sx={{ minWidth: '32px', minHeight: '32px', opacity: 0.8 }}
+                        >
+                          <GetApp sx={{ fontSize: '24px' }} />
+                        </Button>
+                      </Tooltip>
+                    </Box>
                   </Box>
                 )}
               </React.Fragment>

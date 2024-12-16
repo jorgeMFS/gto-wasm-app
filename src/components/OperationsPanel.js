@@ -276,7 +276,7 @@ const OperationsPanel = ({ onAddOperation, isWorkflowEmpty, isLoading, setIsLoad
           return (
             <React.Fragment key={category}>
               <ListItemButton onClick={() => handleCategoryClick(category)}>
-                <ListItemText primary={category} />
+                <ListItemText primary={`${category} (${filteredOps.length})`} />
                 {expandedCategories[category] ? <ExpandLess /> : <ExpandMore />}
               </ListItemButton>
               <Collapse in={expandedCategories[category] || searchTerm !== ''} timeout="auto" unmountOnExit>
