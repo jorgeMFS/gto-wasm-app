@@ -492,34 +492,6 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
       ...prev,
       [tool.id]: true,
     }));
-
-    // setRunningToolIds((ids) => [...ids, tool.id]);
-    // try {
-    //   let data = inputData;
-    //   const toolIndex = workflow.findIndex((t) => t.id === tool.id);
-    //   if (toolIndex === -1) throw new Error('Tool not found in workflow');
-
-    //   // Execute all tools up to the selected one to ensure dependencies are met
-    //   for (let i = 0; i <= toolIndex; i++) {
-    //     const currentTool = workflow[i];
-    //     const output = await executeTool(currentTool, data);
-    //     data = output;
-    //     setOutputMap((prevMap) => ({
-    //       ...prevMap,
-    //       [currentTool.id]: output,
-    //     }));
-    //   }
-
-    //   // Mark output as visible
-    //   setVisibleOutputs((prev) => ({
-    //     ...prev,
-    //     [tool.id]: true,
-    //   }));
-    // } catch (error) {
-    //   showNotification(`Failed to view tool output: ${error.message}`, 'error');
-    // } finally {
-    //   setRunningToolIds((ids) => ids.filter((id) => id !== tool.id));
-    // }
   };
 
   const toggleExpand = (toolId) => {
