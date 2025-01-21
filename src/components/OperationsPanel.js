@@ -25,7 +25,7 @@ import { getCompatibleTools } from '../utils/compatibility';
 import operationCategories from '../utils/operationCategories';
 
 
-const OperationsPanel = ({ onAddOperation, isWorkflowEmpty, isLoading, setIsLoading, insertAtIndex, setInsertAtIndex, filteredTools, setFilteredTools }) => {
+const OperationsPanel = ({ onAddOperation, isWorkflowEmpty, isLoading, setIsLoading, insertAtIndex, setInsertAtIndex, addingATool, setAddingATool, filteredTools, setFilteredTools }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCategories, setExpandedCategories] = useState({});
   const { dataType } = useContext(DataTypeContext);
@@ -117,7 +117,7 @@ const OperationsPanel = ({ onAddOperation, isWorkflowEmpty, isLoading, setIsLoad
 
   return (
     <Paper elevation={3} sx={{ padding: 2, height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      {insertAtIndex !== null && (
+      {insertAtIndex !== null && addingATool && (
         <Box
           sx={{
             padding: 2,
@@ -137,6 +137,7 @@ const OperationsPanel = ({ onAddOperation, isWorkflowEmpty, isLoading, setIsLoad
               <Button
                 onClick={() => {
                   setInsertAtIndex(null);
+                  setAddingATool(false);
                   setFilteredTools([]);
                 }}
                 color="primary"
@@ -219,10 +220,11 @@ const OperationsPanel = ({ onAddOperation, isWorkflowEmpty, isLoading, setIsLoad
                         }}
                         onClick={() => {
                           setIsLoading(true);
-                          if (insertAtIndex !== null) {
+                          if (insertAtIndex !== null && addingATool) {
                             onAddOperation(operation.name, insertAtIndex);
-                            setInsertAtIndex(null);
+                            // setInsertAtIndex(null);
                             setFilteredTools([]);
+                            setAddingATool(false);
                             showNotification('Tool added successfully!', 'success');
                           } else {
                             onAddOperation(operation.name);

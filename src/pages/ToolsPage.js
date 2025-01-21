@@ -56,7 +56,7 @@ const ToolsPage = () => {
                             display: 'flex',
                             flexDirection: 'column',
                             overflowY: 'auto',
-                            maxHeight: 'calc(100vh - 150px)', // Adjust height relative to header/footer
+                            maxHeight: 'calc(100vh - 64px)',
                         }}
                     >
                         <AllOperationsPanel onToolClick={handleToolClick} />

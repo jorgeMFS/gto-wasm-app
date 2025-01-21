@@ -54,7 +54,7 @@ const AllOperationsPanel = ({ onToolClick }) => {
     return (
         <Paper elevation={3} sx={{ padding: 2, height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
             <Typography variant="h6" align="center" gutterBottom>
-                Operations
+                All Operations
             </Typography>
             <TextField
                 label="Search Operations"

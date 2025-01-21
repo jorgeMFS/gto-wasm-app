@@ -21,8 +21,10 @@ const WorkflowPage = () => {
     const [outputData, setOutputData] = useState('');
     const [isLoading, setIsLoading] = useState(false); // State to control data type update loading
     const [insertAtIndex, setInsertAtIndex] = useState(null); // State to control the available tools to insert
+    const [addingATool, setAddingATool] = useState(false); // State to control the adding of a tool
     const [filteredTools, setFilteredTools] = useState([]); // State for filtered tools
     const [isVariableLoaded, setIsVariableLoaded] = useState(false); // Control if the workflow was loaded
+    // const [insertedToolIndex, setInsertedToolIndex] = useState(null); // State to control the index of the inserted tool
 
     const { inputDataType, setInputDataType } = useContext(DataTypeContext);
 
@@ -76,13 +78,17 @@ const WorkflowPage = () => {
             params,
         };
 
+        let newWorkflow;
         if (insertAtIndex !== null) {
-            const newWorkflow = [...workflow];
-            newWorkflow.splice(insertAtIndex + 1, 0, newOperation);
-            setWorkflow(newWorkflow);
+            newWorkflow = [...workflow];
+            newWorkflow.splice(insertAtIndex, 0, newOperation);
         } else {
-            setWorkflow([...workflow, newOperation]);
+            newWorkflow = [...workflow, newOperation];
+
+            setInsertAtIndex(newWorkflow.length - 1);
         }
+
+        setWorkflow(newWorkflow);
     };
 
     const isWorkflowEmpty = workflow.length === 0;
@@ -130,6 +136,8 @@ const WorkflowPage = () => {
                                 setIsLoading={setIsLoading}
                                 insertAtIndex={insertAtIndex}
                                 setInsertAtIndex={setInsertAtIndex}
+                                addingATool={addingATool}
+                                setAddingATool={setAddingATool}
                                 filteredTools={filteredTools}
                                 setFilteredTools={setFilteredTools}
                             />
@@ -157,6 +165,7 @@ const WorkflowPage = () => {
                                 setIsLoading={setIsLoading}
                                 insertAtIndex={insertAtIndex}
                                 setInsertAtIndex={setInsertAtIndex}
+                                setAddingATool={setAddingATool}
                                 setFilteredTools={setFilteredTools}
                             />
                         </Grid>
