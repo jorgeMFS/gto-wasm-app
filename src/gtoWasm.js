@@ -16,15 +16,22 @@ export async function loadWasmModule(toolName) {
 
     const runFunctionName = `run_${moduleName}`;
     console.log(`Looking for run function: ${runFunctionName}`);
-    const runFunction = window[runFunctionName];
 
-    if (typeof runFunction === 'function') {
-      console.log(`Run function found for ${toolName}`);
-      return runFunction;
-    } else {
-      console.error(`Run function not found for ${toolName}`);
-      throw new Error(`Function ${runFunctionName} not found on window.`);
+    // Retry mechanism to wait for the function to be available
+    let retries = 5;
+    while (retries > 0) {
+      const runFunction = window[runFunctionName];
+      if (typeof runFunction === 'function') {
+        console.log(`Run function found for ${toolName}`);
+        return runFunction;
+      }
+      console.log(`Run function not found, retrying...`);
+      await new Promise(resolve => setTimeout(resolve, 100)); // Wait for 100ms before retrying
+      retries--;
     }
+
+    console.error(`Run function not found for ${toolName}`);
+    throw new Error(`Function ${runFunctionName} not found on window.`);
   } catch (error) {
     console.error(`Failed to load module for ${toolName}`, error);
     throw error;

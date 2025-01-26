@@ -24,7 +24,6 @@ const WorkflowPage = () => {
     const [addingATool, setAddingATool] = useState(false); // State to control the adding of a tool
     const [filteredTools, setFilteredTools] = useState([]); // State for filtered tools
     const [isVariableLoaded, setIsVariableLoaded] = useState(false); // Control if the workflow was loaded
-    // const [insertedToolIndex, setInsertedToolIndex] = useState(null); // State to control the index of the inserted tool
 
     const { inputDataType, setInputDataType } = useContext(DataTypeContext);
 
