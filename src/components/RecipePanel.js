@@ -140,6 +140,15 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
 
   }, [workflow, inputData, inputDataType]);
 
+  // Run validateParameters when the page is loaded
+  useEffect(() => {
+    if (workflow.length > 0) {
+      workflow.forEach((tool) => {
+        validateParameters(tool);
+      });
+    }
+  }, [workflow]);
+
   // State to store help messages for tools
   useEffect(() => {
     workflow.forEach((tool) => {
@@ -541,10 +550,10 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
         }
       }
 
-      if (outputData.stdout.trim() === '') {
-        // Notify the user if the output is empty
-        showNotification('Execution resulted in an empty output.', 'warning');
-      }
+      // if (outputData.stdout.trim() === '') {
+      //   // Notify the user if the output is empty
+      //   showNotification('Execution resulted in an empty output.', 'warning');
+      // }
 
       return outputData.stdout;
     } catch (error) {
@@ -864,9 +873,9 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
                   >
                     {renderParameters(tool)}
                     <Box sx={{ display: 'flex', alignItems: 'center', marginTop: 1 }}>
-                      <Tooltip title={workflow.slice(0, index).some((prevTool) => validationErrors[prevTool.id] && Object.keys(validationErrors[prevTool.id]).length > 0) ? (
+                      <Tooltip title={workflow.slice(0, index + 1).some((prevTool) => validationErrors[prevTool.id] && Object.keys(validationErrors[prevTool.id]).length > 0) ? (
                         <Typography align="center" variant="body2">
-                          View output option is unavailable due to previous errors in the workflow.
+                          View output option is unavailable due to errors in the workflow.
                         </Typography>
                       ) : ''
                       }>
@@ -877,7 +886,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
                             size="small"
                             onClick={() => handleViewTool(tool)}
                             startIcon={visibleOutputs[tool.id] ? <VisibilityOff /> : <Visibility />}
-                            disabled={workflow.slice(0, index).some((prevTool) => validationErrors[prevTool.id] && Object.keys(validationErrors[prevTool.id]).length > 0)}
+                            disabled={workflow.slice(0, index + 1).some((prevTool) => validationErrors[prevTool.id] && Object.keys(validationErrors[prevTool.id]).length > 0)}
                           >
                             {visibleOutputs[tool.id] ? 'Hide' : 'View'}
                           </Button>
