@@ -133,7 +133,6 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
     // The mapping update is done in the handle delete functions
     if (!deleteOperation) {
       updateDataTypeAndOutputsMapping();
-      console.log("VALIDATION ERRORSSSS: " + JSON.stringify(validationErrors));
     }
     else {
       setDeleteOperation(false);  // Reset the flag
@@ -854,9 +853,69 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
             {workflow.map((tool, index) => {
               return (
                 <React.Fragment key={tool.id}>
+                  <SortableItem
+                    id={tool.id}
+                    toolName={tool.toolName}
+                    onDelete={() => handleDelete(tool.id)}
+                    onDeleteFromHere={() => handleDeleteFromHere(tool.id)}
+                    isInvalid={invalidItemIds.includes(tool.id)} // Is true if the tool is invalid
+                    helpMessage={helpMessages[tool.toolName]?.general}
+                    workflowLength={workflow.length}
+                  >
+                    {renderParameters(tool)}
+                    <Box sx={{ display: 'flex', alignItems: 'center', marginTop: 1 }}>
+                      <Tooltip title={workflow.slice(0, index).some((prevTool) => validationErrors[prevTool.id] && Object.keys(validationErrors[prevTool.id]).length > 0) ? (
+                        <Typography align="center" variant="body2">
+                          View output option is unavailable due to previous errors in the workflow.
+                        </Typography>
+                      ) : ''
+                      }>
+                        <span>
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            onClick={() => handleViewTool(tool)}
+                            startIcon={visibleOutputs[tool.id] ? <VisibilityOff /> : <Visibility />}
+                            disabled={workflow.slice(0, index).some((prevTool) => validationErrors[prevTool.id] && Object.keys(validationErrors[prevTool.id]).length > 0)}
+                          >
+                            {visibleOutputs[tool.id] ? 'Hide' : 'View'}
+                          </Button>
+                        </span>
+                      </Tooltip>
+                    </Box>
+                    {outputMap[tool.id] && visibleOutputs[tool.id] && !(workflow.slice(0, index).some((prevTool) => validationErrors[prevTool.id] && Object.keys(validationErrors[prevTool.id]).length > 0)) && (
+                      <Box sx={{ marginTop: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography variant="subtitle2">Output:</Typography>
+                          <Button
+                            size="small"
+                            onClick={() => toggleOutputExpand(tool.id)}
+                          >
+                            {expandedOutputs[tool.id] ? 'Collapse' : 'Expand'}
+                          </Button>
+                        </Box>
+                        <Collapse in={expandedOutputs[tool.id]} timeout="auto" unmountOnExit>
+                          <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
+                            <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', fontSize: '0.800rem' }}>
+                              {outputMap[tool.id]}
+                            </Typography>
+                          </Paper>
+                        </Collapse>
+                        {!expandedOutputs[tool.id] && (
+                          <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
+                            <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', fontSize: '0.800rem' }}>
+                              {outputMap[tool.id].length > 50 ? `${outputMap[tool.id].slice(0, 90)}...` : outputMap[tool.id]}
+                            </Typography>
+                          </Paper>
+                        )}
+                      </Box>
+                    )}
+                  </SortableItem>
+                  {/* Add Operation Button */}
                   <Box sx={{ position: 'relative' }}>
                     {/* Overlay to block interaction */}
-                    {workflow.slice(0, index).some((prevTool) => validationErrors[prevTool.id] && Object.keys(validationErrors[prevTool.id]).length > 0) && (
+                    {Object.values(validationErrors).some(error => Object.keys(error).length > 0) && (
                       <Box
                         sx={{
                           position: 'absolute',
@@ -872,132 +931,58 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
                           alignItems: 'center',
                         }}
                       >
-                        <Typography variant="body2" color="error">
-                          There are invalid parameters in the previous tools. Please fix them first.
-                        </Typography>
                       </Box>
                     )}
-                    <SortableItem
-                      id={tool.id}
-                      toolName={tool.toolName}
-                      onDelete={() => handleDelete(tool.id)}
-                      onDeleteFromHere={() => handleDeleteFromHere(tool.id)}
-                      isInvalid={invalidItemIds.includes(tool.id)} // Is true if the tool is invalid
-                      helpMessage={helpMessages[tool.toolName]?.general}
-                      workflowLength={workflow.length}
-                    >
-                      {renderParameters(tool)}
-                      <Box sx={{ display: 'flex', alignItems: 'center', marginTop: 1 }}>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          size="small"
-                          onClick={() => handleViewTool(tool)}
-                          startIcon={visibleOutputs[tool.id] ? <VisibilityOff /> : <Visibility />}
-                        >
-                          {visibleOutputs[tool.id] ? 'Hide' : 'View'}
-                        </Button>
-                      </Box>
-                      {outputMap[tool.id] && visibleOutputs[tool.id] && (
-                        <Box sx={{ marginTop: 1 }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Typography variant="subtitle2">Output:</Typography>
-                            <Button
-                              size="small"
-                              onClick={() => toggleOutputExpand(tool.id)}
-                            >
-                              {expandedOutputs[tool.id] ? 'Collapse' : 'Expand'}
-                            </Button>
-                          </Box>
-                          <Collapse in={expandedOutputs[tool.id]} timeout="auto" unmountOnExit>
-                            <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
-                              <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', fontSize: '0.800rem' }}>
-                                {outputMap[tool.id]}
-                              </Typography>
-                            </Paper>
-                          </Collapse>
-                          {!expandedOutputs[tool.id] && (
-                            <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
-                              <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', fontSize: '0.800rem' }}>
-                                {outputMap[tool.id].length > 50 ? `${outputMap[tool.id].slice(0, 90)}...` : outputMap[tool.id]}
-                              </Typography>
-                            </Paper>
-                          )}
-                        </Box>
-                      )}
-                    </SortableItem>
-                    {/* Add Operation Button */}
-                    <Box sx={{ position: 'relative' }}>
-                      {/* Overlay to block interaction */}
-                      {validationErrors[tool.id] && Object.keys(validationErrors[tool.id]).length > 0 && (
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            height: '100%',
-                            backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                            zIndex: 10,
-                            pointerEvents: 'all',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                          }}
-                        >
-                        </Box>
-                      )}
-                      {index < workflow.length - 1 && (
-                        <Box
-                          sx={{
-                            height: '10px',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            overflow: 'hidden',
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                              height: '40px',
-                              '& .action-buttons': {
-                                opacity: 1,
-                                pointerEvents: 'all',
-                              },
+                    {index < workflow.length - 1 && (
+                      <Box
+                        sx={{
+                          height: '10px',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          overflow: 'hidden',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            height: '40px',
+                            '& .action-buttons': {
+                              opacity: 1,
+                              pointerEvents: 'all',
                             },
+                          },
+                        }}
+                      >
+                        <Box
+                          className="action-buttons"
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            opacity: 0,
+                            pointerEvents: 'none',
+                            transition: 'opacity 0.3s ease',
                           }}
                         >
-                          <Box
-                            className="action-buttons"
-                            sx={{
-                              display: 'flex',
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                              opacity: 0,
-                              pointerEvents: 'none',
-                              transition: 'opacity 0.3s ease',
-                            }}
-                          >
-                            <Tooltip title="Add Operation">
-                              <Button
-                                color="primary"
-                                onClick={() => handleListOperations(index)}
-                                sx={{ minWidth: '32px', minHeight: '32px', opacity: 0.8 }}
-                              >
-                                <AddCircle sx={{ fontSize: '24px' }} />
-                              </Button>
-                            </Tooltip>
-                            <Tooltip title="Export Until Here">
-                              <Button
-                                color="primary"
-                                onClick={() => handlePartialExport(index)}
-                                sx={{ minWidth: '32px', minHeight: '32px', opacity: 0.8 }}
-                              >
-                                <GetApp sx={{ fontSize: '24px' }} />
-                              </Button>
-                            </Tooltip>
-                          </Box>
+                          <Tooltip title="Add Operation">
+                            <Button
+                              color="primary"
+                              onClick={() => handleListOperations(index)}
+                              sx={{ minWidth: '32px', minHeight: '32px', opacity: 0.8 }}
+                            >
+                              <AddCircle sx={{ fontSize: '24px' }} />
+                            </Button>
+                          </Tooltip>
+                          <Tooltip title="Export Until Here">
+                            <Button
+                              color="primary"
+                              onClick={() => handlePartialExport(index)}
+                              sx={{ minWidth: '32px', minHeight: '32px', opacity: 0.8 }}
+                            >
+                              <GetApp sx={{ fontSize: '24px' }} />
+                            </Button>
+                          </Tooltip>
                         </Box>
-                      )}
-                    </Box>
+                      </Box>
+                    )}
                   </Box>
                 </React.Fragment>
               )
@@ -1016,7 +1001,31 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
         </DndContext>
       </Box>
       <Divider sx={{ marginY: 2 }} />
-      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, position: 'relative' }}>
+        {/* Overlay to block interaction */}
+        {Object.values(validationErrors).some(error => Object.keys(error).length > 0) && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              backgroundColor: 'rgba(255, 255, 255, 0.7)',
+              zIndex: 10,
+              pointerEvents: 'all',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            {/* <Block sx={{
+              color: 'error.main',
+              fontSize: 80,
+              padding: 2,
+            }} /> */}
+          </Box>
+        )}
         <Button
           variant="contained"
           color="primary"

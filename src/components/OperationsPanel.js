@@ -1,4 +1,4 @@
-import { AddCircle } from '@mui/icons-material';
+import { AddCircle, Block } from '@mui/icons-material';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import {
@@ -21,6 +21,7 @@ import debounce from 'lodash.debounce';
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { DataTypeContext } from '../contexts/DataTypeContext';
 import { NotificationContext } from '../contexts/NotificationContext';
+import { ValidationErrorsContext } from '../contexts/ValidationErrorsContext';
 import { getCompatibleTools } from '../utils/compatibility';
 import operationCategories from '../utils/operationCategories';
 
@@ -30,6 +31,7 @@ const OperationsPanel = ({ onAddOperation, isWorkflowEmpty, isLoading, setIsLoad
   const [expandedCategories, setExpandedCategories] = useState({});
   const { dataType } = useContext(DataTypeContext);
   const showNotification = useContext(NotificationContext);
+  const { validationErrors } = useContext(ValidationErrorsContext); // Access validation errors
 
   // Debounced search handler
   const handleSearch = useMemo(
@@ -166,6 +168,34 @@ const OperationsPanel = ({ onAddOperation, isWorkflowEmpty, isLoading, setIsLoad
           }}
         >
           <CircularProgress />
+        </Box>
+      )}
+
+      {/* Overlay to block interaction */}
+      {Object.values(validationErrors).some(error => Object.keys(error).length > 0) && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            zIndex: 10,
+            pointerEvents: 'all',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <Block sx={{
+            color: 'error.main',
+            fontSize: 60,
+          }} />
+          <Typography variant="body1" sx={{ color: 'error.main', textAlign: 'center' }}>
+            Correct the invalid parameters in the workflow to unlock the unavailable features.
+          </Typography>
         </Box>
       )}
 
