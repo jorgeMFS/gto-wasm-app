@@ -71,7 +71,7 @@ const OperationsPanel = ({ onAddOperation, isWorkflowEmpty, isLoading, setIsLoad
     const compatible = getCompatibleTools(dataType, isWorkflowEmpty);
     // Assuming tool names in operationCategories do not have the 'gto_' prefix
     return new Set(compatible.map((tool) => tool.name.replace(/^gto_/, '')));
-  }, [dataType]);
+  }, [dataType, isWorkflowEmpty]);
 
   // Expand categories with available tools
   useEffect(() => {

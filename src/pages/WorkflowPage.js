@@ -196,7 +196,7 @@ const WorkflowPage = () => {
                                     overflowY: 'auto', // Independent scrolling
                                 }}
                             >
-                                <OutputPanel outputData={outputData} setOutputData={setOutputData} />
+                                <OutputPanel outputData={outputData} setOutputData={setOutputData} workflow={workflow} inputData={inputData} />
                             </Box>
                         </Grid>
                     </Grid>

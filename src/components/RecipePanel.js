@@ -142,11 +142,11 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
 
   // Run validateParameters when the page is loaded
   useEffect(() => {
-    if (workflow.length > 0) {
-      workflow.forEach((tool) => {
-        validateParameters(tool);
-      });
-    }
+    // if (workflow.length > 0) {
+    workflow.forEach((tool) => {
+      validateParameters(tool);
+    });
+    // }
   }, [workflow]);
 
   // State to store help messages for tools
@@ -334,6 +334,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
       setOutputMap({}); // Clear the output types map
       setHelpMessages({}); // Clear the help messages
       setDataType(inputDataType); // If there's no more items in workflow, reset to input data type
+      setValidationErrors({}); // Clear the validation errors
       setWorkflow(newWorkflow);
       showNotification('All operations removed. Data type reset to input type.', 'info');
     } else {
@@ -382,6 +383,13 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
           }
         }
 
+        // Update validation errors map
+        setValidationErrors((prevErrors) => {
+          const newErrors = { ...prevErrors };
+          delete newErrors[id];
+          return newErrors;
+        });
+
         setWorkflow(newWorkflow);
 
       } else {
@@ -412,6 +420,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
         setOutputMap({});
         setHelpMessages({});
         setDataType(inputDataType);
+        setValidationErrors({});
         setWorkflow(newWorkflow);
         showNotification('All operations removed. Data type reset to input type.', 'info');
       } else {
@@ -436,6 +445,15 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
           setDataType(lastOutputType);
           showNotification(`Data type updated to ${lastOutputType}`, 'info');
         }
+
+        // Update validation errors map
+        setValidationErrors((prevErrors) => {
+          const newErrors = {};
+          newWorkflow.forEach((tool) => {
+            newErrors[tool.id] = prevErrors[tool.id];
+          });
+          return newErrors;
+        });
 
         setWorkflow(newWorkflow);
       }
@@ -735,7 +753,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
             </Box>
 
             {/* Collapse */}
-            <Collapse in={expandedTools[tool.id]} timeout="auto" unmountOnExit>
+            <Collapse in={expandedTools[tool.id] || (validationErrors[tool.id] && Object.keys(validationErrors[tool.id]).length > 0)} timeout="auto" unmountOnExit>
               {optionalFlags.map((flagObj) => {
                 const flagValue = !!tool.params[flagObj.flag];
                 const parameterValue = tool.params[flagObj.parameter] || '';
