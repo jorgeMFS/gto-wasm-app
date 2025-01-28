@@ -1,8 +1,8 @@
 import SaveIcon from '@mui/icons-material/Save';
 import { Box, IconButton, Paper, TextField, Tooltip, Typography } from '@mui/material';
-import React from 'react';
+import React, { useEffect } from 'react';
 
-const OutputPanel = ({ outputData }) => {
+const OutputPanel = ({ outputData, setOutputData, workflow, inputData }) => {
   const handleSaveOutput = () => {
     const blob = new Blob([outputData], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -12,6 +12,11 @@ const OutputPanel = ({ outputData }) => {
     link.click();
     URL.revokeObjectURL(url);
   };
+
+  // Clear output data when workflow or input data changes, beacuse the output data is no longer valid
+  useEffect(() => {
+    setOutputData('');
+  }, [workflow, inputData]);
 
   return (
     <Paper elevation={3} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>

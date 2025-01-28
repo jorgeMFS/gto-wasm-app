@@ -17,7 +17,6 @@ import { AddCircle, ContentCopy, ExpandLess, ExpandMore, FileUpload, GetApp, Hel
 import {
   Box,
   Button,
-  CircularProgress,
   Collapse,
   Dialog,
   DialogActions,
@@ -32,7 +31,7 @@ import {
   Tabs,
   TextField,
   Tooltip,
-  Typography,
+  Typography
 } from '@mui/material';
 import React, { useContext, useEffect, useState } from 'react';
 import description from '../../description.json';
@@ -47,11 +46,11 @@ import { importRecipeCommand } from '../utils/importRecipeCommand';
 import { importRecipeConfigFile } from '../utils/importRecipeConfigFile';
 import SortableItem from './SortableItem';
 
-const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutputData, isLoading, setIsLoading, insertAtIndex, setInsertAtIndex, setFilteredTools }) => {
+const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutputData, isLoading, setIsLoading, insertAtIndex, setInsertAtIndex, setAddingATool, setFilteredTools }) => {
   const [activeId, setActiveId] = useState(null);
   const { setDataType, dataType, inputDataType, setInputDataType } = useContext(DataTypeContext); // To update data type context
   const [invalidItemIds, setInvalidItemIds] = useState([]); // To store invalid item IDs
-  const [outputTypesMap, setOutputTypesMap] = useState({}); // To store output types of tools
+  const [outputMap, setOutputMap] = useState({}); // To store output data of tools
   const { validationErrors, setValidationErrors } = useContext(ValidationErrorsContext); // Access validation errors of parameters
   const [helpMessages, setHelpMessages] = useState({}); // To store help messages for tools
   const [exportFileName, setExportFileName] = useState('my_workflow'); // Default export name
@@ -66,6 +65,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
   const [importMode, setImportMode] = useState('command'); // To track the selected import mode
   const [importFile, setImportFile] = useState(null); // To store the uploaded file for import
   const [partialExportIndex, setPartialExportIndex] = useState(null); // To store the index for partial export
+  const [deleteOperation, setDeleteOperation] = useState(false); // To store the delete from here state
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -74,65 +74,80 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
 
   const showNotification = useContext(NotificationContext);
 
-  // If workflow changes, update the data type and output types map
+  // Load outputMap from localStorage
   useEffect(() => {
-    const updateDataType = async () => {
-      if (workflow.length > 0) {
-        const newOutputTypesMap = {};
+    const savedOutputMap = localStorage.getItem('outputMap');
 
-        for (const tool of workflow) {
-          let data = inputData; // Reset data to inputData for each tool
+    if (savedOutputMap) {
+      setOutputMap(JSON.parse(savedOutputMap));
+    }
+  }, []);
+
+  // Save outputMap in localStorage
+  useEffect(() => {
+    localStorage.setItem('outputMap', JSON.stringify(outputMap));
+  }, [outputMap]);
+
+  // If a tool is inserted, update data type and outputs mapping
+  useEffect(() => {
+    const updateDataTypeAndOutputsMapping = async () => {
+      if (workflow.length > 0 && validateParameters(workflow[insertAtIndex !== null ? insertAtIndex : workflow.length - 1])) {
+        let data = (insertAtIndex !== null && insertAtIndex > 0) ? outputMap[workflow[insertAtIndex - 1].id] : inputData;
+
+        for (let i = (insertAtIndex !== null && insertAtIndex > 0) ? insertAtIndex : 0; i < workflow.length; i++) {
+          const tool = workflow[i];
           try {
-            const toolConfig = description.tools.find((t) => t.name === `gto_${tool.toolName}`);
-            const outputFormats = toolConfig.output.format.split(',').map(f => f.trim());
+            const output = await executeTool(tool, data);
+            data = output;
 
-            if (outputFormats.length === 1) {
-              let toolOutput = outputFormats[0];
+            // Store the output in the map
+            setOutputMap((prevMap) => ({
+              ...prevMap,
+              [tool.id]: output,
+            }));
 
-              if (toolOutput === 'text') {
-                toolOutput = 'UNKNOWN';
-              }
+            // Detect the data type of the output
+            const detectedType = detectDataType('output.txt', output);
 
-              newOutputTypesMap[tool.id] = toolOutput;
-
-              if (tool.id === workflow[workflow.length - 1].id && dataType !== toolOutput) {
-                setDataType(toolOutput);
-                showNotification(`Data type updated to ${toolOutput}`, 'info');
-              }
-            } else {
-              // Execute all tools up to the current one to ensure dependencies are met
-              for (let i = 0; i <= workflow.findIndex((t) => t.id === tool.id); i++) {
-                const currentTool = workflow[i];
-                const output = await executeTool(currentTool, data);
-                data = output;
-              }
-              const detectedType = detectDataType('output.txt', data);
-
-              newOutputTypesMap[tool.id] = detectedType;
-
-              console.log("Output types map: ", newOutputTypesMap);
-
-              if (tool.id === workflow[workflow.length - 1].id && dataType !== detectedType) {
-                setDataType(detectedType);
-                showNotification(`Data type updated to ${detectedType}`, 'info');
-              }
+            if (tool.id === workflow[workflow.length - 1].id && dataType !== detectedType) {
+              setDataType(detectedType);
+              showNotification(`Data type updated to ${detectedType}`, 'info');
             }
           } catch (error) {
             console.error(`Failed to update data type for tool ${tool.toolName}:`, error);
           }
         }
 
-        setOutputTypesMap(newOutputTypesMap);
       } else {
         if (dataType !== inputDataType) {
           setDataType(inputDataType);
+          showNotification(`Data type updated to ${inputDataType}`, 'info');
         }
       }
-      setIsLoading(false);
+
+      setIsLoading(false);    // Stops Operations Panel loading
+      setInsertAtIndex(null);   // Resets the index of inserted tool
     };
 
-    updateDataType();
-  }, [workflow, inputData, inputDataType, dataType]);
+    // If deleteOperation triggered the useEffect, do not update the data type and outputs mapping
+    // The mapping update is done in the handle delete functions
+    if (!deleteOperation) {
+      updateDataTypeAndOutputsMapping();
+    }
+    else {
+      setDeleteOperation(false);  // Reset the flag
+    }
+
+  }, [workflow, inputData, inputDataType]);
+
+  // Run validateParameters when the page is loaded
+  useEffect(() => {
+    // if (workflow.length > 0) {
+    workflow.forEach((tool) => {
+      validateParameters(tool);
+    });
+    // }
+  }, [workflow]);
 
   // State to store help messages for tools
   useEffect(() => {
@@ -141,6 +156,8 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
         loadHelpMessage(tool.toolName);
       }
     });
+
+    // console.log('helpMessages ON RECIPEPANEL:', helpMessages);
   }, [workflow]);
 
   // Export
@@ -150,7 +167,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
         workflow,
         inputData,
         inputDataType,
-        outputTypesMap,
+        outputMap,
         exportFileName,
         showNotification,
         setOpenExportDialog,
@@ -161,7 +178,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
     } else {
       setCommand('');
     }
-  }, [openExportDialog, workflow, inputData, inputDataType, outputTypesMap]);
+  }, [openExportDialog, workflow, inputData, inputDataType, outputMap]);
 
   // Load help message for a tool
   const loadHelpMessage = async (toolName) => {
@@ -269,6 +286,10 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
       [tool.id]: errors,
     }));
 
+    if (Object.keys(errors).length > 0) {
+      showNotification('Please correct the parameters highlighted in red.', 'error');
+    }
+
     return Object.keys(errors).length === 0;
   };
 
@@ -304,14 +325,17 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
     setActiveId(null);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
+    setDeleteOperation(true); // Set the flag to avoid updating the data type and outputs mapping in the useEffect
+
     const newWorkflow = workflow.filter((item) => item.id !== id);
 
     if (newWorkflow.length === 0) {
+      setOutputMap({}); // Clear the output types map
+      setHelpMessages({}); // Clear the help messages
+      setDataType(inputDataType); // If there's no more items in workflow, reset to input data type
+      setValidationErrors({}); // Clear the validation errors
       setWorkflow(newWorkflow);
-      // If no more items in workflow, reset to input data type
-      setDataType(inputDataType);
-      setOutputTypesMap({}); // Clear the output types map
       showNotification('All operations removed. Data type reset to input type.', 'info');
     } else {
 
@@ -319,25 +343,58 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
       const isFirstToolWithoutInput = toolIndex === 0 && description.tools.find((tool) => `gto_${workflow[toolIndex].toolName}` === tool.name)?.input?.type === '';
 
       if (validateWorkflow(newWorkflow, inputDataType) && !isFirstToolWithoutInput) {
-        setWorkflow(newWorkflow);
-
-        // Remove the tool from the outputTypesMap
-        setOutputTypesMap((prevMap) => {
+        // Remove the tool from the outputMap
+        setOutputMap((prevMap) => {
           const newMap = { ...prevMap };
           delete newMap[id];
           return newMap;
         });
 
-        // Update the data type based on the last valid tool in the workflow
-        const lastToolInWorkflow = newWorkflow[newWorkflow.length - 1];
-        const lastToolId = lastToolInWorkflow.id;
-        const lastOutputType = outputTypesMap[lastToolId];
+        // Execute the tools subsequent to the deleted one to update the outputMap
+        let previousTool = workflow[toolIndex - 1];
+        let data = previousTool ? outputMap[previousTool.id] || inputData : inputData;
 
-        if (lastOutputType) {
-          setDataType(lastOutputType); // Use the actual output type from the map
-          showNotification(`Data type updated to ${lastOutputType}`, 'info');
+        for (let i = toolIndex; i < newWorkflow.length; i++) {
+          const tool = newWorkflow[i];
+          const output = await executeTool(tool, data);
+          data = output;
+
+          // Store the output in the map
+          setOutputMap((prevMap) => ({
+            ...prevMap,
+            [tool.id]: output,
+          }));
         }
+
+        // Remove the help message for the tool
+        setHelpMessages((prev) => {
+          const newMessages = { ...prev };
+          delete newMessages[workflow[toolIndex].toolName];
+          return newMessages;
+        });
+
+        // Verify if the tool being removed is the last one, if so, update the data type
+        if (toolIndex === newWorkflow.length) {
+          const lastTool = newWorkflow[newWorkflow.length - 1];
+          const lastOutputType = detectDataType('output.txt', outputMap[lastTool.id]);
+          if (dataType !== lastOutputType) {
+            setDataType(lastOutputType);
+            showNotification(`Data type updated to ${lastOutputType}`, 'info');
+          }
+        }
+
+        // Update validation errors map
+        setValidationErrors((prevErrors) => {
+          const newErrors = { ...prevErrors };
+          delete newErrors[id];
+          return newErrors;
+        });
+
+        setWorkflow(newWorkflow);
+
       } else {
+        setDeleteOperation(false); // Reset the flag because there wasn't any change in the workflow
+
         showNotification('Invalid operation: resulting workflow has incompatible steps.', 'error');
 
         setInvalidItemIds((prev) => [...prev, id]);
@@ -352,44 +409,83 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
 
   // Delete all operations from the selected tool onwards
   const handleDeleteFromHere = (id) => {
+    setDeleteOperation(true); // Set the flag to avoid updating the data type and outputs mapping in the useEffect
+
     const index = workflow.findIndex((item) => item.id === id);
 
     if (index !== -1) {
       const newWorkflow = workflow.slice(0, index); // Keep only the operations before the selected one
-      setWorkflow(newWorkflow);
 
       if (newWorkflow.length === 0) {
+        setOutputMap({});
+        setHelpMessages({});
         setDataType(inputDataType);
-        setOutputTypesMap({});
+        setValidationErrors({});
+        setWorkflow(newWorkflow);
         showNotification('All operations removed. Data type reset to input type.', 'info');
       } else {
+        // Update outputMap to keep only the outputs of the tools that are still in the workflow after slicing
+        const newOutputMap = {};
+        newWorkflow.forEach((tool) => {
+          newOutputMap[tool.id] = outputMap[tool.id];
+        });
+        setOutputMap(newOutputMap);
+
+        // Update help messages to keep only the messages of the tools that are still in the workflow after slicing
+        const newHelpMessages = {};
+        newWorkflow.forEach((tool) => {
+          newHelpMessages[tool.toolName] = helpMessages[tool.toolName];
+        });
+        setHelpMessages(newHelpMessages);
+
+        // Verify if the data type should be updated
         const lastTool = newWorkflow[newWorkflow.length - 1];
-        const lastOutputType = outputTypesMap[lastTool.id];
-        setDataType(lastOutputType);
-        showNotification(`Data type updated to ${lastOutputType}`, 'info');
+        const lastOutputType = detectDataType('output.txt', outputMap[lastTool.id]);
+        if (dataType !== lastOutputType) {
+          setDataType(lastOutputType);
+          showNotification(`Data type updated to ${lastOutputType}`, 'info');
+        }
+
+        // Update validation errors map
+        setValidationErrors((prevErrors) => {
+          const newErrors = {};
+          newWorkflow.forEach((tool) => {
+            newErrors[tool.id] = prevErrors[tool.id];
+          });
+          return newErrors;
+        });
+
+        setWorkflow(newWorkflow);
       }
     }
   };
 
   const handleParameterChange = (id, name, value) => {
-    setWorkflow(
-      workflow.map((item) =>
-        item.id === id
-          ? {
-            ...item,
-            params: {
-              ...item.params,
-              [name]: value, // Sets either flag toggle or parameter value
-            },
-          }
-          : item
-      )
+    // Store the index of the tool in the workflow
+    const toolIndex = workflow.findIndex((t) => t.id === id);
+    setInsertAtIndex(toolIndex);
+
+    const newWorkflow = workflow.map((item) =>
+      item.id === id
+        ? {
+          ...item,
+          params: {
+            ...item.params,
+            [name]: value, // Sets either flag toggle or parameter value
+          },
+        }
+        : item
     );
+
+    setWorkflow(newWorkflow);
+
+    // Validate the parameter value
+    validateParameters(newWorkflow[toolIndex]);
   };
 
   const handleListOperations = (index) => {
     const previous = workflow[index]
-    const previousOutputType = outputTypesMap[previous.id]
+    const previousOutputType = detectDataType('output.txt', outputMap[previous.id])
 
     const next = workflow[index + 1]
     const nextTool = description.tools.find((t) => t.name === `gto_${next.toolName}`)
@@ -402,18 +498,15 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
       return toolInputTypes.includes(previousOutputType) && toolOutputTypes.some((type) => nextInputTypes.includes(type));
     });
 
+    setAddingATool(true);
     setFilteredTools(filteredOperations);
-    setInsertAtIndex(index);
+    setInsertAtIndex(index + 1);
   };
 
   const handlePartialExport = (stepIndex) => {
     setPartialExportIndex(stepIndex);
     setOpenExportDialog(true);
   };
-
-  // State to store outputs of tools
-  const [outputs, setOutputs] = useState({});
-  const [runningToolIds, setRunningToolIds] = useState([]);
 
   const executeTool = async (tool, input) => {
     try {
@@ -434,7 +527,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
       if (tool.params && Object.keys(tool.params).length > 0) {
         // Handle flags
         toolConfig.flags.forEach((flagObj) => {
-          if (tool.params[flagObj.parameter]) {
+          if (flagObj.required || tool.params[flagObj.flag]) {
             args.push(flagObj.flag);
             // Check if the flag has an associated parameter
             if (
@@ -457,7 +550,6 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
       const outputData = await runFunction(input, args);
 
       // Handle messages in stderr
-      let hasInfoMessage = false;
       if (outputData.stderr) {
         const stderrLines = outputData.stderr.split('\n');
         let infoMessages = []; // Accumulate all informational messages
@@ -467,7 +559,6 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
             throw new Error(line.trim()); // Treat as an error
           } else if (line.trim()) {
             infoMessages.push(line.trim()); // Accumulate info messages
-            hasInfoMessage = true;
           }
         });
 
@@ -477,23 +568,14 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
         }
       }
 
-      // Detect data type of the output
-      const detectedType = detectDataType('output.txt', outputData.stdout);
-
-      // Update the output types map with the real output type from the current tool
-      setOutputTypesMap((prevMap) => ({
-        ...prevMap,
-        [tool.id]: detectedType,
-      }));
-
-      if (outputData.stdout.trim() === '') {
-        // Notify the user if the output is empty
-        showNotification('Execution resulted in an empty output.', 'warning');
-      }
+      // if (outputData.stdout.trim() === '') {
+      //   // Notify the user if the output is empty
+      //   showNotification('Execution resulted in an empty output.', 'warning');
+      // }
 
       return outputData.stdout;
     } catch (error) {
-      // showNotification(`Execution failed: ${error.message}`, 'error');
+      console.error(`Failed to execute tool ${tool.toolName}:`, error);
       throw error;
     }
   };
@@ -508,36 +590,11 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
       return;
     }
 
-    // Validate parameters before running
-    if (!validateParameters(tool)) {
-      showNotification('Invalid input detected. Please correct the inputs in red.', 'error');
-      return;
-    }
-
-    setRunningToolIds((ids) => [...ids, tool.id]);
-    try {
-      let data = inputData;
-      const toolIndex = workflow.findIndex((t) => t.id === tool.id);
-      if (toolIndex === -1) throw new Error('Tool not found in workflow');
-
-      // Execute all tools up to the selected one to ensure dependencies are met
-      for (let i = 0; i <= toolIndex; i++) {
-        const currentTool = workflow[i];
-        const output = await executeTool(currentTool, data);
-        data = output;
-        setOutputs((prevOutputs) => ({ ...prevOutputs, [currentTool.id]: data }));
-      }
-
-      // Mark output as visible
-      setVisibleOutputs((prev) => ({
-        ...prev,
-        [tool.id]: true,
-      }));
-    } catch (error) {
-      showNotification(`Failed to view tool output: ${error.message}`, 'error');
-    } finally {
-      setRunningToolIds((ids) => ids.filter((id) => id !== tool.id));
-    }
+    // Mark output as visible
+    setVisibleOutputs((prev) => ({
+      ...prev,
+      [tool.id]: true,
+    }));
   };
 
   const toggleExpand = (toolId) => {
@@ -696,7 +753,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
             </Box>
 
             {/* Collapse */}
-            <Collapse in={expandedTools[tool.id]} timeout="auto" unmountOnExit>
+            <Collapse in={expandedTools[tool.id] || (validationErrors[tool.id] && Object.keys(validationErrors[tool.id]).length > 0)} timeout="auto" unmountOnExit>
               {optionalFlags.map((flagObj) => {
                 const flagValue = !!tool.params[flagObj.flag];
                 const parameterValue = tool.params[flagObj.parameter] || '';
@@ -820,114 +877,143 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
             items={workflow.map((item) => item.id)}
             strategy={verticalListSortingStrategy}
           >
-            {workflow.map((tool, index) => (
-              <React.Fragment key={tool.id}>
-                <SortableItem
-                  id={tool.id}
-                  toolName={tool.toolName}
-                  onDelete={() => handleDelete(tool.id)}
-                  onDeleteFromHere={() => handleDeleteFromHere(tool.id)}
-                  isInvalid={invalidItemIds.includes(tool.id)} // Is true if the tool is invalid
-                  helpMessage={helpMessages[tool.toolName]?.general}
-                  workflowLength={workflow.length}
-                >
-                  {renderParameters(tool)}
-                  <Box sx={{ display: 'flex', alignItems: 'center', marginTop: 1 }}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      size="small"
-                      onClick={() => handleViewTool(tool)}
-                      startIcon={visibleOutputs[tool.id] ? <VisibilityOff /> : <Visibility />}
-                      disabled={runningToolIds.includes(tool.id)}
-                    >
-                      {visibleOutputs[tool.id] ? 'Hide' : 'View'}
-                    </Button>
-                    {runningToolIds.includes(tool.id) && (
-                      <CircularProgress size={24} sx={{ marginLeft: 1 }} />
+            {workflow.map((tool, index) => {
+              return (
+                <React.Fragment key={tool.id}>
+                  <SortableItem
+                    id={tool.id}
+                    toolName={tool.toolName}
+                    onDelete={() => handleDelete(tool.id)}
+                    onDeleteFromHere={() => handleDeleteFromHere(tool.id)}
+                    isInvalid={invalidItemIds.includes(tool.id)} // Is true if the tool is invalid
+                    helpMessage={helpMessages[tool.toolName]?.general}
+                    workflowLength={workflow.length}
+                  >
+                    {renderParameters(tool)}
+                    <Box sx={{ display: 'flex', alignItems: 'center', marginTop: 1 }}>
+                      <Tooltip title={workflow.slice(0, index + 1).some((prevTool) => validationErrors[prevTool.id] && Object.keys(validationErrors[prevTool.id]).length > 0) ? (
+                        <Typography align="center" variant="body2">
+                          View output option is unavailable due to errors in the workflow.
+                        </Typography>
+                      ) : ''
+                      }>
+                        <span>
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            onClick={() => handleViewTool(tool)}
+                            startIcon={visibleOutputs[tool.id] ? <VisibilityOff /> : <Visibility />}
+                            disabled={workflow.slice(0, index + 1).some((prevTool) => validationErrors[prevTool.id] && Object.keys(validationErrors[prevTool.id]).length > 0)}
+                          >
+                            {visibleOutputs[tool.id] ? 'Hide' : 'View'}
+                          </Button>
+                        </span>
+                      </Tooltip>
+                    </Box>
+                    {outputMap[tool.id] && visibleOutputs[tool.id] && !(workflow.slice(0, index).some((prevTool) => validationErrors[prevTool.id] && Object.keys(validationErrors[prevTool.id]).length > 0)) && (
+                      <Box sx={{ marginTop: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography variant="subtitle2">Output:</Typography>
+                          <Button
+                            size="small"
+                            onClick={() => toggleOutputExpand(tool.id)}
+                          >
+                            {expandedOutputs[tool.id] ? 'Collapse' : 'Expand'}
+                          </Button>
+                        </Box>
+                        <Collapse in={expandedOutputs[tool.id]} timeout="auto" unmountOnExit>
+                          <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
+                            <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', fontSize: '0.800rem' }}>
+                              {outputMap[tool.id]}
+                            </Typography>
+                          </Paper>
+                        </Collapse>
+                        {!expandedOutputs[tool.id] && (
+                          <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
+                            <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', fontSize: '0.800rem' }}>
+                              {outputMap[tool.id].length > 50 ? `${outputMap[tool.id].slice(0, 90)}...` : outputMap[tool.id]}
+                            </Typography>
+                          </Paper>
+                        )}
+                      </Box>
+                    )}
+                  </SortableItem>
+                  {/* Add Operation Button */}
+                  <Box sx={{ position: 'relative' }}>
+                    {/* Overlay to block interaction */}
+                    {Object.values(validationErrors).some(error => Object.keys(error).length > 0) && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                          zIndex: 10,
+                          pointerEvents: 'all',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        }}
+                      >
+                      </Box>
+                    )}
+                    {index < workflow.length - 1 && (
+                      <Box
+                        sx={{
+                          height: '10px',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          overflow: 'hidden',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            height: '40px',
+                            '& .action-buttons': {
+                              opacity: 1,
+                              pointerEvents: 'all',
+                            },
+                          },
+                        }}
+                      >
+                        <Box
+                          className="action-buttons"
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            opacity: 0,
+                            pointerEvents: 'none',
+                            transition: 'opacity 0.3s ease',
+                          }}
+                        >
+                          <Tooltip title="Add Operation">
+                            <Button
+                              color="primary"
+                              onClick={() => handleListOperations(index)}
+                              sx={{ minWidth: '32px', minHeight: '32px', opacity: 0.8 }}
+                            >
+                              <AddCircle sx={{ fontSize: '24px' }} />
+                            </Button>
+                          </Tooltip>
+                          <Tooltip title="Export Until Here">
+                            <Button
+                              color="primary"
+                              onClick={() => handlePartialExport(index)}
+                              sx={{ minWidth: '32px', minHeight: '32px', opacity: 0.8 }}
+                            >
+                              <GetApp sx={{ fontSize: '24px' }} />
+                            </Button>
+                          </Tooltip>
+                        </Box>
+                      </Box>
                     )}
                   </Box>
-                  {outputs[tool.id] && visibleOutputs[tool.id] && (
-                    <Box sx={{ marginTop: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="subtitle2">Output:</Typography>
-                        <Button
-                          size="small"
-                          onClick={() => toggleOutputExpand(tool.id)}
-                        >
-                          {expandedOutputs[tool.id] ? 'Collapse' : 'Expand'}
-                        </Button>
-                      </Box>
-                      <Collapse in={expandedOutputs[tool.id]} timeout="auto" unmountOnExit>
-                        <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
-                          <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', fontSize: '0.800rem' }}>
-                            {outputs[tool.id]}
-                          </Typography>
-                        </Paper>
-                      </Collapse>
-                      {!expandedOutputs[tool.id] && (
-                        <Paper sx={{ padding: 1, backgroundColor: '#f5f5f5', overflow: 'auto', maxHeight: '200px', wordWrap: 'break-word' }}>
-                          <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', fontSize: '0.800rem' }}>
-                            {outputs[tool.id].length > 50 ? `${outputs[tool.id].slice(0, 90)}...` : outputs[tool.id]}
-                          </Typography>
-                        </Paper>
-                      )}
-                    </Box>
-                  )}
-                </SortableItem>
-                {/* Add Operation Button */}
-                {index < workflow.length - 1 && (
-                  <Box
-                    sx={{
-                      height: '10px',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      overflow: 'hidden',
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        height: '40px',
-                        '& .action-buttons': {
-                          opacity: 1,
-                          pointerEvents: 'all',
-                        },
-                      },
-                    }}
-                  >
-                    <Box
-                      className="action-buttons"
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        opacity: 0,
-                        pointerEvents: 'none',
-                        transition: 'opacity 0.3s ease',
-                      }}
-                    >
-                      <Tooltip title="Add Operation">
-                        <Button
-                          color="primary"
-                          onClick={() => handleListOperations(index)}
-                          sx={{ minWidth: '32px', minHeight: '32px', opacity: 0.8 }}
-                        >
-                          <AddCircle sx={{ fontSize: '24px' }} />
-                        </Button>
-                      </Tooltip>
-                      <Tooltip title="Export Until Here">
-                        <Button
-                          color="primary"
-                          onClick={() => handlePartialExport(index)}
-                          sx={{ minWidth: '32px', minHeight: '32px', opacity: 0.8 }}
-                        >
-                          <GetApp sx={{ fontSize: '24px' }} />
-                        </Button>
-                      </Tooltip>
-                    </Box>
-                  </Box>
-                )}
-              </React.Fragment>
-            ))}
+                </React.Fragment>
+              )
+            })}
           </SortableContext>
           <DragOverlay>
             {activeId ? (
@@ -942,7 +1028,31 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
         </DndContext>
       </Box>
       <Divider sx={{ marginY: 2 }} />
-      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, position: 'relative' }}>
+        {/* Overlay to block interaction */}
+        {Object.values(validationErrors).some(error => Object.keys(error).length > 0) && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              backgroundColor: 'rgba(255, 255, 255, 0.7)',
+              zIndex: 10,
+              pointerEvents: 'all',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            {/* <Block sx={{
+              color: 'error.main',
+              fontSize: 80,
+              padding: 2,
+            }} /> */}
+          </Box>
+        )}
         <Button
           variant="contained"
           color="primary"
@@ -1070,7 +1180,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
                 workflow,
                 inputData,
                 inputDataType,
-                outputTypesMap,
+                outputMap,
                 exportFileName,
                 showNotification,
                 setOpenExportDialog,
