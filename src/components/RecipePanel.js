@@ -91,12 +91,19 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
   // If a tool is inserted, update data type and outputs mapping
   useEffect(() => {
     const updateDataTypeAndOutputsMapping = async () => {
-      if (workflow.length > 0 && validateParameters(workflow[insertAtIndex !== null ? insertAtIndex : workflow.length - 1])) {
+      if (workflow.length > 0) {
         let data = (insertAtIndex !== null && insertAtIndex > 0) ? outputMap[workflow[insertAtIndex - 1].id] : inputData;
 
         for (let i = (insertAtIndex !== null && insertAtIndex > 0) ? insertAtIndex : 0; i < workflow.length; i++) {
           const tool = workflow[i];
           try {
+            // Validate parameters
+            const isValid = validateParameters(tool, data);
+            if (!isValid) {
+              setDataType('UNKNOWN');
+              break;
+            }
+
             const output = await executeTool(tool, data);
             data = output;
 
