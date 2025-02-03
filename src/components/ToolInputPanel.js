@@ -187,6 +187,7 @@ const ToolInputPanel = ({ tool, inputData, setInputData }) => {
                         multiline: true,
                         inputComponent: 'textarea',
                     }}
+                    inputProps={{ maxLength: 100000 }}
                     rows={9}
                     sx={{
                         flexGrow: 1,
@@ -211,7 +212,7 @@ const ToolInputPanel = ({ tool, inputData, setInputData }) => {
                 }}
             >
                 <Typography variant="body2" color="textSecondary">
-                    {inputData.length} characters, {numberOfLines} lines
+                    {inputData.length}/100000 characters, {numberOfLines} lines
                 </Typography>
                 <Tooltip title="Upload File">
                     <IconButton

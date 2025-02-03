@@ -109,12 +109,37 @@ const ToolTestingPanel = ({ tool, inputData, setOutputData, setIsLoading }) => {
                         errors[flagObj.parameter] = 'Invalid float value';
                     } else if (paramValue === undefined || paramValue === '') {
                         errors[flagObj.parameter] = 'Parameter value cannot be empty';
+                    } else {
+                        const numericValue = parseFloat(paramValue);
+                        if (paramConfig.min !== undefined && numericValue < paramConfig.min) {
+                            errors[flagObj.parameter] = `Value must be at least ${paramConfig.min}`;
+                        }
+                        if (paramConfig.max !== undefined && numericValue > paramConfig.max) {
+                            errors[flagObj.parameter] = `Value must be at most ${paramConfig.max}`;
+                        }
+                        if (paramConfig.maxLength !== undefined && paramValue.length > paramConfig.maxLength) {
+                            errors[flagObj.parameter] = `Maximum input length is ${paramConfig.maxLength}`;
+                        }
                     }
                 }
             } else if (isFlagRequired && (paramValue === undefined || paramValue === '')) {
                 errors[flagObj.flag] = 'Required flag cannot be empty';
             }
         });
+
+        // brute_force_string need to be limited, otherwise it will crash the browser
+        if (tool.name === 'brute_force_string') {
+            const alphabet = parameters['alphabet'];
+            const size = parameters['size'];
+            const max = 250000;
+
+            if (alphabet && size && alphabet.length ** size > max) {
+                showNotification('The number of possible combinations is too high. Please reduce the alphabet or the size.', 'error');
+                toolConfig.flags.forEach((flagObj) => {
+                    errors[flagObj.parameter] = 'Number of combinations is too high';
+                });
+            }
+        }
 
         setValidationErrors(errors);
 
@@ -175,7 +200,7 @@ const ToolTestingPanel = ({ tool, inputData, setOutputData, setIsLoading }) => {
 
             // Verify if the input data is compatible with the tool
             const inputDataType = detectDataType("input.txt", inputData);
-            if (!inputFormats.includes(inputDataType)) {
+            if (!inputFormats.includes(inputDataType) && toolConfig.input.type !== '') {
                 showNotification(
                     `Input data type ${inputDataType} is not supported by tool ${tool.name}.`,
                     'error'
