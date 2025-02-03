@@ -200,7 +200,7 @@ const OperationsPanel = ({ onAddOperation, isWorkflowEmpty, isLoading, setIsLoad
       )}
 
       <Typography variant="h6" align="center" gutterBottom>
-        Operations
+        Available Tools
       </Typography>
       <TextField
         label="Search Operations"

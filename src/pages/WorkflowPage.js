@@ -6,7 +6,6 @@ import {
     useTheme
 } from '@mui/material';
 import React, { useContext, useEffect, useState } from 'react';
-import Navbar from '../components/Navbar';
 import ErrorBoundary from '/src/components/ErrorBoundary'; // Ensure this component exists
 import ExecutionControls from '/src/components/ExecutionControls';
 import InputPanel from '/src/components/InputPanel';
@@ -98,12 +97,9 @@ const WorkflowPage = () => {
                 sx={{
                     display: 'flex',
                     flexDirection: 'column',
-                    minHeight: '100vh', // Occupies the full height of the viewport
                     overflowY: 'auto', // Enables vertical scrolling
                 }}
             >
-                <Navbar />
-
                 {/* Main Content */}
                 <Container
                     maxWidth="xl"
@@ -188,7 +184,7 @@ const WorkflowPage = () => {
                                     overflowY: 'auto', // Independent scrolling
                                 }}
                             >
-                                <InputPanel inputData={inputData} setInputData={setInputData} />
+                                <InputPanel inputData={inputData} setInputData={setInputData} page={'WorkflowPage'} />
                             </Box>
                             <Box
                                 sx={{
@@ -196,7 +192,7 @@ const WorkflowPage = () => {
                                     overflowY: 'auto', // Independent scrolling
                                 }}
                             >
-                                <OutputPanel outputData={outputData} setOutputData={setOutputData} workflow={workflow} inputData={inputData} />
+                                <OutputPanel outputData={outputData} setOutputData={setOutputData} workflow={workflow} inputData={inputData} page={'WorkflowPage'} />
                             </Box>
                         </Grid>
                     </Grid>

@@ -1,13 +1,16 @@
-import { Box, Container, Grid, Paper, Typography } from '@mui/material';
+import { Box, Container, Grid, Typography } from '@mui/material';
 import React, { useState } from 'react';
 import { loadWasmModule } from '../gtoWasm';
 import AllOperationsPanel from '/src/components/AllOperationsPanel';
-import Navbar from '/src/components/Navbar';
+import OutputPanel from '/src/components/OutputPanel';
+import ToolInputPanel from '/src/components/ToolInputPanel';
 import ToolTestingPanel from '/src/components/ToolTestingPanel';
 
 const ToolsPage = () => {
     const [selectedTool, setSelectedTool] = useState(null);
     const [helpMessage, setHelpMessage] = useState('');
+    const [inputData, setInputData] = useState('');
+    const [outputData, setOutputData] = useState('');
 
     const handleToolClick = async (tool) => {
         setSelectedTool(tool); // Update the selected tool
@@ -31,11 +34,10 @@ const ToolsPage = () => {
             sx={{
                 display: 'flex',
                 flexDirection: 'column',
-                minHeight: '100vh',
+                height: 'calc(100vh - 64px)',
                 overflowY: 'auto',
             }}
         >
-            <Navbar />
             <Container
                 maxWidth="xl"
                 sx={{
@@ -44,6 +46,7 @@ const ToolsPage = () => {
                     display: 'flex',
                     flexDirection: 'column',
                     overflow: 'hidden',
+                    height: '100%',
                 }}
             >
                 <Grid container spacing={2} sx={{ flex: 1, overflow: 'hidden' }}>
@@ -56,36 +59,63 @@ const ToolsPage = () => {
                             display: 'flex',
                             flexDirection: 'column',
                             overflowY: 'auto',
-                            maxHeight: 'calc(100vh - 64px)',
+                            maxHeight: '100%',
                         }}
                     >
                         <AllOperationsPanel onToolClick={handleToolClick} />
                     </Grid>
 
-                    {/* Tool Information and Testing Panels */}
-                    <Grid item xs={12} md={8.8}>
-                        <Paper
+                    {/* Testing Tool Panel */}
+                    <Grid
+                        item
+                        xs={12}
+                        md={5.8}
+                        sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            overflowY: 'auto', // Independent scrolling
+                            maxHeight: '100%',
+                        }}
+                    >
+                        {selectedTool ? (
+                            <ToolTestingPanel tool={selectedTool} inputData={inputData} setOutputData={setOutputData} />
+                        ) : (
+                            <Typography align="center" variant="h6" sx={{ marginTop: '20%' }}>
+                                Select a tool from the list to view details and test it
+                            </Typography>
+                        )
+                        }
+                    </Grid>
+
+                    {/* Input and Output Panels */}
+                    <Grid
+                        item
+                        xs={12}
+                        md={3}
+                        sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            overflowY: 'auto', // Independent scrolling
+                            maxHeight: '100%', // Adjusts height relative to header/footer
+                        }}
+                    >
+                        <Box
                             sx={{
-                                height: '100%',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                padding: 2,
-                                overflowY: 'auto',
+                                flexGrow: 1,
+                                mb: 2,
+                                overflowY: 'auto', // Independent scrolling
                             }}
                         >
-                            {selectedTool ? (
-                                <Grid container spacing={2}>
-                                    {/* Single Tool Testing Panel */}
-                                    <Grid item xs={12}>
-                                        <ToolTestingPanel tool={selectedTool} helpMessage={helpMessage} />
-                                    </Grid>
-                                </Grid>
-                            ) : (
-                                <Typography align="center" variant="h6" sx={{ marginTop: '20%' }}>
-                                    Select an operation from the list to view details and test it
-                                </Typography>
-                            )}
-                        </Paper>
+                            <ToolInputPanel tool={selectedTool} inputData={inputData} setInputData={setInputData} />
+                        </Box>
+                        <Box
+                            sx={{
+                                flexGrow: 1,
+                                overflowY: 'auto', // Independent scrolling
+                            }}
+                        >
+                            <OutputPanel outputData={outputData} setOutputData={setOutputData} tool={selectedTool} inputData={inputData} page={'ToolPage'} />
+                        </Box>
                     </Grid>
                 </Grid>
             </Container>
