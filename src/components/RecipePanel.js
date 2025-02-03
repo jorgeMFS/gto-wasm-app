@@ -1046,11 +1046,6 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
               alignItems: 'center',
             }}
           >
-            {/* <Block sx={{
-              color: 'error.main',
-              fontSize: 80,
-              padding: 2,
-            }} /> */}
           </Box>
         )}
         <Button

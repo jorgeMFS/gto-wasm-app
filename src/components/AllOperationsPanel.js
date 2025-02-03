@@ -54,7 +54,7 @@ const AllOperationsPanel = ({ onToolClick }) => {
     return (
         <Paper elevation={3} sx={{ padding: 2, height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
             <Typography variant="h6" align="center" gutterBottom>
-                All Operations
+                All Tools
             </Typography>
             <TextField
                 label="Search Operations"
@@ -93,9 +93,9 @@ const AllOperationsPanel = ({ onToolClick }) => {
                                             <ListItemButton
                                                 sx={{
                                                     pl: 4,
-                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2), // Use primary color with 10% opacity
+                                                    bgcolor: (theme) => alpha(theme.palette.secondary.main, 0.2), // Use secondary color with 10% opacity
                                                     '&:hover': {
-                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.4), // Slightly darker on hover
+                                                        bgcolor: (theme) => alpha(theme.palette.secondary.main, 0.4), // Slightly darker on hover
                                                     },
                                                 }}
                                                 onClick={() => onToolClick(operation)}

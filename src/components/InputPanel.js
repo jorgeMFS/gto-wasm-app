@@ -118,7 +118,7 @@ const InputPanel = ({ inputData, setInputData }) => {
 
   return (
     <Paper elevation={3} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 2, flexShrink: 0 }}>
         <Typography variant="h6">Input</Typography>
         <Typography variant="body2" color="textSecondary">
           {inputDataType}

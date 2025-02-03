@@ -1,11 +1,20 @@
+import { AccountTree, Science } from '@mui/icons-material';
 import { AppBar, Box, Button, Toolbar, useTheme } from '@mui/material';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import BioChefLogo from '../../img/BioChefWhite.svg';
 
 const Navbar = () => {
     const theme = useTheme();
     const location = useLocation();
+    const [navColor, setNavColor] = useState(theme.palette.secondary.main);
+
+    useEffect(() => {
+        const newColor = location.pathname === '/workflow'
+            ? theme.palette.primary.main
+            : theme.palette.secondary.main;
+        setNavColor(newColor);
+    }, [location.pathname]);
 
     const isActive = (path) => location.pathname === path;
 
@@ -34,7 +43,15 @@ const Navbar = () => {
     });
 
     return (
-        <AppBar position="static" color="primary" elevation={0}>
+        <AppBar
+            position="static"
+            elevation={0}
+            color='transparent'
+            sx={{
+                backgroundColor: navColor,
+                transition: 'background-color 0.5s ease-in-out',
+            }}
+        >
             <Toolbar>
                 {/* Logo */}
                 <BioChefLogo style={{ maxWidth: '75px', marginRight: '15px' }} />
@@ -45,6 +62,7 @@ const Navbar = () => {
                         component={Link}
                         to="/"
                         sx={buttonStyle(isActive('/'))}
+                        startIcon={<Science />}
                     >
                         Tools
                     </Button>
@@ -52,6 +70,7 @@ const Navbar = () => {
                         component={Link}
                         to="/workflow"
                         sx={buttonStyle(isActive('/workflow'))}
+                        startIcon={<AccountTree />}
                     >
                         Workflow Builder
                     </Button>
