@@ -79,7 +79,7 @@ const operationCategories = {
         { name: 'reverse', description: 'Reverses the ACGT bases order for each read in a sequence file' },
         { name: 'segment', description: 'Segments a filtered sequence based on a threshold. \nInput: NUM \nOutput: text' },
         { name: 'word_search', description: 'Search for a word in a file. \nInput: text \nOutput: text' },
-        { name: 'brute_force_string', description: 'Generates all combinations, line by line, for an inputted alphabet and specific size. \nInput: text \nOutput: text' },
+        { name: 'brute_force_string', description: 'Generates all combinations, line by line, for an inputted alphabet and specific size. \nOutput: text' },
     ]
 };
 

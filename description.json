@@ -315,19 +315,26 @@
       "parameters": [
         {
           "name": "seed",
-          "type": "integer"
+          "type": "integer",
+          "maxLength": 9
         },
         {
           "name": "mutation-rate",
-          "type": "float"
+          "type": "float",
+          "min": 0,
+          "max": 1
         },
         {
           "name": "deletion-rate",
-          "type": "float"
+          "type": "float",
+          "min": 0,
+          "max": 1
         },
         {
           "name": "insertion-rate",
-          "type": "float"
+          "type": "float",
+          "min": 0,
+          "max": 1
         }
       ],
       "source": "gto/src/FastqMutate.c"
@@ -1242,19 +1249,26 @@
       "parameters": [
         {
           "name": "seed",
-          "type": "integer"
+          "type": "integer",
+          "maxLength": 9
         },
         {
           "name": "edit-rate",
-          "type": "float"
+          "type": "float",
+          "min": 0,
+          "max": 1
         },
         {
           "name": "deletion-rate",
-          "type": "float"
+          "type": "float",
+          "min": 0,
+          "max": 1
         },
         {
           "name": "insertion-rate",
-          "type": "float"
+          "type": "float",
+          "min": 0,
+          "max": 1
         }
       ],
       "source": "gto/src/FastaMutate.c"
@@ -1913,11 +1927,14 @@
       "parameters": [
         {
           "name": "seed",
-          "type": "integer"
+          "type": "integer",
+          "maxLength": 9
         },
         {
           "name": "nSymbols",
-          "type": "integer"
+          "type": "integer",
+          "min": 0,
+          "max": 100000
         },
         {
           "name": "frequency",
@@ -1993,19 +2010,26 @@
       "parameters": [
         {
           "name": "seed",
-          "type": "integer"
+          "type": "integer",
+          "maxLength": 9
         },
         {
           "name": "mutation-rate",
-          "type": "float"
+          "type": "float",
+          "min": 0,
+          "max": 1
         },
         {
           "name": "deletion-rate",
-          "type": "float"
+          "type": "float",
+          "min": 0,
+          "max": 1
         },
         {
           "name": "insertion-rate",
-          "type": "float"
+          "type": "float",
+          "min": 0,
+          "max": 1
         }
       ],
       "source": "gto/src/GenomicDNAMutate.c"
@@ -2310,8 +2334,8 @@
       "name": "gto_brute_force_string",
       "description": "Generates all combinations, line by line, for an inputted alphabet and specific size.",
       "input": {
-        "type": "stdin",
-        "format": "text"
+        "type": "",
+        "format": ""
       },
       "output": {
         "type": "stdout",
@@ -2538,7 +2562,8 @@
         },
         {
           "name": "seed",
-          "type": "integer"
+          "type": "integer",
+          "maxLength": 9
         }
       ],
       "source": "gto/src/PermuteByBlocks.c"
