@@ -50,7 +50,10 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
   const [activeId, setActiveId] = useState(null);
   const { setDataType, dataType, inputDataType, setInputDataType } = useContext(DataTypeContext); // To update data type context
   const [invalidItemIds, setInvalidItemIds] = useState([]); // To store invalid item IDs
-  const [outputMap, setOutputMap] = useState({}); // To store output data of tools
+  const [outputMap, setOutputMap] = useState(() => {
+    const savedMap = localStorage.getItem('outputMap');
+    return savedMap ? JSON.parse(savedMap) : {};
+  });
   const { validationErrors, setValidationErrors } = useContext(ValidationErrorsContext); // Access validation errors of parameters
   const [helpMessages, setHelpMessages] = useState({}); // To store help messages for tools
   const [exportFileName, setExportFileName] = useState('my_workflow'); // Default export name
@@ -59,7 +62,10 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
   const [openImportDialog, setOpenImportDialog] = useState(false); // State for import dialog
   const [importInput, setImportInput] = useState(''); // State for import input
   const [importError, setImportError] = useState(''); // State for import error
-  const [expandedTools, setExpandedTools] = useState({}); // Track each tool's expanded state
+  const [expandedTools, setExpandedTools] = useState(() => {  // Track each tool's expanded state
+    const saved = localStorage.getItem('expandedTools');
+    return saved ? JSON.parse(saved) : {};
+  });
   const [expandedOutputs, setExpandedOutputs] = useState({}); // Track each tool's output expanded state
   const [visibleOutputs, setVisibleOutputs] = useState({}); // Track visible outputs
   const [importMode, setImportMode] = useState('command'); // To track the selected import mode
@@ -74,19 +80,19 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, setOutput
 
   const showNotification = useContext(NotificationContext);
 
-  // Load outputMap from localStorage
-  useEffect(() => {
-    const savedOutputMap = localStorage.getItem('outputMap');
-
-    if (savedOutputMap) {
-      setOutputMap(JSON.parse(savedOutputMap));
-    }
-  }, []);
-
   // Save outputMap in localStorage
   useEffect(() => {
-    localStorage.setItem('outputMap', JSON.stringify(outputMap));
+    if (Object.keys(outputMap).length > 0) {
+      localStorage.setItem('outputMap', JSON.stringify(outputMap));
+    }
   }, [outputMap]);
+
+  // Save expandedTools in localStorage
+  useEffect(() => {
+    if (Object.keys(expandedTools).length > 0) {
+      localStorage.setItem('expandedTools', JSON.stringify(expandedTools));
+    }
+  }, [expandedTools]);
 
   // If a tool is inserted, update data type and outputs mapping
   useEffect(() => {
