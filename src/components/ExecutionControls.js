@@ -7,7 +7,7 @@ import { ValidationErrorsContext } from '../contexts/ValidationErrorsContext';
 import { loadWasmModule } from '../gtoWasm';
 import { detectDataType } from '../utils/detectDataType';
 
-const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
+const ExecutionControls = ({ workflow, inputData, uploadedFiles, setOutputData }) => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [autoExecute, setAutoExecute] = useState(false);
   const { validationErrors, setValidationErrors } = useContext(ValidationErrorsContext); // Access validation errors
@@ -62,80 +62,100 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
 
   const handleRun = async () => {
     setIsExecuting(true);
-    try {
-      let data = inputData;
 
-      for (const operation of workflow) {
-        // Validate parameters before executing each tool
-        const { isValid, errors } = validateParameters(operation);
-        if (!isValid) {
-          showNotification('Invalid input detected for tool "' + operation.toolName + '". Please correct the inputs in red.', 'error');
-          setIsExecuting(false);
-          return;
-        }
+    let allInputs = [];
+    if (inputData) {
+      allInputs.push({ name: "ManualInput", content: inputData });
+    }
+    allInputs = [...allInputs, ...uploadedFiles];
 
-        const { toolName, params } = operation;
-        const runFunction = await loadWasmModule(toolName);
+    for (const input of allInputs) {
+      let data = input.content;
 
-        const toolConfig = description.tools.find((tool) => tool.name === `gto_${toolName}`);
-        if (!toolConfig) {
-          showNotification(`Configuration for tool ${toolName} not found.`, 'error');
-          throw new Error(`Configuration for tool ${toolName} not found.`);
-        }
-
-        // Prepare arguments for execution
-        let args = [];
-        toolConfig.flags.forEach((flagObj) => {
-          if (params[flagObj.parameter]) {
-            args.push(flagObj.flag);
-            if (
-              flagObj.parameter &&
-              params[flagObj.parameter] !== undefined &&
-              params[flagObj.parameter] !== ''
-            ) {
-              args.push(`${params[flagObj.parameter]}`);
-            }
+      try {
+        for (const operation of workflow) {
+          // Validate parameters before executing each tool
+          const { isValid, errors } = validateParameters(operation);
+          if (!isValid) {
+            showNotification('Invalid input detected for tool "' + operation.toolName + '". Please correct the inputs in red.', 'error');
+            setIsExecuting(false);
+            return;
           }
-        });
 
+          const { toolName, params } = operation;
+          const runFunction = await loadWasmModule(toolName);
 
-        // Execute the tool
-        const outputData = await runFunction(data, args);
+          const toolConfig = description.tools.find((tool) => tool.name === `gto_${toolName}`);
+          if (!toolConfig) {
+            showNotification(`Configuration for tool ${toolName} not found.`, 'error');
+            throw new Error(`Configuration for tool ${toolName} not found.`);
+          }
 
-        // Handle messages in stderr
-        let hasInfoMessage = false;
-        if (outputData.stderr) {
-          const stderrLines = outputData.stderr.split('\n');
-          let infoMessages = []; // Accumulate all informational messages
-
-          stderrLines.forEach((line) => {
-            if (line.trim().startsWith('ERROR:')) {
-              throw new Error(line.trim()); // Treat as an error
-            } else if (line.trim()) {
-              infoMessages.push(line.trim()); // Accumulate info messages
-              hasInfoMessage = true;
+          // Prepare arguments for execution
+          let args = [];
+          toolConfig.flags.forEach((flagObj) => {
+            if (params[flagObj.parameter]) {
+              args.push(flagObj.flag);
+              if (
+                flagObj.parameter &&
+                params[flagObj.parameter] !== undefined &&
+                params[flagObj.parameter] !== ''
+              ) {
+                args.push(`${params[flagObj.parameter]}`);
+              }
             }
           });
 
-          // Display all accumulated informational messages together
-          if (infoMessages.length > 0) {
-            showNotification(infoMessages.join('\n'), 'info');
+
+          // Execute the tool
+          const outputData = await runFunction(data, args);
+
+          // Handle messages in stderr
+          let hasInfoMessage = false;
+          if (outputData.stderr) {
+            const stderrLines = outputData.stderr.split('\n');
+            let infoMessages = []; // Accumulate all informational messages
+
+            stderrLines.forEach((line) => {
+              if (line.trim().startsWith('ERROR:')) {
+                throw new Error(line.trim()); // Treat as an error
+              } else if (line.trim()) {
+                infoMessages.push(line.trim()); // Accumulate info messages
+                hasInfoMessage = true;
+              }
+            });
+
+            // Display all accumulated informational messages together
+            if (infoMessages.length > 0) {
+              showNotification(infoMessages.join('\n'), 'info');
+            }
           }
+
+          data = outputData.stdout;
         }
 
-        data = outputData.stdout;
-      }
+        setOutputData((prevOutputData) => ({
+          ...prevOutputData,
+          [input.name]: data,
+        }));
 
-      const detectedType = detectDataType('output.txt', data);
-      setDataType(detectedType);
-      setOutputData(data);
-      showNotification('Workflow executed successfully!', 'success');
-    } catch (error) {
-      setOutputData(`Error: ${error.message}`);
-      showNotification(`Workflow execution failed: ${error.message}`, 'error');
-    } finally {
-      setIsExecuting(false);
+        const detectedType = detectDataType('output.txt', data);
+        setDataType(detectedType);
+
+        showNotification('Workflow executed successfully!', 'success');
+      } catch (error) {
+        for (const input of allInputs) {
+          setOutputData((prevOutputData) => ({
+            ...prevOutputData,
+            [input.name]: `Error: ${error.message}`,
+          }));
+        }
+
+        showNotification(`Workflow execution failed: ${error.message}`, 'error');
+      }
     }
+
+    setIsExecuting(false);
   };
 
   // Auto-Execute: Execute workflow whenever workflow or inputData changes
