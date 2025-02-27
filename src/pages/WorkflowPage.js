@@ -6,9 +6,8 @@ import {
     useTheme
 } from '@mui/material';
 import React, { useContext, useEffect, useState } from 'react';
-import InputPanel2 from '../components/InputPanel2';
+import InputPanel from '../components/InputPanel';
 import ErrorBoundary from '/src/components/ErrorBoundary'; // Ensure this component exists
-import ExecutionControls from '/src/components/ExecutionControls';
 import OperationsPanel from '/src/components/OperationsPanel';
 import RecipePanel from '/src/components/RecipePanel';
 import { DataTypeContext } from '/src/contexts/DataTypeContext';
@@ -16,13 +15,11 @@ import { DataTypeContext } from '/src/contexts/DataTypeContext';
 const WorkflowPage = () => {
     const [workflow, setWorkflow] = useState([]);
     const [inputData, setInputData] = useState('');
-    const [outputData, setOutputData] = useState({});
     const [isLoading, setIsLoading] = useState(false); // State to control data type update loading
     const [insertAtIndex, setInsertAtIndex] = useState(null); // State to control the available tools to insert
     const [addingATool, setAddingATool] = useState(false); // State to control the adding of a tool
     const [filteredTools, setFilteredTools] = useState([]); // State for filtered tools
     const [isVariableLoaded, setIsVariableLoaded] = useState(false); // Control if the workflow was loaded
-    const [isInputDataValid, setIsInputDataValid] = useState(true);
     const [selectedFiles, setSelectedFiles] = useState(new Set()); // Track selected files
     const [tabIndex, setTabIndex] = useState(0);    // Track the selected tab index for input mode
 
@@ -64,7 +61,7 @@ const WorkflowPage = () => {
 
     // Save input data type in localStorage
     useEffect(() => {
-        if (isVariableLoaded) {
+        if (isVariableLoaded && tabIndex == 0) {
             localStorage.setItem('inputDataType', inputDataType);
         }
     }, [inputDataType, isVariableLoaded]);
@@ -99,7 +96,7 @@ const WorkflowPage = () => {
                 sx={{
                     display: 'flex',
                     flexDirection: 'column',
-                    height: '100vh', // Set full viewport height
+                    height: 'calc(100vh - 64px)',
                 }}
             >
                 {/* Main Content */}
@@ -159,7 +156,6 @@ const WorkflowPage = () => {
                                 setWorkflow={setWorkflow}
                                 inputData={inputData}
                                 setInputData={setInputData}
-                                setOutputData={setOutputData}
                                 isLoading={isLoading}
                                 setIsLoading={setIsLoading}
                                 insertAtIndex={insertAtIndex}
@@ -168,7 +164,6 @@ const WorkflowPage = () => {
                                 setFilteredTools={setFilteredTools}
                                 selectedFiles={selectedFiles}
                                 setSelectedFiles={setSelectedFiles}
-                                isInputDataValid={isInputDataValid}
                                 tabIndex={tabIndex}
                             />
                         </Grid>
@@ -186,49 +181,17 @@ const WorkflowPage = () => {
                                 height: '100%', // Ensure it does not overflow parent
                             }}
                         >
-                            <InputPanel2
+                            <InputPanel
                                 tabIndex={tabIndex}
                                 setTabIndex={setTabIndex}
                                 selectedFiles={selectedFiles}
                                 setSelectedFiles={setSelectedFiles}
                                 inputData={inputData}
+                                setInputData={setInputData}
                             />
-                            {/* <Box
-                                sx={{
-                                    flexGrow: 1,
-                                    mb: 2,
-                                    overflowY: 'auto', // Independent scrolling
-                                }}
-                            >
-                                <InputPanel inputData={inputData} setInputData={setInputData} uploadedFiles={uploadedFiles} setUploadedFiles={setUploadedFiles} isInputDataValid={isInputDataValid} setIsInputDataValid={setIsInputDataValid} />
-                            </Box>
-                            <Box
-                                sx={{
-                                    flexGrow: 1,
-                                    overflowY: 'auto', // Independent scrolling
-                                }}
-                            >
-                                <OutputPanel outputData={outputData} setOutputData={setOutputData} workflow={workflow} inputData={inputData} page={'WorkflowPage'} uploadedFiles={uploadedFiles} />
-                            </Box> */}
                         </Grid>
                     </Grid>
                 </Container>
-
-                {/* Execution Controls */}
-                <Box
-                    sx={{
-                        flexShrink: 0,
-                        padding: 2,
-                        backgroundColor: theme.palette.background.paper,
-                    }}
-                >
-                    <ExecutionControls
-                        workflow={workflow}
-                        inputData={inputData}
-                        selectedFiles={selectedFiles}
-                        setOutputData={setOutputData}
-                    />
-                </Box>
             </Box>
         </ErrorBoundary>
     );

@@ -52,8 +52,8 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
     const [activeNode, setActiveNode] = useState(null);
     const [isRenaming, setIsRenaming] = useState(false);
     const [newName, setNewName] = useState('');
-    const [isCreating, setIsCreating] = useState(false);
-    const [newItemType, setNewItemType] = useState('file');
+    // const [isCreating, setIsCreating] = useState(false);
+    // const [newItemType, setNewItemType] = useState('file');
     const [showFileInfo, setShowFileInfo] = useState(false);
     const fileInputRef = useRef(null);
     const folderInputRef = useRef(null);
@@ -62,7 +62,7 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
     // Old variables
     const [isAcceptable, setIsAcceptable] = useState(true);
     const [openMetadataDialog, setOpenMetadataDialog] = useState(false);
-    const { setInputDataType, validateData, inputDataType } = useContext(DataTypeContext);
+    const { validateData } = useContext(DataTypeContext);
     const showNotification = useContext(NotificationContext);
 
     // Define acceptable file extensions
@@ -464,29 +464,29 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
         setActiveNode(null);
     };
 
-    const handleCreateSubmit = () => {
-        if (activeNode && newName) {
-            const newNode = {
-                id: Date.now().toString(),
-                name: newName,
-                type: newItemType,
-                children: newItemType === 'folder' ? [] : undefined,
-            };
-            const updateTree = (nodes) => {
-                return nodes.map(node => {
-                    if (node.id === activeNode.id && node.type === 'folder') {
-                        return { ...node, children: [...(node.children || []), newNode] };
-                    }
-                    if (node.children) {
-                        return { ...node, children: updateTree(node.children) };
-                    }
-                    return node;
-                });
-            };
-            setTree(prev => ({ ...prev, children: updateTree(prev.children || []) }));
-        }
-        setIsCreating(false);
-    };
+    // const handleCreateSubmit = () => {
+    //     if (activeNode && newName) {
+    //         const newNode = {
+    //             id: Date.now().toString(),
+    //             name: newName,
+    //             type: newItemType,
+    //             children: newItemType === 'folder' ? [] : undefined,
+    //         };
+    //         const updateTree = (nodes) => {
+    //             return nodes.map(node => {
+    //                 if (node.id === activeNode.id && node.type === 'folder') {
+    //                     return { ...node, children: [...(node.children || []), newNode] };
+    //                 }
+    //                 if (node.children) {
+    //                     return { ...node, children: updateTree(node.children) };
+    //                 }
+    //                 return node;
+    //             });
+    //         };
+    //         setTree(prev => ({ ...prev, children: updateTree(prev.children || []) }));
+    //     }
+    //     setIsCreating(false);
+    // };
 
     const handleDelete = () => {
         if (activeNode) {
@@ -847,7 +847,7 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                 </DialogActions>
             </Dialog>
 
-            <Dialog open={isCreating} onClose={() => setIsCreating(false)}>
+            {/* <Dialog open={isCreating} onClose={() => setIsCreating(false)}>
                 <DialogTitle>Create New {newItemType}</DialogTitle>
                 <DialogContent>
                     <TextField
@@ -864,7 +864,7 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                     <Button onClick={() => setIsCreating(false)}>Cancel</Button>
                     <Button onClick={handleCreateSubmit}>Create</Button>
                 </DialogActions>
-            </Dialog>
+            </Dialog> */}
 
             <Dialog open={showFileInfo} onClose={() => setShowFileInfo(false)}>
                 <DialogTitle>File Information</DialogTitle>
