@@ -78,26 +78,9 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
   const [deleteOperation, setDeleteOperation] = useState(false); // To store the delete from here state
   const [selectedInput, setSelectedInput] = useState(''); // Tracks selected input
 
-  const outputs = tabIndex === 1 ? outputMap[selectedInput] : outputMap["ManualInput"];  // Output data for the selected input
-
-  const finalOutput = (() => {
-    if (workflow.length === 0) return {};
-    const lastToolId = workflow[workflow.length - 1].id;
-    if (tabIndex === 0) {
-      // CLI Mode: Use manual input
-      return {
-        "ManualInput": outputMap["ManualInput"]?.[lastToolId] || ""
-      };
-    } else {
-      // File Manager Mode: Create an object from selectedFiles
-      return Object.fromEntries(
-        Array.from(selectedFiles).map(file => [
-          file.name,
-          outputMap[file.id]?.[lastToolId] || ""
-        ])
-      );
-    }
-  })();
+  const outputs = tabIndex === 1 && selectedInput ?
+      outputMap[selectedInput] :
+      outputMap["ManualInput"];   // Output data for the selected input
 
   const workflowInput = tabIndex === 0
     ? [{ id: "ManualInput", content: inputData }]
@@ -145,45 +128,62 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
   // If a tool is inserted, update data type and outputs mapping
   useEffect(() => {
     const updateDataTypeAndOutputsMapping = async () => {
-      let allInputs = workflowInput;
+      setIsLoading(true);
+
+      let input;
+
+      if (tabIndex === 0) {
+        input = { id: "ManualInput", content: inputData };
+      } else if (selectedInput) {
+        input = workflowInput.find(input => input.id === selectedInput);
+        if (!input) {
+          setIsLoading(false);
+          setInsertAtIndex(null);
+          return;
+        }
+      } else {
+        setIsLoading(false);
+        setInsertAtIndex(null);
+        return;
+      }
+
       if (workflow.length > 0) {
-        for (const input of allInputs) {
-          let data = (insertAtIndex !== null && insertAtIndex > 0) ? outputMap[input.id]?.[workflow[insertAtIndex - 1].id] : input.content;
+        let data = (insertAtIndex !== null && insertAtIndex > 0)
+            ? outputMap[input.id]?.[workflow[insertAtIndex - 1].id]
+            : input.content;
 
-          for (let i = (insertAtIndex !== null && insertAtIndex > 0) ? insertAtIndex : 0; i < workflow.length; i++) {
-            const tool = workflow[i];
-            try {
-              // Validate parameters
-              const isValid = validateParameters(tool, data);
-              if (!isValid) {
-                setDataType('UNKNOWN');
-                break;
-              }
-
-              const output = await executeTool(tool, data);
-              data = output;
-
-              // Store the output in the map
-              setOutputMap((prevMap) => ({
-                ...prevMap,
-                [input.id]: {
-                  ...prevMap[input.id],
-                  [tool.id]: output,
-                },
-              }));
-
-              // Detect the data type of the output
-              const detectedType = detectDataType('output.txt', output);
-
-              if (tool.id === workflow[workflow.length - 1].id && dataType !== detectedType) {
-                setDataType(detectedType);
-                showNotification(`Data type updated to ${detectedType}`, 'info');
-              }
-            } catch (error) {
-              console.error(`Failed to update data type for tool ${tool.toolName}:`, error);
+        for (let i = (insertAtIndex !== null && insertAtIndex > 0) ? insertAtIndex : 0; i < workflow.length; i++) {
+          const tool = workflow[i];
+          try {
+            // Validate parameters
+            const isValid = validateParameters(tool, data);
+            if (!isValid) {
+              setDataType('UNKNOWN');
+              break;
             }
-          }
 
+            const output = await executeTool(tool, data);
+            data = output;
+
+            // Store the output in the map
+            setOutputMap((prevMap) => ({
+              ...prevMap,
+              [input.id]: {
+                ...prevMap[input.id],
+                [tool.id]: output,
+              },
+            }));
+
+            // Detect the data type of the output
+            const detectedType = detectDataType('output.txt', output);
+
+            if (tool.id === workflow[workflow.length - 1].id && dataType !== detectedType) {
+              setDataType(detectedType);
+              showNotification(`Data type updated to ${detectedType}`, 'info');
+            }
+          } catch (error) {
+            console.error(`Failed to update data type for tool ${tool.toolName}:`, error);
+          }
         }
       } else {
         if (dataType !== inputDataType) {
@@ -192,8 +192,8 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
         }
       }
 
-      setIsLoading(false);    // Stops Operations Panel loading
-      setInsertAtIndex(null);   // Resets the index of inserted tool
+      setIsLoading(false);
+      setInsertAtIndex(null);
     };
 
     // If deleteOperation triggered the useEffect, do not update the data type and outputs mapping
@@ -205,7 +205,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
       setDeleteOperation(false);  // Reset the flag
     }
 
-  }, [workflow, inputData, selectedFiles, inputDataType]);
+  }, [workflow, inputData, selectedInput, inputDataType]);
 
   // Run validateParameters when the page is loaded
   useEffect(() => {
@@ -250,11 +250,16 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
   // Automatically select the first item in availableInputs when it has values
   useEffect(() => {
     if (workflowInput.length > 0 && tabIndex === 1) {
-      setSelectedInput(workflowInput[0].id);
-    } else {
-      setSelectedInput('');
-    }
-  }, [workflowInput]);
+      const selectedInputExists = workflowInput.some(input => input.id === selectedInput);
+
+      if (!selectedInput || !selectedInputExists) {
+        setSelectedInput(workflowInput[0].id);
+      }
+    } else if (tabIndex === 0) {
+    // No modo CLI, usar sempre "ManualInput"
+    setSelectedInput('');
+  }
+  }, [workflowInput, tabIndex]);
 
   // Load help message for a tool
   const loadHelpMessage = async (toolName) => {
@@ -634,16 +639,11 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
 
   const handleListOperations = (index) => {
     const previous = workflow[index]
-    const previousOutputType = null
-    if (outputMap["ManualInput"]?.[previous.id]) {
+    let previousOutputType = null
+    if (tabIndex === 0) {
       previousOutputType = detectDataType('output.txt', outputMap["ManualInput"]?.[previous.id]);
     } else {
-      for (const inputName in outputMap) {
-        if (outputMap[inputName]?.[previous.id]) {
-          previousOutputType = detectDataType('output.txt', outputMap[inputName]?.[previous.id]);
-          break;
-        }
-      }
+      previousOutputType = detectDataType('output.txt', outputMap[selectedInput]?.[previous.id]);
     }
 
     const next = workflow[index + 1]
@@ -756,10 +756,36 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
     }));
   };
 
-  const handleSaveOutput = () => {
-    if (Object.keys(finalOutput).length === 1) {
-      const inputFileName = Object.keys(finalOutput)[0];
-      const outputContent = finalOutput[inputFileName];
+  const handleSaveOutput = async () => {
+    const allInputs = tabIndex === 0
+        ? [{ id: "ManualInput", content: inputData }]
+        : Array.from(selectedFiles);
+
+    const exportOutputs = {};
+
+    for (const input of allInputs) {
+      let data = input.content;
+
+      for (let i = 0; i < workflow.length; i++) {
+        const tool = workflow[i];
+        try {
+
+          data = await executeTool(tool, data);
+
+          // If it's the last output, store to save it
+          if (i === workflow.length - 1) {
+            exportOutputs[input.id] = data;
+          }
+        } catch (error) {
+          console.error(`Failed to process input ${input.id} with tool ${tool.toolName}:`, error);
+          showNotification(`Error processing ${input.id}`, 'error');
+        }
+      }
+    }
+
+    if (Object.keys(exportOutputs).length === 1) {
+      const inputFileName = Object.keys(exportOutputs)[0];
+      const outputContent = exportOutputs[inputFileName];
       const blob = new Blob([outputContent], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -773,7 +799,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
       URL.revokeObjectURL(url);
     } else {
       const zip = new JSZip();
-      for (const [inputFileName, outputContent] of Object.entries(finalOutput)) {
+      for (const [inputFileName, outputContent] of Object.entries(exportOutputs)) {
         zip.file(`${inputFileName}_output.txt`, outputContent);
       }
       zip.generateAsync({ type: 'blob' }).then((content) => {
@@ -1040,8 +1066,30 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
   return (
     <Paper
       elevation={3}
-      sx={{ padding: 2, height: '100%', display: 'flex', flexDirection: 'column' }}
+      sx={{ padding: 2, height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}
     >
+      {/* Box to block interaction */}
+      {tabIndex === 1 && selectedFiles.size === 0 && (
+          <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                zIndex: 10,
+                pointerEvents: 'all',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+          >
+            <Typography variant="body1" color="text.secondary">
+              Please select at least one file to work with
+            </Typography>
+          </Box>
+      )}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
         <Typography variant="h6" gutterBottom>
           Workflow
@@ -1065,9 +1113,24 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
             <MenuItem value="" disabled>
               Inputs
             </MenuItem>
-            {workflowInput.map((input) => (
-              <MenuItem key={input.id} value={input.id}>{input.name}</MenuItem>
-            ))}
+            {workflowInput.map((input) => {
+              const maxDisplayLength = 20;
+              let displayName;
+
+              if (input.name && input.name.length > maxDisplayLength) {
+                const start = input.name.substring(0, maxDisplayLength - 10);
+                const end = input.name.substring(input.name.length - 7);
+                displayName = `${start}...${end}`;
+              } else {
+                displayName = input.name || input.id;
+              }
+
+              return (
+                  <MenuItem key={input.id} value={input.id} title={input.name || input.id}>
+                    {displayName}
+                  </MenuItem>
+              );
+            })}
           </Select>
         )}
       </Box>

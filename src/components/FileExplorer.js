@@ -12,6 +12,7 @@ import {
     InsertDriveFile,
     LibraryAddCheck,
     MoreVert,
+    Visibility,
     NoteAdd
 } from '@mui/icons-material';
 import {
@@ -58,6 +59,7 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
     const fileInputRef = useRef(null);
     const folderInputRef = useRef(null);
     const zipInputRef = useRef(null);
+    const [showFileContent, setShowFileContent] = useState(false);
 
     // Old variables
     const [isAcceptable, setIsAcceptable] = useState(true);
@@ -150,16 +152,16 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
             const targetFolderId = activeNode?.type === 'folder' ? activeNode.id : 'root';
 
             setTree((prev) => {
-                const newTree = {
-                    ...prev,
-                    children: insertFilesIntoFolder(
-                        prev.children || [],
-                        targetFolderId,
-                        validFiles
-                    ),
-                };
-                return newTree;
-            }
+                    const newTree = {
+                        ...prev,
+                        children: insertFilesIntoFolder(
+                            prev.children || [],
+                            targetFolderId,
+                            validFiles
+                        ),
+                    };
+                    return newTree;
+                }
             );
 
             showNotification(`${validFiles.length} file(s) uploaded successfully.`, 'success');
@@ -464,30 +466,6 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
         setActiveNode(null);
     };
 
-    // const handleCreateSubmit = () => {
-    //     if (activeNode && newName) {
-    //         const newNode = {
-    //             id: Date.now().toString(),
-    //             name: newName,
-    //             type: newItemType,
-    //             children: newItemType === 'folder' ? [] : undefined,
-    //         };
-    //         const updateTree = (nodes) => {
-    //             return nodes.map(node => {
-    //                 if (node.id === activeNode.id && node.type === 'folder') {
-    //                     return { ...node, children: [...(node.children || []), newNode] };
-    //                 }
-    //                 if (node.children) {
-    //                     return { ...node, children: updateTree(node.children) };
-    //                 }
-    //                 return node;
-    //             });
-    //         };
-    //         setTree(prev => ({ ...prev, children: updateTree(prev.children || []) }));
-    //     }
-    //     setIsCreating(false);
-    // };
-
     const handleDelete = () => {
         if (activeNode) {
             const deleteNode = (nodes) => {
@@ -499,8 +477,57 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                 });
             };
             setTree(prev => ({ ...prev, children: deleteNode(prev.children || []) }));
+
+            // if the node is a file, remove it from selectedFiles, if it's a folder, remove it's file children from selectedFiles
+            if (activeNode.type === 'file') {
+                // Remove the file directly from selectedFiles if it exists
+                setSelectedFiles(prev => {
+                    const newSet = new Set(prev);
+                    if (newSet.has(activeNode)) {
+                        newSet.delete(activeNode);
+                    }
+                    return newSet;
+                });
+            } else if (activeNode.type === 'folder') {
+                // For folders, we need to recursively collect all file nodes and remove them from selectedFiles
+                const collectFilesFromFolder = (folder) => {
+                    let files = [];
+                    if (folder.children) {
+                        folder.children.forEach(child => {
+                            if (child.type === 'file') {
+                                files.push(child);
+                            } else if (child.type === 'folder') {
+                                files = files.concat(collectFilesFromFolder(child));
+                            }
+                        });
+                    }
+                    return files;
+                };
+
+                const filesToRemove = collectFilesFromFolder(activeNode);
+
+                setSelectedFiles(prev => {
+                    const newSet = new Set(prev);
+                    filesToRemove.forEach(file => {
+                        if (newSet.has(file)) {
+                            newSet.delete(file);
+                        }
+                    });
+                    return newSet;
+                });
+            }
         }
         handleClose();
+    };
+
+    const handleViewContent = (file) => {
+        setActiveNode(file);
+        setShowFileContent(true);
+        setContextMenu(null);
+    };
+
+    const handleCloseFileContent = () => {
+        setShowFileContent(false);
     };
 
     const handleMenuItemFileUpload = () => {
@@ -543,7 +570,12 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                                 <InsertDriveFile />
                             )}
                         </ListItemIcon>
-                        <ListItemText primary={node.name} />
+                        <ListItemText primary={
+                            node.name && node.name.length > 30
+                                ? `${node.name.substring(0, 12)}...${node.name.substring(node.name.length - 7)}`
+                                : node.name
+                        }
+                        />
                         <ListItemSecondaryAction>
                             <IconButton edge="end" onClick={(event) => handleContextMenu(event, node)}>
                                 <MoreVert />
@@ -563,29 +595,30 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
     );
 
     return (
-        <Paper elevation={0} sx={{ height: '100%', overflow: 'auto', position: 'relative' }}>
-            {tree.children && tree.children.length > 0 ? (
-                renderTree(tree.children)
-            ) : (
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '80%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                    }}
-                >
-                    <Typography variant="body1" sx={{ padding: '16px', textAlign: 'center' }}>
-                        The file manager is empty. Please upload files to appear here.
-                    </Typography>
-                </Box>
-            )
-            }
+        <Paper elevation={0} sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+            <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+                {tree.children && tree.children.length > 0 ? (
+                    renderTree(tree.children)
+                ) : (
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '80%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                        }}
+                    >
+                        <Typography variant="body1" sx={{ padding: '16px', textAlign: 'center' }}>
+                            The file manager is empty. Please upload files to appear here.
+                        </Typography>
+                    </Box>
+                )}
+            </Box>
 
             <Menu
                 open={contextMenu !== null}
@@ -645,6 +678,14 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                         />
                     </MenuItem>
                 )}
+                {activeNode?.type === 'file' && (
+                    <MenuItem onClick={() => handleViewContent(activeNode)}>
+                        <ListItemIcon>
+                            <Visibility fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText>View</ListItemText>
+                    </MenuItem>
+                )}
                 <MenuItem onClick={handleRename}>
                     <ListItemIcon>
                         <Edit fontSize="small" />
@@ -672,15 +713,18 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: 1,
-                    position: 'absolute',
+                    position: 'sticky',
                     bottom: 0,
                     right: 0,
+                    backgroundColor: 'white',
                     margin: 2, // Ajuste a margem conforme necessário
+                    justifyContent: 'flex-end', // Adicionado para alinhar à direita
+                    paddingBottom: 1, // Adicionado para melhorar o visual
                 }}
             >
                 {/* File Counter */}
                 <Typography variant="caption" color="textSecondary" sx={{ marginRight: 1 }}>
-                    {selectedFiles.size} file(s)
+                    {selectedFiles.size} file(s) selected
                 </Typography>
                 {/* File Selection Dropdown */}
                 <Tooltip
@@ -744,17 +788,17 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                     </IconButton>
                 </Tooltip>
                 <Tooltip title="Upload Files"
-                    placement="top"
-                    PopperProps={{
-                        modifiers: [
-                            {
-                                name: 'offset',
-                                options: {
-                                    offset: [0, -8], // Ajuste a margem conforme necessário
-                                },
-                            },
-                        ],
-                    }}>
+                         placement="top"
+                         PopperProps={{
+                             modifiers: [
+                                 {
+                                     name: 'offset',
+                                     options: {
+                                         offset: [0, -8], // Ajuste a margem conforme necessário
+                                     },
+                                 },
+                             ],
+                         }}>
                     <IconButton
                         color="primary"
                         component="label"
@@ -774,17 +818,17 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                     </IconButton>
                 </Tooltip>
                 <Tooltip title="Upload Folder"
-                    placement="top"
-                    PopperProps={{
-                        modifiers: [
-                            {
-                                name: 'offset',
-                                options: {
-                                    offset: [0, -8], // Ajuste a margem conforme necessário
-                                },
-                            },
-                        ],
-                    }}>
+                         placement="top"
+                         PopperProps={{
+                             modifiers: [
+                                 {
+                                     name: 'offset',
+                                     options: {
+                                         offset: [0, -8], // Ajuste a margem conforme necessário
+                                     },
+                                 },
+                             ],
+                         }}>
                     <IconButton
                         color="primary"
                         component="label"
@@ -828,6 +872,64 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                 </Tooltip>
             </Box>
 
+            {/* File Content Dialog */}
+            <Dialog
+                open={showFileContent}
+                onClose={handleCloseFileContent}
+                fullWidth
+                maxWidth="md"
+            >
+                <DialogTitle
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        bgcolor: 'primary.main',
+                        color: 'primary.contrastText'
+                    }}
+                >
+                    <Visibility />
+                    File Content: {activeNode?.name && activeNode.name.length > 40 ?
+                    `${activeNode.name.substring(0, 25)}...${activeNode.name.substring(activeNode.name.length - 10)}` :
+                    activeNode?.name}
+                </DialogTitle>
+                <DialogContent sx={{ mt: 2 }}>
+                    <Paper
+                        elevation={3}
+                        sx={{
+                            p: 2,
+                            bgcolor: 'grey.100',
+                            maxHeight: '500px',
+                            overflowY: 'auto',
+                            '&:hover': {
+                                boxShadow: 6,
+                            },
+                        }}
+                    >
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                fontFamily: 'monospace',
+                                whiteSpace: 'pre-wrap',
+                                wordBreak: 'break-all'
+                            }}
+                        >
+                            {activeNode?.content || 'No content available'}
+                        </Typography>
+                    </Paper>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        onClick={handleCloseFileContent}
+                        color="primary"
+                        variant="contained"
+                        startIcon={<Close />}
+                    >
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             <Dialog open={isRenaming} onClose={() => setIsRenaming(false)}>
                 <DialogTitle>Rename {activeNode?.type}</DialogTitle>
                 <DialogContent>
@@ -846,25 +948,6 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                     <Button onClick={handleRenameSubmit}>Rename</Button>
                 </DialogActions>
             </Dialog>
-
-            {/* <Dialog open={isCreating} onClose={() => setIsCreating(false)}>
-                <DialogTitle>Create New {newItemType}</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        label={`${newItemType} Name`}
-                        type="text"
-                        fullWidth
-                        value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setIsCreating(false)}>Cancel</Button>
-                    <Button onClick={handleCreateSubmit}>Create</Button>
-                </DialogActions>
-            </Dialog> */}
 
             <Dialog open={showFileInfo} onClose={() => setShowFileInfo(false)}>
                 <DialogTitle>File Information</DialogTitle>
@@ -896,7 +979,11 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                             <Grid container spacing={2}>
                                 <Grid item xs={12} sm={6}>
                                     <Typography variant="subtitle2" color="text.secondary">Name</Typography>
-                                    <Typography variant="body1" gutterBottom>{activeNode.name}</Typography>
+                                    <Typography variant="body1" gutterBottom>
+                                        {activeNode?.name && activeNode.name.length > 25 ?
+                                        `${activeNode.name.substring(0, 15)}...${activeNode.name.substring(activeNode.name.length - 7)}` :
+                                        activeNode?.name}
+                                    </Typography>
                                 </Grid>
                                 <Grid item xs={12} sm={6}>
                                     <Typography variant="subtitle2" color="text.secondary">Type</Typography>
@@ -909,40 +996,6 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                                     </Typography>
                                 </Grid>
                             </Grid>
-
-                            <Divider sx={{ my: 2 }} />
-
-                            {activeNode.type === 'file' && activeNode.content && (
-                                <>
-                                    <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                                        Preview
-                                    </Typography>
-                                    <Paper
-                                        elevation={3}
-                                        sx={{
-                                            p: 2,
-                                            bgcolor: 'grey.100',
-                                            maxHeight: '200px',
-                                            overflowY: 'auto',
-                                            '&:hover': {
-                                                boxShadow: 6,
-                                            },
-                                        }}
-                                    >
-                                        <Typography
-                                            variant="body2"
-                                            sx={{
-                                                fontFamily: 'monospace',
-                                                whiteSpace: 'pre-wrap',
-                                                wordBreak: 'break-all'
-                                            }}
-                                        >
-                                            {activeNode.content.slice(0, 300)}
-                                            {activeNode.content.length > 300 ? '...' : ''}
-                                        </Typography>
-                                    </Paper>
-                                </>
-                            )}
                         </Box>
                     ) : (
                         <Typography>Loading...</Typography>

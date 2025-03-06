@@ -135,6 +135,8 @@ const WorkflowPage = () => {
                                 setAddingATool={setAddingATool}
                                 filteredTools={filteredTools}
                                 setFilteredTools={setFilteredTools}
+                                selectedFiles={selectedFiles}
+                                tabIndex={tabIndex}
                             />
                         </Grid>
 
