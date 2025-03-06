@@ -23,6 +23,14 @@ const WorkflowPage = () => {
     const [selectedFiles, setSelectedFiles] = useState(new Set()); // Track selected files
     const [tabIndex, setTabIndex] = useState(0);    // Track the selected tab index for input mode
 
+    const initialTree = {
+        id: 'root',
+        name: 'Root',
+        type: 'folder',
+        children: [],
+    };
+    const [tree, setTree] = useState(initialTree);
+
     const { inputDataType, setInputDataType } = useContext(DataTypeContext);
 
     const theme = useTheme();
@@ -167,6 +175,9 @@ const WorkflowPage = () => {
                                 selectedFiles={selectedFiles}
                                 setSelectedFiles={setSelectedFiles}
                                 tabIndex={tabIndex}
+                                setTabIndex={setTabIndex}
+                                tree={tree}
+                                setTree={setTree}
                             />
                         </Grid>
 
@@ -190,6 +201,8 @@ const WorkflowPage = () => {
                                 setSelectedFiles={setSelectedFiles}
                                 inputData={inputData}
                                 setInputData={setInputData}
+                                tree={tree}
+                                setTree={setTree}
                             />
                         </Grid>
                     </Grid>

@@ -53,9 +53,6 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
     const [activeNode, setActiveNode] = useState(null);
     const [isRenaming, setIsRenaming] = useState(false);
     const [newName, setNewName] = useState('');
-    // const [isCreating, setIsCreating] = useState(false);
-    // const [newItemType, setNewItemType] = useState('file');
-    const [showFileInfo, setShowFileInfo] = useState(false);
     const fileInputRef = useRef(null);
     const folderInputRef = useRef(null);
     const zipInputRef = useRef(null);
@@ -104,6 +101,7 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                     content,
                     size: file.size,
                     lastModified: new Date(file.lastModified),
+                    relativePath: '',
                 });
             };
 
@@ -214,6 +212,8 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                     const relativePath = file.webkitRelativePath;
                     const pathParts = relativePath.split('/'); // e.g., ["Documents", "file.txt"]
 
+                    processedFile.relativePath = relativePath;
+
                     // Insert file node into the newFilesTree based on its relative path
                     addFileToTree([...pathParts], processedFile, newFilesTree);
                     processedFilesCount++;
@@ -290,6 +290,7 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                     const processedFile = await processFile(simulatedFile);
                     if (processedFile) {
                         const pathParts = fileName.split('/'); // e.g. ["Documents", "Subfolder", "file.txt"]
+                        processedFile.relativePath = fileName;
                         addFileToTree([...pathParts], processedFile, newFilesTree);
                         processedFilesCount++;
                     }
@@ -949,19 +950,6 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                 </DialogActions>
             </Dialog>
 
-            <Dialog open={showFileInfo} onClose={() => setShowFileInfo(false)}>
-                <DialogTitle>File Information</DialogTitle>
-                <DialogContent>
-                    <Typography><strong>Name:</strong> {activeNode?.name}</Typography>
-                    <Typography><strong>Type:</strong> {activeNode?.type}</Typography>
-                    {activeNode?.size && <Typography><strong>Size:</strong> {activeNode.size} bytes</Typography>}
-                    {activeNode?.lastModified && <Typography><strong>Modified:</strong> {activeNode.lastModified.toLocaleString()}</Typography>}
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setShowFileInfo(false)}>Close</Button>
-                </DialogActions>
-            </Dialog>
-
             {/* Metadata Dialog */}
             <Dialog open={openMetadataDialog} onClose={handleCloseMetadataDialog} fullWidth maxWidth="sm">
                 <DialogTitle sx={{
@@ -993,6 +981,12 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                                     <Typography variant="subtitle2" color="text.secondary">Size</Typography>
                                     <Typography variant="body1" gutterBottom>
                                         {(activeNode.size / 1024).toFixed(2)} KB
+                                    </Typography>
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                    <Typography variant="subtitle2" color="text.secondary">RelativePath</Typography>
+                                    <Typography variant="body1" gutterBottom>
+                                        {activeNode.relativePath}
                                     </Typography>
                                 </Grid>
                             </Grid>

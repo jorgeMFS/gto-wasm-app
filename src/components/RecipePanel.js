@@ -50,7 +50,7 @@ import { importRecipeCommand } from '../utils/importRecipeCommand';
 import { importRecipeConfigFile } from '../utils/importRecipeConfigFile';
 import SortableItem from './SortableItem';
 
-const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading, setIsLoading, insertAtIndex, setInsertAtIndex, setAddingATool, setFilteredTools, selectedFiles, setSelectedFiles, tabIndex }) => {
+const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading, setIsLoading, insertAtIndex, setInsertAtIndex, setAddingATool, setFilteredTools, selectedFiles, setSelectedFiles, tabIndex, setTabIndex, tree, setTree }) => {
   const [activeId, setActiveId] = useState(null);
   const { setDataType, dataType, inputDataType, setInputDataType } = useContext(DataTypeContext); // To update data type context
   const [invalidItemIds, setInvalidItemIds] = useState([]); // To store invalid item IDs
@@ -234,13 +234,12 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
         workflow,
         inputData,
         inputDataType,
-        outputMap,
+        outputs,
         exportFileName,
         showNotification,
         setOpenExportDialog,
         true, // Request the command
-        partialExportIndex
-      );
+        partialExportIndex, tabIndex, selectedFiles);
       setCommand(generatedCommand);
     } else {
       setCommand('');
@@ -1266,7 +1265,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
                               <AddCircle sx={{ fontSize: '24px' }} />
                             </Button>
                           </Tooltip>
-                          <Tooltip title="Export Until Here">
+                          <Tooltip title="Export Previous Steps">
                             <Button
                               color="primary"
                               onClick={() => handlePartialExport(index)}
@@ -1492,13 +1491,12 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
                 workflow,
                 inputData,
                 inputDataType,
-                outputMap,
+                outputs,
                 exportFileName,
                 showNotification,
                 setOpenExportDialog,
                 false,
-                partialExportIndex
-              );
+                partialExportIndex, tabIndex, selectedFiles);
               setPartialExportIndex(null);
             }}
             color="primary"
@@ -1514,7 +1512,9 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
                 exportFileName,
                 showNotification,
                 setOpenExportDialog,
-                partialExportIndex
+                partialExportIndex,
+                  tabIndex,
+                  selectedFiles
               );
               setPartialExportIndex(null);
             }}
@@ -1628,7 +1628,11 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
                   setInputData,
                   setInputDataType,
                   showNotification,
-                  setOpenImportDialog
+                  setOpenImportDialog,
+                    setTabIndex,
+                    tree,
+                    setTree,
+                    setSelectedFiles,
                 );
               } else {
                 showNotification('Please provide a valid input for import.', 'error');

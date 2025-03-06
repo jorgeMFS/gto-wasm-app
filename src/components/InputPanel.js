@@ -14,19 +14,11 @@ import { NotificationContext } from '../contexts/NotificationContext';
 import { detectDataType } from '../utils/detectDataType';
 import FileExplorer from './FileExplorer';
 
-const InputPanel = ({ tabIndex, setTabIndex, selectedFiles, setSelectedFiles, inputData, setInputData }) => {
+const InputPanel = ({ tabIndex, setTabIndex, selectedFiles, setSelectedFiles, inputData, setInputData, tree, setTree }) => {
     const showNotification = useContext(NotificationContext);
     const { setInputDataType, validateData, inputDataType } = useContext(DataTypeContext);
     const [isValid, setIsValid] = useState(true);
     const [debounceTimer, setDebounceTimer] = useState(null);
-
-    const initialTree = {
-        id: 'root',
-        name: 'Root',
-        type: 'folder',
-        children: [],
-    };
-    const [tree, setTree] = useState(initialTree);
 
     const numberOfLines = inputData.split('\n').length;
 
