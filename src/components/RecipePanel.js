@@ -755,7 +755,9 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
     }));
   };
 
-  const handleSaveOutput = async () => {
+  const handleSaveOutput = async (stopAtIndex) => {
+    const endIndex = stopAtIndex !== undefined ? stopAtIndex : workflow.length - 1;
+
     const allInputs = tabIndex === 0
         ? [{ id: "ManualInput", content: inputData }]
         : Array.from(selectedFiles);
@@ -765,14 +767,14 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
     for (const input of allInputs) {
       let data = input.content;
 
-      for (let i = 0; i < workflow.length; i++) {
+      for (let i = 0; i <= endIndex && i < workflow.length; i++) {
         const tool = workflow[i];
         try {
 
           data = await executeTool(tool, data);
 
           // If it's the last output, store to save it
-          if (i === workflow.length - 1) {
+          if (i === endIndex) {
             exportOutputs[input.id] = data;
           }
         } catch (error) {
@@ -1155,6 +1157,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
                     isInvalid={invalidItemIds.includes(tool.id)} // Is true if the tool is invalid
                     helpMessage={helpMessages[tool.toolName]?.general}
                     workflowLength={workflow.length}
+                    onPartialSave={() => handleSaveOutput(index)}
                   >
                     {renderParameters(tool)}
                     <Box sx={{ display: 'flex', alignItems: 'center', marginTop: 1 }}>
@@ -1256,7 +1259,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
                             transition: 'opacity 0.3s ease',
                           }}
                         >
-                          <Tooltip title="Add Operation">
+                          <Tooltip title="Add Tool">
                             <Button
                               color="primary"
                               onClick={() => handleListOperations(index)}
@@ -1313,7 +1316,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
               }}
             >
               <Tooltip title="Save Output">
-                <IconButton color="primary" onClick={handleSaveOutput}>
+                <IconButton color="primary" onClick={() => handleSaveOutput(workflow.length - 1)}>
                   <Save />
                 </IconButton>
               </Tooltip>
