@@ -123,7 +123,7 @@ const WorkflowPage = () => {
                         <Grid
                             item
                             xs={12}
-                            md={3.2}
+                            md={3.1}
                             sx={{
                                 display: 'flex',
                                 flexDirection: 'column',
@@ -152,7 +152,7 @@ const WorkflowPage = () => {
                         <Grid
                             item
                             xs={12}
-                            md={5.6}
+                            md={5.2}
                             sx={{
                                 display: 'flex',
                                 flexDirection: 'column',
@@ -185,7 +185,7 @@ const WorkflowPage = () => {
                         <Grid
                             item
                             xs={12}
-                            md={3.2}
+                            md={3.7}
                             sx={{
                                 display: 'flex',
                                 flexDirection: 'column',

@@ -1075,7 +1075,7 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
                 top: 0,
                 left: 0,
                 width: '100%',
-                height: '100%',
+                height: '88%',
                 backgroundColor: 'rgba(255, 255, 255, 0.7)',
                 zIndex: 10,
                 pointerEvents: 'all',
@@ -1346,13 +1346,13 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
 
       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, position: 'relative' }}>
         {/* Overlay to block interaction */}
-        {Object.values(validationErrors).some(error => Object.keys(error).length > 0) && (
+        {(Object.values(validationErrors).some(error => Object.keys(error).length > 0)) || (tabIndex === 1 && selectedFiles.size === 0) && (
           <Box
             sx={{
               position: 'absolute',
               top: 0,
               left: 0,
-              width: '100%',
+              width: tabIndex === 1 && selectedFiles.size === 0 ? '50%' : '100%',
               height: '100%',
               backgroundColor: 'rgba(255, 255, 255, 0.7)',
               zIndex: 10,

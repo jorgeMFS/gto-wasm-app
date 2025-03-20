@@ -102,6 +102,26 @@ export const exportRecipeScript = (workflow, inputData, inputDataType, outputs, 
     scriptLines.push('done\n');
 
     if (tabIndex === 1 && selectedFiles && selectedFiles.size > 0) {
+        // Add the code to handle directory path as argument
+        scriptLines.push('# Check if a directory path was provided as an argument');
+        scriptLines.push('FILES_DIRECTORY="$1"');
+        scriptLines.push('ORIGINAL_DIR=$(pwd)');
+        scriptLines.push('');
+        scriptLines.push('# Handle directory path');
+        scriptLines.push('if [ -n "$FILES_DIRECTORY" ]; then');
+        scriptLines.push('  if [ -d "$FILES_DIRECTORY" ]; then');
+        scriptLines.push('    echo "Using provided directory: $FILES_DIRECTORY"');
+        scriptLines.push('    cd "$FILES_DIRECTORY" || { echo "Error: Cannot access the specified directory"; exit 1; }');
+        scriptLines.push('  else');
+        scriptLines.push('    echo "Error: The specified directory does not exist: $FILES_DIRECTORY"');
+        scriptLines.push('    exit 1');
+        scriptLines.push('  fi');
+        scriptLines.push('else');
+        scriptLines.push('  echo "WARNING: No directory path provided. Using the current directory."');
+        scriptLines.push('  echo "You can specify a directory path by running: $0 /path/to/directory"');
+        scriptLines.push('fi');
+        scriptLines.push('');
+
         // File Manager Mode: Process each selected file
         scriptLines.push('# Processing multiple input files');
         
@@ -124,6 +144,10 @@ export const exportRecipeScript = (workflow, inputData, inputDataType, outputs, 
         });
         
         scriptLines.push('\necho "Starting batch processing of files..."\n');
+        scriptLines.push('# Initialize counters for processed and missing files');
+        scriptLines.push('processed_files=0');
+        scriptLines.push('missing_files=0');
+        scriptLines.push('');
         
         // Process each file
         files.forEach(file => {
@@ -131,9 +155,14 @@ export const exportRecipeScript = (workflow, inputData, inputDataType, outputs, 
             const outputPath = file.relativePath 
                 ? `output/${file.relativePath}` 
                 : `output/${file.name}`;
-            
-            scriptLines.push(`echo "Processing file: ${file.relativePath || file.name}"`);
-            scriptLines.push(`# Execute workflow for ${file.relativePath || file.name}`);
+
+            const filePath = file.relativePath || file.name;
+
+            // Add file existence check
+            scriptLines.push(`# Check if file ${filePath} exists`);
+            scriptLines.push(`if [ -f "${filePath}" ]; then`);
+            scriptLines.push(`  echo "Processing file: ${filePath}"`);
+            scriptLines.push(`  # Execute workflow for ${filePath}`);
             
             // First tool with input redirection
             const firstTool = exportWorkflow[0];
@@ -166,6 +195,12 @@ export const exportRecipeScript = (workflow, inputData, inputDataType, outputs, 
             // Move final output to its destination
             scriptLines.push(`mv temp_output_${exportWorkflow.length}.txt "${outputPath}_output.${fileExtension}"`);
             scriptLines.push(`echo "Output saved to: ${outputPath}_output.${fileExtension}"\n`);
+            scriptLines.push('  processed_files=$((processed_files+1))');
+            scriptLines.push('else');
+            scriptLines.push(`  echo "WARNING: File '${filePath}' not found. Skipping."`);
+            scriptLines.push('  missing_files=$((missing_files+1))');
+            scriptLines.push('fi');
+            scriptLines.push('');
         });
         
         // Cleanup temp files
@@ -173,6 +208,20 @@ export const exportRecipeScript = (workflow, inputData, inputDataType, outputs, 
         for (let i = 1; i <= exportWorkflow.length; i++) {
             scriptLines.push(`rm -f temp_output_${i}.txt`);
         }
+
+        // Display summary of processed files
+        scriptLines.push('\n# Display processing summary');
+        scriptLines.push('echo -e "\\nBatch processing completed."');
+        scriptLines.push('echo "Files processed: $processed_files"');
+        scriptLines.push('echo "Files missing: $missing_files"');
+        scriptLines.push('');
+
+        // Add code to return to original directory if it was changed
+        scriptLines.push('');
+        scriptLines.push('# Return to original directory if it was changed');
+        scriptLines.push('if [ -n "$FILES_DIRECTORY" ]; then');
+        scriptLines.push('  cd "$ORIGINAL_DIR" || echo "Warning: Could not return to original directory"');
+        scriptLines.push('fi');
         
         scriptLines.push('\necho "Batch processing completed."');
     } else {

@@ -52,7 +52,7 @@ export const importRecipeConfigFile = (
                 id: `${file.name}-${Date.now()}`,
                 name: file.name,
                 type: "file",
-                fileType: file.type,
+                fileType: file.fileType,
                 content: file.content,
                 size: file.content.length,
                 lastModified: new Date(),

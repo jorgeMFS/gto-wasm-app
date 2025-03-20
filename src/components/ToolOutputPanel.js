@@ -67,7 +67,7 @@ const ToolOutputPanel = ({ outputData, setOutputData, workflow = null, tool = nu
                 }}
             >
                 <Tooltip title="Save Output">
-                    <IconButton color={'secondary'} onClick={handleSaveOutput}>
+                    <IconButton color={'primary'} onClick={handleSaveOutput}>
                         <SaveIcon />
                     </IconButton>
                 </Tooltip>

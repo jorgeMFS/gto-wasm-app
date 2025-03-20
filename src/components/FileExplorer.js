@@ -122,7 +122,7 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
 
         return nodes.map(node => {
             if (node.id === folderId && node.type === 'folder') {
-                // Insert new file nodes here
+                // Insert new file nodes here with updated paths
                 return {
                     ...node,
                     children: [...(node.children || []), ...newFiles],
@@ -138,29 +138,111 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
         });
     };
 
+    // Helper function to check if a node with the same name exists at the same level
+    const doesNameExistInFolder = (nodes, name, targetFolderId) => {
+        // If we're at the root level
+        if (targetFolderId === 'root') {
+            return nodes.some(node => node.name === name);
+        }
+
+        // Find the target folder
+        const findFolder = (nodes, id) => {
+            for (const node of nodes) {
+                if (node.id === id) {
+                    return node;
+                }
+                if (node.children) {
+                    const found = findFolder(node.children, id);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+
+        const targetFolder = findFolder(nodes, targetFolderId);
+        if (!targetFolder || !targetFolder.children) return false;
+
+        // Check if name exists in target folder
+        return targetFolder.children.some(node => node.name === name);
+    };
+
+    // Helper function to get the full path of a node in the tree
+    const getNodePath = (nodeId, nodes) => {
+        if (nodeId === 'root') return '';
+
+        const findNodePath = (currentNodes, id, parentPath = '') => {
+            for (const node of currentNodes) {
+                if (node.id === id) {
+                    return parentPath + node.name;
+                }
+                if (node.children) {
+                    const result = findNodePath(node.children, id, parentPath + node.name + '/');
+                    if (result) return result;
+                }
+            }
+            return null;
+        };
+
+        return findNodePath(nodes, nodeId);
+    };
+
     // Handle multiple file uploads
     const handleFileUpload = async (event) => {
         const files = Array.from(event.target.files);
         if (files.length === 0) return;
 
         try {
+            const targetFolderId = activeNode?.type === 'folder' ? activeNode.id : 'root';
+            // Get the parent path for the target folder
+            const parentPath = getNodePath(targetFolderId, tree.children || []);
+
+            const currentTreeNodes = targetFolderId === 'root' ?
+                tree.children || [] :
+                // Find the children of the target folder
+                (() => {
+                    const findFolder = (nodes, id) => {
+                        for (const node of nodes) {
+                            if (node.id === id) return node;
+                            if (node.children) {
+                                const found = findFolder(node.children, id);
+                                if (found) return found;
+                            }
+                        }
+                        return null;
+                    };
+                    const folder = findFolder(tree.children || [], targetFolderId);
+                    return folder?.children || [];
+                })();
+
+            // Check for duplicate file names before processing
+            const duplicateNames = files.filter(file =>
+                doesNameExistInFolder(tree.children || [], file.name, targetFolderId)
+            ).map(file => file.name);
+
+            if (duplicateNames.length > 0) {
+                const message = duplicateNames.length === 1
+                    ? `Upload failed: The file "${duplicateNames[0]}" already exists at this location.`
+                    : `Upload failed: The following files already exist at this location: ${duplicateNames.join(', ')}`;
+                showNotification(message, 'error');
+                return; // Stop processing
+            }
+
             const processedFiles = await Promise.all(files.map(processFile));
             const validFiles = processedFiles.filter((file) => file !== null);
 
-            const targetFolderId = activeNode?.type === 'folder' ? activeNode.id : 'root';
+            // Set correct relativePath with parent folder path
+            validFiles.forEach(file => {
+                file.relativePath = parentPath ? parentPath + '/' + file.name : file.name;
+            });
 
-            setTree((prev) => {
-                    const newTree = {
-                        ...prev,
-                        children: insertFilesIntoFolder(
-                            prev.children || [],
-                            targetFolderId,
-                            validFiles
-                        ),
-                    };
-                    return newTree;
-                }
-            );
+            setTree((prev) => ({
+                ...prev,
+                children: insertFilesIntoFolder(
+                    prev.children || [],
+                    targetFolderId,
+                    validFiles
+                ),
+            }));
 
             showNotification(`${validFiles.length} file(s) uploaded successfully.`, 'success');
 
@@ -190,7 +272,7 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
             };
             tree.push(folder);
         }
-        // Recursively add the file to the subfolder
+        // Recursively add the file to the subfolder with updated parent path
         addFileToTree(pathParts, fileNode, folder.children);
     };
 
@@ -199,41 +281,56 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
         const files = Array.from(event.target.files);
         if (files.length === 0) return;
 
-        const newFilesTree = [];
+        try {
+            const targetFolderId = activeNode?.type === 'folder' ? activeNode.id : 'root';
+            const parentPath = getNodePath(targetFolderId, tree.children || []);
 
-        let processedFilesCount = 0;
+            // Extract the top-level folder name from the first file's relative path
+            const firstFilePath = files[0].webkitRelativePath;
+            const topFolderName = firstFilePath.split('/')[0];
 
-        // Process each file from the uploaded directory
-        for (const file of files) {
-            try {
-                const processedFile = await processFile(file);
-                if (processedFile) {
-                    // Reconstruct folder structure using webkitRelativePath, e.g. "folder/subfolder/file.txt"
-                    const relativePath = file.webkitRelativePath;
-                    const pathParts = relativePath.split('/'); // e.g., ["Documents", "file.txt"]
-
-                    processedFile.relativePath = relativePath;
-
-                    // Insert file node into the newFilesTree based on its relative path
-                    addFileToTree([...pathParts], processedFile, newFilesTree);
-                    processedFilesCount++;
-                }
-            } catch (error) {
-                console.error(`Error processing file ${file.name}:`, error);
+            // Check if this folder name already exists
+            if (doesNameExistInFolder(tree.children || [], topFolderName, targetFolderId)) {
+                showNotification(`Upload failed: A folder named "${topFolderName}" already exists at this location.`, 'error');
+                return;
             }
-        }
 
-        // Merge the new files tree with your existing tree structure
-        const targetFolderId = activeNode?.type === 'folder' ? activeNode.id : 'root';
-        setTree((prev) => ({
-            ...prev,
-            children: insertFilesIntoFolder(prev.children || [], targetFolderId, newFilesTree),
-        }));
+            const newFilesTree = [];
+            let processedFilesCount = 0;
 
-        if (processedFilesCount === 0) {
-            showNotification('No files were uploaded due to unsupported file types.', 'warning');
-        } else {
-            showNotification(`${processedFilesCount} file(s) uploaded successfully from directory.`, 'success');
+            // Process each file from the uploaded directory
+            for (const file of files) {
+                try {
+                    const processedFile = await processFile(file);
+                    if (processedFile) {
+                        const relativePath = file.webkitRelativePath;
+                        const pathParts = relativePath.split('/');
+
+                        // Set the correct relativePath that includes parent path
+                        processedFile.relativePath = parentPath ? parentPath + '/' + relativePath : relativePath;
+
+                        // Use original pathParts for tree structure
+                        addFileToTree([...pathParts], processedFile, newFilesTree);
+                        processedFilesCount++;
+                    }
+                } catch (error) {
+                    console.error(`Error processing file ${file.name}:`, error);
+                }
+            }
+
+            // Merge the new files tree with the existing tree structure
+            setTree((prev) => ({
+                ...prev,
+                children: insertFilesIntoFolder(prev.children || [], targetFolderId, newFilesTree),
+            }));
+
+            if (processedFilesCount === 0) {
+                showNotification('No files were uploaded due to unsupported file types.', 'warning');
+            } else {
+                showNotification(`${processedFilesCount} file(s) uploaded successfully from directory.`, 'success');
+            }
+        } catch (error) {
+            console.error('Directory upload error:', error);
         }
     };
 
@@ -269,8 +366,30 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                 return;
             }
 
-            const newFilesTree = [];
+            const targetFolderId = activeNode?.type === 'folder' ? activeNode.id : 'root';
+            const parentPath = getNodePath(targetFolderId, tree.children || []);
 
+            // Extract all top-level folder/file names from the zip
+            const topLevelNames = new Set();
+            fileNames.forEach(fileName => {
+                const parts = fileName.split('/');
+                topLevelNames.add(parts[0]);
+            });
+
+            // Check for duplicates
+            const duplicateNames = Array.from(topLevelNames).filter(name =>
+                doesNameExistInFolder(tree.children || [], name, targetFolderId)
+            );
+
+            if (duplicateNames.length > 0) {
+                const message = duplicateNames.length === 1
+                    ? `Upload failed: An item named "${duplicateNames[0]}" already exists at this location.`
+                    : `Upload failed: The following items already exist at this location: ${duplicateNames.join(', ')}`;
+                showNotification(message, 'error');
+                return;
+            }
+
+            const newFilesTree = [];
             let processedFilesCount = 0;
 
             for (const fileName of fileNames) {
@@ -289,8 +408,12 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                 try {
                     const processedFile = await processFile(simulatedFile);
                     if (processedFile) {
-                        const pathParts = fileName.split('/'); // e.g. ["Documents", "Subfolder", "file.txt"]
-                        processedFile.relativePath = fileName;
+                        const pathParts = fileName.split('/');
+
+                        // Set the correct relativePath that includes parent path
+                        processedFile.relativePath = parentPath ? parentPath + '/' + fileName : fileName;
+
+                        // Use original pathParts for tree structure
                         addFileToTree([...pathParts], processedFile, newFilesTree);
                         processedFilesCount++;
                     }
@@ -299,7 +422,6 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                 }
             }
 
-            const targetFolderId = activeNode?.type === 'folder' ? activeNode.id : 'root';
             setTree((prev) => ({
                 ...prev,
                 children: insertFilesIntoFolder(prev.children || [], targetFolderId, newFilesTree),
@@ -441,32 +563,6 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
         setActiveNode(null);
     };
 
-    const handleRename = () => {
-        setIsRenaming(true);
-        setNewName(activeNode?.name || '');
-        setContextMenu(null);
-    };
-
-    const handleRenameSubmit = () => {
-        console.log('Renaming', activeNode, 'to', newName);
-        if (activeNode && newName) {
-            const updateNodeName = (nodes) => {
-                return nodes.map(node => {
-                    if (node.id === activeNode.id) {
-                        return { ...node, name: newName };
-                    }
-                    if (node.children) {
-                        return { ...node, children: updateNodeName(node.children) };
-                    }
-                    return node;
-                });
-            };
-            setTree(prev => ({ ...prev, children: updateNodeName(prev.children || []) }));
-        }
-        setIsRenaming(false);
-        setActiveNode(null);
-    };
-
     const handleDelete = () => {
         if (activeNode) {
             const deleteNode = (nodes) => {
@@ -578,6 +674,11 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                         }
                         />
                         <ListItemSecondaryAction>
+                            {node.type === 'file' && (
+                                <IconButton edge="end" onClick={() => handleViewContent(node)} style={{marginRight: '8px'}}>
+                                    <Visibility fontSize="small" />
+                                </IconButton>
+                            )}
                             <IconButton edge="end" onClick={(event) => handleContextMenu(event, node)}>
                                 <MoreVert />
                             </IconButton>
@@ -679,20 +780,6 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                         />
                     </MenuItem>
                 )}
-                {activeNode?.type === 'file' && (
-                    <MenuItem onClick={() => handleViewContent(activeNode)}>
-                        <ListItemIcon>
-                            <Visibility fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText>View</ListItemText>
-                    </MenuItem>
-                )}
-                <MenuItem onClick={handleRename}>
-                    <ListItemIcon>
-                        <Edit fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText>Rename</ListItemText>
-                </MenuItem>
                 <MenuItem onClick={handleDelete}>
                     <ListItemIcon>
                         <Delete fontSize="small" />
@@ -928,25 +1015,6 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                     >
                         Close
                     </Button>
-                </DialogActions>
-            </Dialog>
-
-            <Dialog open={isRenaming} onClose={() => setIsRenaming(false)}>
-                <DialogTitle>Rename {activeNode?.type}</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        label="New Name"
-                        type="text"
-                        fullWidth
-                        value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setIsRenaming(false)}>Cancel</Button>
-                    <Button onClick={handleRenameSubmit}>Rename</Button>
                 </DialogActions>
             </Dialog>
 
