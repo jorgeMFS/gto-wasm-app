@@ -79,8 +79,8 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
   const [selectedInput, setSelectedInput] = useState(''); // Tracks selected input
 
   const outputs = tabIndex === 1 && selectedInput ?
-      outputMap[selectedInput] :
-      outputMap["ManualInput"];   // Output data for the selected input
+    outputMap[selectedInput] :
+    outputMap["ManualInput"];   // Output data for the selected input
 
   const workflowInput = tabIndex === 0
     ? [{ id: "ManualInput", content: inputData }]
@@ -93,9 +93,13 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
 
   const showNotification = useContext(NotificationContext);
 
-  // Save outputMap in localStorage
+  // Save only ManualInput outputMap in localStorage
   useEffect(() => {
-    localStorage.setItem('outputMap', JSON.stringify(outputMap));
+    // Extract only the ManualInput data from the outputMap
+    const manualInputData = outputMap["ManualInput"] ? { "ManualInput": outputMap["ManualInput"] } : {};
+
+    // Store only the ManualInput data in localStorage
+    localStorage.setItem('outputMap', JSON.stringify(manualInputData));
   }, [outputMap]);
 
   // Save expandedTools in localStorage
@@ -149,8 +153,8 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
 
       if (workflow.length > 0) {
         let data = (insertAtIndex !== null && insertAtIndex > 0)
-            ? outputMap[input.id]?.[workflow[insertAtIndex - 1].id]
-            : input.content;
+          ? outputMap[input.id]?.[workflow[insertAtIndex - 1].id]
+          : input.content;
 
         for (let i = (insertAtIndex !== null && insertAtIndex > 0) ? insertAtIndex : 0; i < workflow.length; i++) {
           const tool = workflow[i];
@@ -255,9 +259,9 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
         setSelectedInput(workflowInput[0].id);
       }
     } else if (tabIndex === 0) {
-    // No modo CLI, usar sempre "ManualInput"
-    setSelectedInput('');
-  }
+      // No modo CLI, usar sempre "ManualInput"
+      setSelectedInput('');
+    }
   }, [workflowInput, tabIndex]);
 
   // Load help message for a tool
@@ -759,8 +763,8 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
     const endIndex = stopAtIndex !== undefined ? stopAtIndex : workflow.length - 1;
 
     const allInputs = tabIndex === 0
-        ? [{ id: "ManualInput", content: inputData }]
-        : Array.from(selectedFiles);
+      ? [{ id: "ManualInput", content: inputData }]
+      : Array.from(selectedFiles);
 
     const exportOutputs = {};
 
@@ -1071,25 +1075,25 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
     >
       {/* Box to block interaction */}
       {tabIndex === 1 && selectedFiles.size === 0 && (
-          <Box
-              sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '88%',
-                backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                zIndex: 10,
-                pointerEvents: 'all',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-          >
-            <Typography variant="body1" color="text.secondary">
-              Please select at least one file to work with
-            </Typography>
-          </Box>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '88%',
+            backgroundColor: 'rgba(255, 255, 255, 0.7)',
+            zIndex: 10,
+            pointerEvents: 'all',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <Typography variant="body1" color="text.secondary">
+            Please select at least one file to work with
+          </Typography>
+        </Box>
       )}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
         <Typography variant="h6" gutterBottom>
@@ -1127,9 +1131,9 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
               }
 
               return (
-                  <MenuItem key={input.id} value={input.id} title={input.name || input.id}>
-                    {displayName}
-                  </MenuItem>
+                <MenuItem key={input.id} value={input.id} title={input.name || input.id}>
+                  {displayName}
+                </MenuItem>
               );
             })}
           </Select>
@@ -1516,8 +1520,8 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
                 showNotification,
                 setOpenExportDialog,
                 partialExportIndex,
-                  tabIndex,
-                  selectedFiles
+                tabIndex,
+                selectedFiles
               );
               setPartialExportIndex(null);
             }}
@@ -1632,10 +1636,10 @@ const RecipePanel = ({ workflow, setWorkflow, inputData, setInputData, isLoading
                   setInputDataType,
                   showNotification,
                   setOpenImportDialog,
-                    setTabIndex,
-                    tree,
-                    setTree,
-                    setSelectedFiles,
+                  setTabIndex,
+                  tree,
+                  setTree,
+                  setSelectedFiles,
                 );
               } else {
                 showNotification('Please provide a valid input for import.', 'error');

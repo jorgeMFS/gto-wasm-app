@@ -4,7 +4,6 @@ import {
     CreateNewFolder,
     Delete,
     DriveFolderUpload,
-    Edit,
     ExpandMore,
     FileUpload,
     FolderZip,
@@ -12,8 +11,8 @@ import {
     InsertDriveFile,
     LibraryAddCheck,
     MoreVert,
-    Visibility,
-    NoteAdd
+    NoteAdd,
+    Visibility
 } from '@mui/icons-material';
 import {
     Box,
@@ -24,7 +23,6 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-    Divider,
     Grid,
     IconButton,
     List,
@@ -36,9 +34,8 @@ import {
     MenuItem,
     Paper,
     Select,
-    TextField,
     Tooltip,
-    Typography,
+    Typography
 } from '@mui/material';
 import JSZip from 'jszip';
 import React, { useContext, useRef, useState } from 'react';
@@ -67,51 +64,110 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
     // Define acceptable file extensions
     const acceptableExtensions = ['.fasta', '.fa', '.fastq', '.fq', '.pos', '.svg', '.txt', '.num'];
 
-    // Function to process uploaded files
-    const processFile = (file) => {
+    const readFirstNLines = (file, maxLines = 100) => {
+        return new Promise((resolve, reject) => {
+            let lineCount = 0;
+            let result = '';
+
+            // Create a stream reader from the file
+            const reader = new FileReader();
+            const chunkSize = 64 * 1024; // 64KB chunks
+            let offset = 0;
+
+            const readNextChunk = () => {
+                if (lineCount >= maxLines || offset >= file.size) {
+                    resolve(result);
+                    return;
+                }
+
+                const chunk = file.slice(offset, offset + chunkSize);
+                reader.readAsText(chunk);
+            };
+
+            reader.onload = (e) => {
+                const chunkText = e.target.result;
+                const lines = chunkText.split('\n');
+
+                // Handle the case where a line spans across chunks
+                if (offset > 0 && result.endsWith('\n') === false) {
+                    // Append the first line of this chunk to the last line of the previous chunk
+                    result = result.slice(0, result.lastIndexOf('\n') + 1) +
+                        result.slice(result.lastIndexOf('\n') + 1) + lines[0];
+                    lines.shift(); // Remove the first line as it's been processed
+                }
+
+                // Add lines until we reach maxLines
+                for (let i = 0; i < lines.length && lineCount < maxLines; i++) {
+                    // Add newline character except for the first line if it's a continuation
+                    if (lineCount > 0 || offset > 0) {
+                        result += '\n';
+                    }
+                    result += lines[i];
+                    lineCount++;
+                }
+
+                // Move to the next chunk
+                offset += chunkSize;
+                readNextChunk();
+            };
+
+            reader.onerror = () => {
+                reject(new Error('Error reading file'));
+            };
+
+            // Start reading the file
+            readNextChunk();
+        });
+    };
+
+    // Function to process a file
+    const processFile = async (file) => {
         const extension = `.${file.name.split('.').pop().toLowerCase()}`;
         if (!acceptableExtensions.includes(extension)) {
             showNotification(`Unsupported file ${file.name} with type ${extension}.`, 'error');
             return null;
         }
 
-        const fileSizeLimit = 100 * 1024 * 1024; // 100MB limit
+        const fileSizeLimit = 1 * 1024 * 1024; // 1MB limit
         const isPartial = file.size > fileSizeLimit;
-        const reader = new FileReader();
 
-        if (isPartial) {
-            showNotification(`The file ${file.name} is too large. Only the first 100 lines will be loaded.`, 'warning');
-        }
+        try {
+            let content;
 
-        return new Promise((resolve, reject) => {
-            reader.onload = (e) => {
-                const content = e.target.result.split('\n').slice(0, isPartial ? 100 : undefined).join('\n');
-                const detectedType = detectDataType(file.name, content);
-
-                if (!validateData(content, detectedType) && detectedType !== 'UNKNOWN') {
-                    showNotification(`Invalid ${detectedType} data format in ${file.name}.`, 'error');
-                    reject();
-                }
-
-                resolve({
-                    id: `${file.name}-${Date.now()}`,
-                    name: file.name,
-                    type: "file",
-                    fileType: detectedType,
-                    content,
-                    size: file.size,
-                    lastModified: new Date(file.lastModified),
-                    relativePath: '',
+            if (isPartial) {
+                showNotification(`The file ${file.name} is too large. Only the first 10000 lines will be loaded.`, 'warning');
+                content = await readFirstNLines(file, 10000);
+            } else {
+                // For smaller files, read the entire content
+                const reader = new FileReader();
+                content = await new Promise((resolve, reject) => {
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = () => reject(new Error('Error reading file'));
+                    reader.readAsText(file);
                 });
-            };
+            }
 
-            reader.onerror = () => {
-                showNotification(`Failed to read file: ${file.name}`, 'error');
-                reject();
-            };
+            const detectedType = detectDataType(file.name, content);
 
-            reader.readAsText(isPartial ? file.slice(0, fileSizeLimit) : file);
-        });
+            if (!validateData(content, detectedType) && detectedType !== 'UNKNOWN') {
+                showNotification(`Invalid ${detectedType} data format in ${file.name}.`, 'error');
+                return null;
+            }
+
+            return {
+                id: `${file.name}-${Date.now()}`,
+                name: file.name,
+                type: "file",
+                fileType: detectedType,
+                content,
+                size: file.size,
+                lastModified: new Date(file.lastModified),
+                relativePath: '',
+            };
+        } catch (error) {
+            showNotification(`Failed to read file: ${file.name}`, 'error');
+            return null;
+        }
     };
 
     // Function to insert files into a folder
@@ -344,8 +400,8 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
     };
 
     const handleZipUpload = async (event) => {
-        const MAX_ZIP_SIZE = 550 * 1024 * 1024; // 550MB
-        const MAX_FILES = 1000;
+        const MAX_ZIP_SIZE = 500 * 1024 * 1024; // 500MB
+        const MAX_FILES = 100;
         const PROCESSING_TIMEOUT = 120000; // 2 minutes
 
         const files = event.target.files;
@@ -675,7 +731,7 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                         />
                         <ListItemSecondaryAction>
                             {node.type === 'file' && (
-                                <IconButton edge="end" onClick={() => handleViewContent(node)} style={{marginRight: '8px'}}>
+                                <IconButton edge="end" onClick={() => handleViewContent(node)} style={{ marginRight: '8px' }}>
                                     <Visibility fontSize="small" />
                                 </IconButton>
                             )}
@@ -876,17 +932,17 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                     </IconButton>
                 </Tooltip>
                 <Tooltip title="Upload Files"
-                         placement="top"
-                         PopperProps={{
-                             modifiers: [
-                                 {
-                                     name: 'offset',
-                                     options: {
-                                         offset: [0, -8], // Ajuste a margem conforme necessário
-                                     },
-                                 },
-                             ],
-                         }}>
+                    placement="top"
+                    PopperProps={{
+                        modifiers: [
+                            {
+                                name: 'offset',
+                                options: {
+                                    offset: [0, -8], // Ajuste a margem conforme necessário
+                                },
+                            },
+                        ],
+                    }}>
                     <IconButton
                         color="primary"
                         component="label"
@@ -906,17 +962,17 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                     </IconButton>
                 </Tooltip>
                 <Tooltip title="Upload Folder"
-                         placement="top"
-                         PopperProps={{
-                             modifiers: [
-                                 {
-                                     name: 'offset',
-                                     options: {
-                                         offset: [0, -8], // Ajuste a margem conforme necessário
-                                     },
-                                 },
-                             ],
-                         }}>
+                    placement="top"
+                    PopperProps={{
+                        modifiers: [
+                            {
+                                name: 'offset',
+                                options: {
+                                    offset: [0, -8], // Ajuste a margem conforme necessário
+                                },
+                            },
+                        ],
+                    }}>
                     <IconButton
                         color="primary"
                         component="label"
@@ -978,8 +1034,8 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                 >
                     <Visibility />
                     File Content: {activeNode?.name && activeNode.name.length > 40 ?
-                    `${activeNode.name.substring(0, 25)}...${activeNode.name.substring(activeNode.name.length - 10)}` :
-                    activeNode?.name}
+                        `${activeNode.name.substring(0, 25)}...${activeNode.name.substring(activeNode.name.length - 10)}` :
+                        activeNode?.name}
                 </DialogTitle>
                 <DialogContent sx={{ mt: 2 }}>
                     <Paper
@@ -1037,8 +1093,8 @@ const FileExplorer = ({ selectedFiles, setSelectedFiles, tree, setTree }) => {
                                     <Typography variant="subtitle2" color="text.secondary">Name</Typography>
                                     <Typography variant="body1" gutterBottom>
                                         {activeNode?.name && activeNode.name.length > 25 ?
-                                        `${activeNode.name.substring(0, 15)}...${activeNode.name.substring(activeNode.name.length - 7)}` :
-                                        activeNode?.name}
+                                            `${activeNode.name.substring(0, 15)}...${activeNode.name.substring(activeNode.name.length - 7)}` :
+                                            activeNode?.name}
                                     </Typography>
                                 </Grid>
                                 <Grid item xs={12} sm={6}>
