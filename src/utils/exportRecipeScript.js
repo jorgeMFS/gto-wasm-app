@@ -1,4 +1,5 @@
 import description from '../../description.json';
+import { detectDataType } from '../utils/detectDataType';
 
 const TypeToExtensionMap = {
     'Multi-FASTA': 'fa',
@@ -13,7 +14,7 @@ const TypeToExtensionMap = {
     'text': 'txt',
 };
 
-export const exportRecipeScript = (workflow, inputData, inputDataType, outputTypesMap, exportFileName, showNotification, setOpenExportDialog, returnCommand = false, partialExportIndex = null) => {
+export const exportRecipeScript = (workflow, inputData, inputDataType, outputMap, exportFileName, showNotification, setOpenExportDialog, returnCommand = false, partialExportIndex = null) => {
     if (workflow.length === 0) {
         showNotification('Cannot export an empty workflow.', 'error');
         return;
@@ -25,7 +26,7 @@ export const exportRecipeScript = (workflow, inputData, inputDataType, outputTyp
 
     // Generation of the command line
     const inputFile = `input.${TypeToExtensionMap[inputDataType] || 'txt'}`;
-    const outputFile = `output.${TypeToExtensionMap[outputTypesMap[exportWorkflow[exportWorkflow.length - 1]?.id] || 'text'] || 'txt'}`;
+    const outputFile = `output.${TypeToExtensionMap[detectDataType('output.txt', outputMap[exportWorkflow[exportWorkflow.length - 1]?.id]) || 'text'] || 'txt'}`;
 
     const commands = exportWorkflow.map((tool, index) => {
         const toolConfig = description.tools.find((t) => `gto_${tool.toolName}` === t.name);
@@ -147,8 +148,7 @@ export const exportRecipeScript = (workflow, inputData, inputDataType, outputTyp
             console.error(`Tool configuration for ${tool.toolName} not found.`);
             return;
         }
-
-        const outputType = outputTypesMap[tool.id] || 'text';
+        const outputType = detectDataType('output.txt', outputMap[tool.id]) || 'text';
         const outputExtension = TypeToExtensionMap[outputType] || 'txt';
         const outputFile = `output_tool_${index + 1}.${outputExtension}`;
 
@@ -178,7 +178,7 @@ export const exportRecipeScript = (workflow, inputData, inputDataType, outputTyp
 
     // Step 5: Cleanup
     exportWorkflow.forEach((_, index) => {
-        const outputType = outputTypesMap[exportWorkflow[index].id] || 'text';
+        const outputType = detectDataType('output.txt', outputMap[exportWorkflow[index].id]) || 'text';
         const outputExtension = TypeToExtensionMap[outputType] || 'txt';
         scriptLines.push(`rm "output_tool_${index + 1}.${outputExtension}"`);
     });

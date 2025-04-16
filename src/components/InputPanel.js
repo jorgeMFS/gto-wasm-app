@@ -118,7 +118,7 @@ const InputPanel = ({ inputData, setInputData }) => {
 
   return (
     <Paper elevation={3} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 2, flexShrink: 0 }}>
         <Typography variant="h6">Input</Typography>
         <Typography variant="body2" color="textSecondary">
           {inputDataType}
@@ -135,6 +135,7 @@ const InputPanel = ({ inputData, setInputData }) => {
             multiline: true,
             inputComponent: 'textarea',
           }}
+          inputProps={{ maxLength: 100000 }}
           rows={9}
           sx={{
             flexGrow: 1,
@@ -159,7 +160,7 @@ const InputPanel = ({ inputData, setInputData }) => {
         }}
       >
         <Typography variant="body2" color="textSecondary">
-          {inputData.length} characters, {numberOfLines} lines
+          {inputData.length}/100000 characters, {numberOfLines} lines
         </Typography>
         <Tooltip title="Upload File">
           <IconButton

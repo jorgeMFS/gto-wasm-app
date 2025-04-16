@@ -1,8 +1,10 @@
 import SaveIcon from '@mui/icons-material/Save';
 import { Box, IconButton, Paper, TextField, Tooltip, Typography } from '@mui/material';
-import React from 'react';
+import React, { useEffect } from 'react';
 
-const OutputPanel = ({ outputData }) => {
+const OutputPanel = ({ outputData, setOutputData, workflow = null, tool = null, inputData, page }) => {
+  const iconColor = page === 'WorkflowPage' ? 'primary' : 'secondary';
+
   const handleSaveOutput = () => {
     const blob = new Blob([outputData], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -13,9 +15,23 @@ const OutputPanel = ({ outputData }) => {
     URL.revokeObjectURL(url);
   };
 
+  // Clear output data when workflow or input data changes, beacuse the output data is no longer valid
+  useEffect(() => {
+    if (workflow !== null) {
+      setOutputData('');
+    }
+  }, [workflow, inputData]);
+
+  // Clear output data when tool or input data changes, because the output data is no longer valid
+  useEffect(() => {
+    if (tool !== null) {
+      setOutputData('');
+    }
+  }, [tool, inputData]);
+
   return (
     <Paper elevation={3} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 2, flexShrink: 0 }}>
         <Typography variant="h6">Output</Typography>
       </Box>
       {/* TextField with dynamic height */}
@@ -29,7 +45,7 @@ const OutputPanel = ({ outputData }) => {
             inputComponent: 'textarea',
             readOnly: true,
           }}
-          rows={9}
+          rows={8}
           sx={{
             flexGrow: 1,
             flexShrink: 1,
@@ -53,7 +69,7 @@ const OutputPanel = ({ outputData }) => {
         }}
       >
         <Tooltip title="Save Output">
-          <IconButton color="primary" onClick={handleSaveOutput}>
+          <IconButton color={iconColor} onClick={handleSaveOutput}>
             <SaveIcon />
           </IconButton>
         </Tooltip>

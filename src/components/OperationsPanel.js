@@ -1,4 +1,4 @@
-import { AddCircle } from '@mui/icons-material';
+import { AddCircle, Block } from '@mui/icons-material';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import {
@@ -21,100 +21,17 @@ import debounce from 'lodash.debounce';
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { DataTypeContext } from '../contexts/DataTypeContext';
 import { NotificationContext } from '../contexts/NotificationContext';
+import { ValidationErrorsContext } from '../contexts/ValidationErrorsContext';
 import { getCompatibleTools } from '../utils/compatibility';
+import operationCategories from '../utils/operationCategories';
 
-// Define categories and map operations to them
-const operationCategories = {
-  "Sequence Manipulation": [
-    { name: 'fasta_extract', description: 'Extracts sequences from a FASTA file.\nInput: FASTA \nOutput: DNA, RNA or AminoAcids' },
-    { name: 'fasta_reverse', description: 'Reverses the order of a FASTA or Multi-FASTA file format. \nInput: FASTA, Multi-FASTA \nOutput: FASTA, Multi-FASTA' },
-    { name: 'fasta_complement', description: 'Replaces the ACGT bases with their complements in FASTA or Multi-FASTA file format. \nInput: FASTA, Multi-FASTA \nOutput: FASTA, Multi-FASTA' },
-    { name: 'fasta_mutate', description: 'Creates a synthetic mutation of a FASTA file. \nInput: FASTA, Multi-FASTA \nOutput: FASTA, Multi-FASTA' },
-    { name: 'fasta_rand_extra_chars', description: 'Substitutes in the DNA sequence the outside ACGT chars by random ACGT symbols. \nInput: FASTA, Multi-FASTA \nOutput: FASTA, Multi-FASTA' },
-    { name: 'fasta_extract_by_read', description: 'Extracts sequences from each read in a FASTA or Multi-FASTA file. \nInput: FASTA, Multi-FASTA \nOutput: FASTA, Multi-FASTA' },
-    { name: 'fasta_extract_read_by_pattern', description: 'Extracts reads from a Multi-FASTA file format given a pattern in the header. \nInput: Multi-FASTA \nOutput: Multi-FASTA' },
-    { name: 'fasta_extract_pattern_coords', description: 'Extracts the header and coordinates from a Multi-FASTA file format given a pattern/motif in the sequence. \nInput: Multi-FASTA \nOutput: text' },
-    { name: 'fasta_split_reads', description: 'Splits a Multi-FASTA file to multiple FASTA files. \nInput: Multi-FASTA \nOutput: text' },
-    { name: 'fasta_split_streams', description: 'Splits and writes a FASTA file into three channels of information: headers, extra and DNA. \nInput: FASTA \nOutput: text' },
-    { name: 'fasta_merge_streams', description: 'Merges the three channels of information (headers, extra and DNA) and writes it into a FASTA file. \nInput: FASTA \nOutput: text' },
-    { name: 'fastq_exclude_n', description: 'Discards the FASTQ reads with the minimum number of \'N\' symbols. \nInput: FASTQ \nOutput: FASTQ' },
-    { name: 'fastq_extract_quality_scores', description: 'Extracts all the quality-scores from FASTQ reads. \nInput: FASTQ \nOutput: text' },
-    { name: 'fastq_minimum_quality_score', description: 'Discards reads with average quality-score below of the defined. \nInput: FASTQ \nOutput: FASTQ' },
-    { name: 'fastq_minimum_read_size', description: 'Filters the FASTQ reads with the length smaller than the value defined. \nInput: FASTQ \nOutput: FASTQ' },
-    { name: 'fastq_maximum_read_size', description: 'Filters the FASTQ reads with the length higher than the value defined. \nInput: FASTQ \nOutput: FASTQ' },
-    { name: 'fastq_minimum_local_quality_score_forward', description: 'Filters the reads considering the quality score average of a defined window size of bases. \nInput: FASTQ \nOutput: FASTQ' },
-    { name: 'fastq_minimum_local_quality_score_reverse', description: 'Filters the reverse reads, considering the quality score average of a defined window size of bases. \nInput: FASTQ \nOutput: FASTQ' },
-    { name: 'fastq_rand_extra_chars', description: 'Substitutes in the FASTQ files, the DNA sequence the outside ACGT chars by random ACGT symbols. \nInput: FASTQ \nOutput: FASTQ' },
-    { name: 'fastq_cut', description: 'Cuts read sequences in a FASTQ file. \nInput: FASTQ \nOutput: FASTQ' },
-    { name: 'fastq_pack', description: 'Packages each FASTQ read in a single line. \nInput: FASTQ \nOutput: FASTQ' },
-    { name: 'fastq_unpack', description: 'Unpacks the FASTQ reads packaged using the gto_fastq_pack tool. \nInput: FASTQ \nOutput: FASTQ' },
-    { name: 'fastq_quality_score_info', description: 'Analyses the quality-scores of a FASTQ file. \nInput: FASTQ \nOutput: text' },
-    { name: 'fastq_quality_score_min', description: 'Analyses the minimal quality-scores of a FASTQ file. \nInput: FASTQ \nOutput: text' },
-    { name: 'fastq_quality_score_max', description: 'Analyses the maximal quality-scores of a FASTQ file. \nInput: FASTQ \nOutput: text' },
-    { name: 'fastq_complement', description: 'Replaces the ACGT bases with their complements in a FASTQ file format. \nInput: FASTQ \nOutput: FASTQ' },
-    { name: 'fastq_reverse', description: 'Reverses the ACGT bases order for each read in a FASTQ file format. \nInput: FASTQ \nOutput: FASTQ' },
-    { name: 'fastq_split', description: 'Splits Paired End files according to the direction of the strand. \nInput: FASTQ \nOutput: text' },
-    { name: 'fastq_mutate', description: 'Creates a synthetic mutation of a FASTQ file. \nInput: FASTQ \nOutput: FASTQ' },
-  ],
-  "Format Conversion": [
-    { name: 'fasta_from_seq', description: 'Converts a genomic sequence to pseudo FASTA file format. \nInput: DNA, RNA, AminoAcids \nOutput: FASTA' },
-    { name: 'fasta_to_seq', description: 'Converts a FASTA or Multi-FASTA file format to a seq. \nInput: FASTA \nOutput: DNA, RNA, AminoAcids' },
-    { name: 'fastq_to_fasta', description: 'Converts a FASTQ file format to a pseudo FASTA file. \nInput: FASTQ \nOutput: FASTA' },
-    { name: 'fastq_to_mfasta', description: 'Converts a FASTQ file format to a pseudo Multi-FASTA file. \nInput: FASTQ \nOutput: Multi-FASTA' },
-    { name: 'fastq_from_seq', description: 'Converts a genomic sequence to pseudo FASTQ file format. \nInput: DNA, RNA, AminoAcids \nOutput: FASTQ' },
-    { name: 'amino_acid_from_fasta', description: 'Converts DNA sequences in FASTA or Multi-FASTA file format to an amino acid sequence. \nInput: FASTA, Multi-FASTA \nOutput: AminoAcids' },
-    { name: 'amino_acid_from_fastq', description: 'Converts DNA sequences in the FASTQ file format to an amino acid sequence. \nInput: FASTQ \nOutput: AminoAcids' },
-    { name: 'amino_acid_from_seq', description: 'Converts DNA sequence to an amino acid sequence. \nInput: DNA \nOutput: AminoAcids' },
-    { name: 'amino_acid_to_pseudo_dna', description: 'Converts an amino acid (protein) sequence to a pseudo DNA sequence. \nInput: AminoAcids \nOutput: DNA' },
-  ],
-  "Genomic Operations": [
-    { name: 'genomic_complement', description: 'Replaces the ACGT bases with their complements in a DNA sequence. \nInput: DNA \nOutput: DNA' },
-    { name: 'genomic_reverse', description: 'Reverses the ACGT bases order for each read in a sequence file. \nInput: DNA \nOutput: DNA' },
-    { name: 'genomic_extract', description: 'Extracts sequences from a sequence file. \nInput: DNA \nOutput: DNA' },
-    { name: 'genomic_gen_random_dna', description: 'Generates a synthetic DNA. \nOutput: DNA' },
-    { name: 'genomic_rand_seq_extra_chars', description: 'Substitutes in the DNA sequence the outside ACGT chars by random ACGT symbols. \nInput: DNA \nOutput: DNA' },
-    { name: 'genomic_period', description: 'Calculates the best order depth of a sequence, using FCMs. \nInput: DNA \nOutput: text' },
-    { name: 'genomic_count_bases', description: 'Counts the number of bases in sequence, FASTA or FASTQ files. \nInput: DNA, FASTA, FASTQ \nOutput: text' },
-    { name: 'genomic_dna_mutate', description: 'Creates a synthetic mutation of a sequence file. \nInput: DNA \nOutput: DNA' },
-  ],
-  "Amino Acid Operations": [
-    { name: 'amino_acid_to_group', description: 'Converts an amino acid sequence to a group sequence. \nInput: AminoAcids \nOutput: GROUP' },
-    { name: 'amino_acid_to_pseudo_dna', description: 'Converts an amino acid (protein) sequence to a pseudo DNA sequence. \nInput: AminoAcids \nOutput: DNA' },
-  ],
-  "Information and Analysis": [
-    { name: 'fasta_info', description: 'Shows the readed information of a FASTA or Multi-FASTA file format. \nInput: FASTA \nOutput: text' },
-    { name: 'fastq_info', description: 'Analyses the basic information of FASTQ file format. \nInput: FASTQ \nOutput: text' },
-    { name: 'info', description: 'Gives the basic properties of the file. \nInput: Any \nOutput: text' },
-    { name: 'fasta_find_n_pos', description: 'Reports the \'N\' regions in a sequence or FASTA (seq) file. \nInput: FASTA \nOutput: text' },
-    { name: 'comparative_map', description: 'Creates a visualization for comparative maps. \nInput: POS \nOutput: SVG' },
-  ],
-  "Mathematical Operations": [
-    { name: 'lower_bound', description: 'Sets an lower bound in a file with a value per line. \nInput: NUM \nOutput: NUM' },
-    { name: 'upper_bound', description: 'Sets an upper bound in a file with a value per line. \nInput: NUM \nOutput: NUM' },
-    { name: 'max', description: 'Computes the maximum value in each row between two files. \nInput: NUM \nOutput: NUM' },
-    { name: 'min', description: 'Computes the minium value in each row between two files. \nInput: NUM \nOutput: NUM' },
-    { name: 'sum', description: 'Adds decimal values in file, line by line, splitted by spaces or tabs. \nInput: NUM \nOutput: NUM' },
-    { name: 'permute_by_blocks', description: 'Permutates by block sequence, FASTA and Multi-FASTA files. \nInput: FASTA \nOutput: FASTA' },
-    { name: 'real_to_binary_with_threshold', description: 'Converts a sequence of real numbers into a binary sequence, given a threshold. \nInput: NUM \nOutput: BIN' },
-  ],
-  "Text Processing": [
-    { name: 'char_to_line', description: 'Splits a sequence into lines, creating an output sequence which has a char for each line. \nInput: DNA, RNA, AminoAcids \nOutput: DNA, RNA, AminoAcids' },
-    { name: 'new_line_on_new_x', description: 'Splits different rows with a new empty row. \nInput: NUM \nOutput: NUM' },
-    { name: 'filter', description: 'Filters numerical sequences using a low-pass filter. \nInput: NUM \nOutput: NUM' },
-    { name: 'reverse', description: 'Reverses the ACGT bases order for each read in a sequence file' },
-    { name: 'segment', description: 'Segments a filtered sequence based on a threshold. \nInput: NUM \nOutput: text' },
-    { name: 'word_search', description: 'Search for a word in a file. \nInput: text \nOutput: text' },
-    { name: 'brute_force_string', description: 'Generates all combinations, line by line, for an inputted alphabet and specific size. \nInput: text \nOutput: text' },
-  ]
-};
 
-console.log('Operation categories:', operationCategories);
-
-const OperationsPanel = ({ onAddOperation, isWorkflowEmpty, isLoading, setIsLoading, insertAtIndex, setInsertAtIndex, filteredTools, setFilteredTools }) => {
+const OperationsPanel = ({ onAddOperation, isWorkflowEmpty, isLoading, setIsLoading, insertAtIndex, setInsertAtIndex, addingATool, setAddingATool, filteredTools, setFilteredTools }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCategories, setExpandedCategories] = useState({});
   const { dataType } = useContext(DataTypeContext);
   const showNotification = useContext(NotificationContext);
+  const { validationErrors } = useContext(ValidationErrorsContext); // Access validation errors
 
   // Debounced search handler
   const handleSearch = useMemo(
@@ -154,7 +71,7 @@ const OperationsPanel = ({ onAddOperation, isWorkflowEmpty, isLoading, setIsLoad
     const compatible = getCompatibleTools(dataType, isWorkflowEmpty);
     // Assuming tool names in operationCategories do not have the 'gto_' prefix
     return new Set(compatible.map((tool) => tool.name.replace(/^gto_/, '')));
-  }, [dataType]);
+  }, [dataType, isWorkflowEmpty]);
 
   // Expand categories with available tools
   useEffect(() => {
@@ -202,7 +119,7 @@ const OperationsPanel = ({ onAddOperation, isWorkflowEmpty, isLoading, setIsLoad
 
   return (
     <Paper elevation={3} sx={{ padding: 2, height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      {insertAtIndex !== null && (
+      {insertAtIndex !== null && addingATool && (
         <Box
           sx={{
             padding: 2,
@@ -222,6 +139,7 @@ const OperationsPanel = ({ onAddOperation, isWorkflowEmpty, isLoading, setIsLoad
               <Button
                 onClick={() => {
                   setInsertAtIndex(null);
+                  setAddingATool(false);
                   setFilteredTools([]);
                 }}
                 color="primary"
@@ -253,8 +171,36 @@ const OperationsPanel = ({ onAddOperation, isWorkflowEmpty, isLoading, setIsLoad
         </Box>
       )}
 
+      {/* Overlay to block interaction */}
+      {Object.values(validationErrors).some(error => Object.keys(error).length > 0) && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(255, 255, 255, 1)',
+            zIndex: 10,
+            pointerEvents: 'all',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <Block sx={{
+            color: 'error.main',
+            fontSize: 60,
+          }} />
+          <Typography variant="body1" sx={{ color: 'error.main', textAlign: 'center' }}>
+            Correct the invalid parameters in the workflow to unlock the unavailable features.
+          </Typography>
+        </Box>
+      )}
+
       <Typography variant="h6" align="center" gutterBottom>
-        Operations
+        Available Tools
       </Typography>
       <TextField
         label="Search Operations"
@@ -304,10 +250,11 @@ const OperationsPanel = ({ onAddOperation, isWorkflowEmpty, isLoading, setIsLoad
                         }}
                         onClick={() => {
                           setIsLoading(true);
-                          if (insertAtIndex !== null) {
+                          if (insertAtIndex !== null && addingATool) {
                             onAddOperation(operation.name, insertAtIndex);
-                            setInsertAtIndex(null);
+                            // setInsertAtIndex(null);
                             setFilteredTools([]);
+                            setAddingATool(false);
                             showNotification('Tool added successfully!', 'success');
                           } else {
                             onAddOperation(operation.name);

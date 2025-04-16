@@ -10,7 +10,7 @@ import { detectDataType } from '../utils/detectDataType';
 const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [autoExecute, setAutoExecute] = useState(false);
-  const { setValidationErrors } = useContext(ValidationErrorsContext); // Access validation errors
+  const { validationErrors, setValidationErrors } = useContext(ValidationErrorsContext); // Access validation errors
   const { setDataType } = useContext(DataTypeContext);
   const showNotification = useContext(NotificationContext);
 
@@ -146,7 +146,31 @@ const ExecutionControls = ({ workflow, inputData, setOutputData }) => {
   }, [workflow, inputData, autoExecute]);
 
   return (
-    <Box sx={{ textAlign: 'center' }}>
+    <Box sx={{ textAlign: 'center', position: 'relative' }}>
+      {/* Overlay to block interaction */}
+      {Object.values(validationErrors).some(error => Object.keys(error).length > 0) && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(255, 255, 255, 0.7)',
+            zIndex: 10,
+            pointerEvents: 'all',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          {/* <Block sx={{
+            color: 'error.main',
+            fontSize: 80,
+            padding: 2,
+          }} /> */}
+        </Box>
+      )}
       <Button
         variant="contained"
         color="primary"
