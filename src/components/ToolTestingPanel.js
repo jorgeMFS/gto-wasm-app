@@ -391,7 +391,7 @@ const ToolTestingPanel = ({ tool, inputData, setOutputData, setIsLoading }) => {
                                                 onChange={(e) =>
                                                     handleParameterChange(flagObj.flag, e.target.checked)
                                                 }
-                                                color='primary'
+                                                color='secondary'
                                             />
                                         }
                                         label={
@@ -538,7 +538,7 @@ const ToolTestingPanel = ({ tool, inputData, setOutputData, setIsLoading }) => {
 
                     <Button
                         variant="contained"
-                        color="primary"
+                        color="secondary"
                         size="small"
                         onClick={() => handleExecuteTool(tool)}
                         startIcon={<PlayArrow />}

@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Delete, DragIndicator, HelpOutline, Save } from '@mui/icons-material';
+import { Delete, DragIndicator, HelpOutline } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 
-const SortableItem = ({ id, toolName, onDelete, onDeleteFromHere, children, isDragging, isInvalid, helpMessage, workflowLength, onPartialSave }) => {
+const SortableItem = ({ id, toolName, onDelete, onDeleteFromHere, children, isDragging, isInvalid, helpMessage, workflowLength }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id,
   });
@@ -85,13 +85,6 @@ const SortableItem = ({ id, toolName, onDelete, onDeleteFromHere, children, isDr
         >
           <IconButton size="small" sx={{ marginLeft: 1 }}>
             <HelpOutline fontSize="small" />
-          </IconButton>
-        </Tooltip>
-
-        {/* Botão de Save Output Parcial */}
-        <Tooltip title="Save Output">
-          <IconButton onClick={onPartialSave} size="small">
-            <Save />
           </IconButton>
         </Tooltip>
 

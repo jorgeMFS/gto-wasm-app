@@ -1,13 +1,20 @@
 import { AccountTree, Science } from '@mui/icons-material';
 import { AppBar, Box, Button, Toolbar, useTheme } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import BioChefLogo from '../../img/BioChefWhite.svg';
 
 const Navbar = () => {
     const theme = useTheme();
     const location = useLocation();
-    const [navColor, setNavColor] = useState(theme.palette.primary.main);
+    const [navColor, setNavColor] = useState(theme.palette.secondary.main);
+
+    useEffect(() => {
+        const newColor = location.pathname === '/workflow'
+            ? theme.palette.primary.main
+            : theme.palette.secondary.main;
+        setNavColor(newColor);
+    }, [location.pathname]);
 
     const isActive = (path) => location.pathname === path;
 
@@ -42,6 +49,7 @@ const Navbar = () => {
             color='transparent'
             sx={{
                 backgroundColor: navColor,
+                transition: 'background-color 0.5s ease-in-out',
             }}
         >
             <Toolbar>
@@ -66,37 +74,6 @@ const Navbar = () => {
                     >
                         Workflow Builder
                     </Button>
-                </Box>
-
-                {/* Right side logos */}
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    {/* UA logo */}
-                    <a
-                        href="https://www.ua.pt/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ display: 'inline-block', marginRight: 16 }}
-                    >
-                        <img
-                            src='/img/logo-ua.png'
-                            alt="Universidade de Aveiro"
-                            style={{ height: 60 }}
-                        />
-                    </a>
-
-                    {/* IEETA logo */}
-                    <a
-                        href="https://www.ieeta.pt/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ display: 'inline-block' }}
-                    >
-                        <img
-                            src='/img/logo-ieeta.png'
-                            alt="IEETA"
-                            style={{ height: 35 }}
-                        />
-                    </a>
                 </Box>
             </Toolbar>
         </AppBar>

@@ -216,13 +216,13 @@ const ToolInputPanel = ({ tool, inputData, setInputData }) => {
                 </Typography>
                 <Tooltip title="Upload File">
                     <IconButton
-                        color="primary"
+                        color="secondary"
                         component="label"
                         sx={{
                             padding: '6px',
-                            backgroundColor: isAcceptable ? 'primary.main' : 'grey.500',
+                            backgroundColor: isAcceptable ? 'secondary.main' : 'grey.500',
                             '&:hover': {
-                                backgroundColor: isAcceptable ? 'primary.dark' : 'grey.500',
+                                backgroundColor: isAcceptable ? 'secondary.dark' : 'grey.500',
                             },
                             cursor: isAcceptable ? 'pointer' : 'not-allowed',
                             color: 'white',
